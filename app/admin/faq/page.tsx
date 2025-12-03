@@ -17,6 +17,9 @@ import {
   TagIcon, // DIPERBAIKI
   CheckCircleIcon, // DIPERBAIKI
   XCircleIcon, // DIPERBAIKI
+  MagnifyingGlassIcon, // DITAMBAHKAN
+  ChevronLeftIcon, // DITAMBAHKAN
+  ChevronRightIcon, // DITAMBAHKAN
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarSolid } from "@heroicons/react/24/solid";
 
@@ -30,12 +33,19 @@ interface FAQ {
   updated_at: string;
 }
 
+// Items per page
+const ITEMS_PER_PAGE = 20;
+
 export default function FAQManagementPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [filteredFaqs, setFilteredFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingFAQ, setEditingFAQ] = useState<FAQ | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [formData, setFormData] = useState({
     question: "",
     answer: "",
@@ -44,9 +54,34 @@ export default function FAQManagementPage() {
   });
   const { toast, showToast, hideToast } = useToast();
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredFaqs.slice(indexOfFirstItem, indexOfLastItem);
+
   useEffect(() => {
     fetchFAQs();
   }, []);
+
+  useEffect(() => {
+    // Filter FAQs based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredFaqs(faqs);
+    } else {
+      const filtered = faqs.filter(
+        (faq) =>
+          faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          faq.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredFaqs(filtered);
+    }
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  }, [searchQuery, faqs]);
 
   const fetchFAQs = async () => {
     try {
@@ -61,6 +96,8 @@ export default function FAQManagementPage() {
         showToast("Gagal memuat FAQ", "error");
       } else {
         setFaqs(data || []);
+        setFilteredFaqs(data || []);
+        setTotalItems(data?.length || 0);
       }
 
       setLoading(false);
@@ -104,7 +141,24 @@ export default function FAQManagementPage() {
         throw error;
       }
 
-      setFaqs(faqs.filter((faq) => faq.id !== id));
+      const updatedFaqs = faqs.filter((faq) => faq.id !== id);
+      setFaqs(updatedFaqs);
+      setTotalItems(updatedFaqs.length);
+
+      // Update filtered FAQs if needed
+      if (searchQuery.trim() === "") {
+        setFilteredFaqs(updatedFaqs);
+      } else {
+        // Reapply filters
+        const filtered = updatedFaqs.filter(
+          (faq) =>
+            faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            faq.category.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredFaqs(filtered);
+      }
+
       showToast("FAQ berhasil dihapus!", "success");
     } catch (error) {
       console.error("Error deleting FAQ:", error);
@@ -137,11 +191,24 @@ export default function FAQManagementPage() {
           throw error;
         }
 
-        setFaqs(
-          faqs.map((faq) =>
-            faq.id === editingFAQ.id ? { ...faq, ...formData } : faq
-          )
+        const updatedFaqs = faqs.map((faq) =>
+          faq.id === editingFAQ.id ? { ...faq, ...formData } : faq
         );
+        setFaqs(updatedFaqs);
+
+        // Update filtered FAQs if needed
+        if (searchQuery.trim() === "") {
+          setFilteredFaqs(updatedFaqs);
+        } else {
+          // Reapply filters
+          const filtered = updatedFaqs.filter(
+            (faq) =>
+              faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              faq.category.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          setFilteredFaqs(filtered);
+        }
 
         showToast("FAQ berhasil diperbarui!", "success");
       } else {
@@ -154,7 +221,24 @@ export default function FAQManagementPage() {
           throw error;
         }
 
-        setFaqs([...faqs, ...(data || [])]);
+        const newFaqs = [...faqs, ...(data || [])];
+        setFaqs(newFaqs);
+
+        // Update filtered FAQs if needed
+        if (searchQuery.trim() === "") {
+          setFilteredFaqs(newFaqs);
+        } else {
+          // Reapply filters
+          const filtered = newFaqs.filter(
+            (faq) =>
+              faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              faq.category.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          setFilteredFaqs(filtered);
+        }
+
+        setTotalItems(newFaqs.length);
         showToast("FAQ berhasil ditambahkan!", "success");
       }
 
@@ -170,6 +254,41 @@ export default function FAQManagementPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingFAQ(null);
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   if (loading) {
@@ -190,6 +309,7 @@ export default function FAQManagementPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
+        {/* Header Section - Diperbaiki dengan Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <button
@@ -199,7 +319,27 @@ export default function FAQManagementPage() {
               <PlusIcon className="h-5 w-5 mr-2" />
               Tambah FAQ
             </button>
+
+            <div className="relative w-full sm:w-auto">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Cari FAQ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredFaqs.length)} dari{" "}
+          {filteredFaqs.length} FAQ
         </div>
 
         <div className="hidden md:block overflow-x-auto">
@@ -224,15 +364,14 @@ export default function FAQManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {faqs.map((faq) => (
+              {currentItems.map((faq) => (
                 <tr
                   key={faq.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
                     <div className="flex items-center">
-                      <ChatBubbleLeftIcon className="h-5 w-5 text-slate-400 mr-3" />{" "}
-                      {/* DIPERBAIKI */}
+                      <ChatBubbleLeftIcon className="h-5 w-5 text-slate-400 mr-3" />
                       {faq.question}
                     </div>
                   </td>
@@ -245,7 +384,7 @@ export default function FAQManagementPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                      <TagIcon className="h-4 w-4 mr-1" /> {/* DIPERBAIKI */}
+                      <TagIcon className="h-4 w-4 mr-1" />
                       {faq.category || "Umum"}
                     </span>
                   </td>
@@ -257,8 +396,7 @@ export default function FAQManagementPage() {
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400">
-                        <XMarkIcon className="h-4 w-4 mr-1" />{" "}
-                        {/* DIPERBAIKI */}
+                        <XMarkIcon className="h-4 w-4 mr-1" />
                         Tidak
                       </span>
                     )}
@@ -269,16 +407,14 @@ export default function FAQManagementPage() {
                         onClick={() => handleEditFAQ(faq)}
                         className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />{" "}
-                        {/* DIPERBAIKI */}
+                        <PencilIcon className="h-4 w-4 mr-1" />
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteFAQ(faq.id)}
                         className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                       >
-                        <TrashIcon className="h-4 w-4 mr-1" />{" "}
-                        {/* DIPERBAIKI */}
+                        <TrashIcon className="h-4 w-4 mr-1" />
                         Hapus
                       </button>
                     </div>
@@ -290,15 +426,14 @@ export default function FAQManagementPage() {
         </div>
 
         <div className="md:hidden space-y-4">
-          {faqs.map((faq) => (
+          {currentItems.map((faq) => (
             <div
               key={faq.id}
               className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-start">
-                  <ChatBubbleLeftIcon className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />{" "}
-                  {/* DIPERBAIKI */}
+                  <ChatBubbleLeftIcon className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-slate-900 dark:text-white">
                       {faq.question}
@@ -312,7 +447,7 @@ export default function FAQManagementPage() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400">
-                    <XMarkIcon className="h-4 w-4 mr-1" /> {/* DIPERBAIKI */}
+                    <XMarkIcon className="h-4 w-4 mr-1" />
                     Tidak
                   </span>
                 )}
@@ -325,7 +460,7 @@ export default function FAQManagementPage() {
                 </p>
                 <div className="flex items-center justify-between mb-3">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                    <TagIcon className="h-4 w-4 mr-1" /> {/* DIPERBAIKI */}
+                    <TagIcon className="h-4 w-4 mr-1" />
                     {faq.category || "Umum"}
                   </span>
                 </div>
@@ -334,14 +469,14 @@ export default function FAQManagementPage() {
                     onClick={() => handleEditFAQ(faq)}
                     className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                   >
-                    <PencilIcon className="h-4 w-4 mr-1" /> {/* DIPERBAIKI */}
+                    <PencilIcon className="h-4 w-4 mr-1" />
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteFAQ(faq.id)}
                     className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                   >
-                    <TrashIcon className="h-4 w-4 mr-1" /> {/* DIPERBAIKI */}
+                    <TrashIcon className="h-4 w-4 mr-1" />
                     Hapus
                   </button>
                 </div>
@@ -350,23 +485,78 @@ export default function FAQManagementPage() {
           ))}
         </div>
 
-        {faqs.length === 0 && (
+        {/* Empty State */}
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
-            <ChatBubbleLeftIcon className="mx-auto h-12 w-12 text-slate-400" />{" "}
-            {/* DIPERBAIKI */}
+            <ChatBubbleLeftIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada FAQ
+              {searchQuery ? "Tidak ada FAQ yang ditemukan" : "Tidak ada FAQ"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Belum ada FAQ yang dibuat.
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : "Belum ada FAQ yang dibuat."}
             </p>
-            <div className="mt-6">
+            {!searchQuery && (
+              <div className="mt-6">
+                <button
+                  onClick={handleAddFAQ}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                  Tambah FAQ Baru
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
               <button
-                onClick={handleAddFAQ}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" /> {/* DIPERBAIKI */}
-                Tambah FAQ Baru
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
               </button>
             </div>
           </div>

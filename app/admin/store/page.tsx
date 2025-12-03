@@ -21,13 +21,23 @@ import {
   ShoppingBagIcon,
   StarIcon,
   GiftIcon,
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+
+// Items per page
+const ITEMS_PER_PAGE = 20;
 
 export default function MarketplaceManagementPage() {
   const [assets, setAssets] = useState<MarketplaceAsset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<MarketplaceAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const { toast, showToast, hideToast } = useToast();
 
   const [showModal, setShowModal] = useState(false);
@@ -51,9 +61,40 @@ export default function MarketplaceManagementPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredAssets.slice(indexOfFirstItem, indexOfLastItem);
+
   useEffect(() => {
     fetchAssets();
   }, []);
+
+  useEffect(() => {
+    // Filter assets based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredAssets(assets);
+    } else {
+      const filtered = assets.filter(
+        (asset) =>
+          asset.nama_aset.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.kategori_aset
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          asset.jenis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (asset.tagline &&
+            asset.tagline.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (asset.deskripsi &&
+            asset.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredAssets(filtered);
+    }
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  }, [searchQuery, assets]);
 
   const fetchAssets = async () => {
     try {
@@ -64,6 +105,8 @@ export default function MarketplaceManagementPage() {
 
       if (error) throw error;
       setAssets(data || []);
+      setFilteredAssets(data || []);
+      setTotalItems(data?.length || 0);
     } catch (error) {
       console.error("Error fetching assets:", error);
       showToast("Gagal memuat aset marketplace!", "error");
@@ -117,7 +160,32 @@ export default function MarketplaceManagementPage() {
         .eq("id", id);
       if (error) throw error;
 
-      setAssets(assets.filter((a) => a.id !== id));
+      const updatedAssets = assets.filter((a) => a.id !== id);
+      setAssets(updatedAssets);
+      setTotalItems(updatedAssets.length);
+
+      // Update filtered assets if needed
+      if (searchQuery.trim() === "") {
+        setFilteredAssets(updatedAssets);
+      } else {
+        // Reapply filters
+        const filtered = updatedAssets.filter(
+          (asset) =>
+            asset.nama_aset.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            asset.kategori_aset
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            asset.jenis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (asset.tagline &&
+              asset.tagline
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())) ||
+            (asset.deskripsi &&
+              asset.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        setFilteredAssets(filtered);
+      }
+
       showToast("Aset berhasil dihapus!", "success");
     } catch (error) {
       console.error("Error deleting asset:", error);
@@ -193,11 +261,38 @@ export default function MarketplaceManagementPage() {
           .update(updatedFormData)
           .eq("id", editingAsset.id);
         if (error) throw error;
-        setAssets(
-          assets.map((a) =>
-            a.id === editingAsset.id ? { ...a, ...updatedFormData } : a
-          )
+
+        const updatedAssets = assets.map((a) =>
+          a.id === editingAsset.id ? { ...a, ...updatedFormData } : a
         );
+        setAssets(updatedAssets);
+
+        // Update filtered assets if needed
+        if (searchQuery.trim() === "") {
+          setFilteredAssets(updatedAssets);
+        } else {
+          // Reapply filters
+          const filtered = updatedAssets.filter(
+            (asset) =>
+              asset.nama_aset
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              asset.kategori_aset
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              asset.jenis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (asset.tagline &&
+                asset.tagline
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase())) ||
+              (asset.deskripsi &&
+                asset.deskripsi
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()))
+          );
+          setFilteredAssets(filtered);
+        }
+
         showToast("Aset berhasil diperbarui!", "success");
       } else {
         const { data, error } = await supabase
@@ -205,7 +300,37 @@ export default function MarketplaceManagementPage() {
           .insert([updatedFormData])
           .select();
         if (error) throw error;
-        setAssets([...(data || []), ...assets]);
+
+        const newAssets = [...(data || []), ...assets];
+        setAssets(newAssets);
+
+        // Update filtered assets if needed
+        if (searchQuery.trim() === "") {
+          setFilteredAssets(newAssets);
+        } else {
+          // Reapply filters
+          const filtered = newAssets.filter(
+            (asset) =>
+              asset.nama_aset
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              asset.kategori_aset
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              asset.jenis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (asset.tagline &&
+                asset.tagline
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase())) ||
+              (asset.deskripsi &&
+                asset.deskripsi
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()))
+          );
+          setFilteredAssets(filtered);
+        }
+
+        setTotalItems(newAssets.length);
         showToast("Aset berhasil ditambahkan!", "success");
       }
       setShowModal(false);
@@ -236,6 +361,41 @@ export default function MarketplaceManagementPage() {
     }).format(amount);
   };
 
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
@@ -254,20 +414,42 @@ export default function MarketplaceManagementPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section */}
+        {/* Header Section - Diperbaiki dengan Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Kelola Marketplace
             </h1>
-            <button
-              onClick={handleAddAsset}
-              className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Tambah Aset
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                onClick={handleAddAsset}
+                className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Tambah Aset
+              </button>
+
+              <div className="relative w-full sm:w-auto">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Cari aset..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredAssets.length)} dari{" "}
+          {filteredAssets.length} aset
         </div>
 
         {/* Desktop Table View */}
@@ -296,7 +478,7 @@ export default function MarketplaceManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {assets.map((asset) => (
+              {currentItems.map((asset) => (
                 <tr
                   key={asset.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -369,7 +551,7 @@ export default function MarketplaceManagementPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {assets.map((asset) => (
+          {currentItems.map((asset) => (
             <div
               key={asset.id}
               className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
@@ -441,22 +623,79 @@ export default function MarketplaceManagementPage() {
         </div>
 
         {/* Empty State */}
-        {assets.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
             <ShoppingBagIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada aset marketplace
+              {searchQuery
+                ? "Tidak ada aset yang ditemukan"
+                : "Tidak ada aset marketplace"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Belum ada aset yang ditambahkan ke marketplace.
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : "Belum ada aset yang ditambahkan ke marketplace."}
             </p>
-            <div className="mt-6">
+            {!searchQuery && (
+              <div className="mt-6">
+                <button
+                  onClick={handleAddAsset}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                  Tambah Aset Baru
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
               <button
-                onClick={handleAddAsset}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                Tambah Aset Baru
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
               </button>
             </div>
           </div>

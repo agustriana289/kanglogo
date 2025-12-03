@@ -19,6 +19,9 @@ import {
   ShoppingBagIcon,
   UserIcon,
   XMarkIcon,
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { createOrderStatusNotification } from "@/lib/notifications";
 
@@ -67,11 +70,17 @@ const filterOptions = [
   { value: "this_year", label: "Tahun Ini" },
 ];
 
+// Items per page
+const ITEMS_PER_PAGE = 20;
+
 export default function OrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editedStatus, setEditedStatus] = useState("");
@@ -79,13 +88,21 @@ export default function OrderManagementPage() {
   const [saving, setSaving] = useState(false);
   const { toast, showToast, hideToast } = useToast();
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+
   useEffect(() => {
     fetchOrders();
   }, []);
 
   useEffect(() => {
-    filterOrders(selectedFilter);
-  }, [orders, selectedFilter]);
+    filterOrders(selectedFilter, searchQuery);
+  }, [orders, selectedFilter, searchQuery]);
 
   const fetchOrders = async () => {
     const { data, error } = await supabase
@@ -97,14 +114,17 @@ export default function OrderManagementPage() {
       showToast("Gagal memuat pesanan", "error");
     } else {
       setOrders(data || []);
+      setFilteredOrders(data || []);
+      setTotalItems(data?.length || 0);
     }
     setLoading(false);
   };
 
-  const filterOrders = (filter: string) => {
+  const filterOrders = (filter: string, search: string) => {
     let filtered = [...orders];
     const now = new Date();
 
+    // Apply time filter
     switch (filter) {
       case "this_week":
         filtered = orders.filter(
@@ -143,11 +163,32 @@ export default function OrderManagementPage() {
       default:
         filtered = orders;
     }
+
+    // Apply search filter
+    if (search.trim() !== "") {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order.invoice_number.toLowerCase().includes(searchLower) ||
+          order.customer_name.toLowerCase().includes(searchLower) ||
+          order.customer_email.toLowerCase().includes(searchLower) ||
+          order.customer_whatsapp.toLowerCase().includes(searchLower) ||
+          (order.package_details &&
+            order.package_details.name.toLowerCase().includes(searchLower))
+      );
+    }
+
     setFilteredOrders(filtered);
+    // Reset to first page when filter or search changes
+    setCurrentPage(1);
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedFilter(e.target.value);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
   const openModal = (order: Order) => {
@@ -241,6 +282,41 @@ export default function OrderManagementPage() {
     });
   };
 
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
@@ -259,7 +335,7 @@ export default function OrderManagementPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki */}
+        {/* Header Section - Diperbaiki dengan Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -270,18 +346,39 @@ export default function OrderManagementPage() {
                 Total: {filteredOrders.length} pesanan
               </p>
             </div>
-            <select
-              value={selectedFilter}
-              onChange={handleFilterChange}
-              className="block w-full sm:w-auto rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-            >
-              {filterOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Cari pesanan..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              <select
+                value={selectedFilter}
+                onChange={handleFilterChange}
+                className="block w-full sm:w-auto rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
+              >
+                {filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+        </div>
+
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredOrders.length)} dari{" "}
+          {filteredOrders.length} pesanan
         </div>
 
         {/* Desktop Table View */}
@@ -313,7 +410,7 @@ export default function OrderManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {filteredOrders.map((order) => (
+              {currentItems.map((order) => (
                 <tr
                   key={order.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -362,7 +459,7 @@ export default function OrderManagementPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {filteredOrders.map((order) => (
+          {currentItems.map((order) => (
             <div
               key={order.id}
               className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
@@ -417,20 +514,75 @@ export default function OrderManagementPage() {
         </div>
 
         {/* Empty State */}
-        {filteredOrders.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
             <ShoppingBagIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada pesanan
+              {searchQuery
+                ? "Tidak ada pesanan yang ditemukan"
+                : "Tidak ada pesanan"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {selectedFilter === "all"
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : selectedFilter === "all"
                 ? "Belum ada pesanan yang dibuat."
                 : `Tidak ada pesanan untuk filter "${
                     filterOptions.find((opt) => opt.value === selectedFilter)
                       ?.label
                   }".`}
             </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         )}
 

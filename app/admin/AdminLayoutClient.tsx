@@ -24,6 +24,7 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   ClockIcon,
+  NewspaperIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 
@@ -210,6 +211,7 @@ export default function AdminLayoutClient({
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: HomeIcon },
     { href: "/admin/orders", label: "Pesanan", icon: FolderIcon },
+    { href: "/admin/store", label: "Toko", icon: BuildingStorefrontIcon },
     { href: "/admin/discounts", label: "Diskon", icon: ReceiptPercentIcon },
     { href: "/admin/payment", label: "Pembayaran", icon: CreditCardIcon },
     { href: "/admin/tasks", label: "Tugas", icon: CheckCircleIcon },
@@ -225,7 +227,7 @@ export default function AdminLayoutClient({
     {
       href: "/admin/landing-content",
       label: "Kelola Landingpage",
-      icon: BuildingStorefrontIcon,
+      icon: NewspaperIcon,
     },
     {
       href: "/admin/pages",

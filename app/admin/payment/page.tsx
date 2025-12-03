@@ -76,7 +76,10 @@ export default function PaymentMethodManagementPage() {
 
   const handleEditMethod = (method: PaymentMethod) => {
     setEditingMethod(method);
-    setFormData({ ...method });
+    setFormData({
+      ...method,
+      logo_url: method.logo_url ?? "",
+    });
     setShowModal(true);
   };
 

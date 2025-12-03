@@ -5,16 +5,18 @@ import { supabase } from "@/lib/supabase";
 import { Discount, DiscountType } from "@/types/discount";
 import LogoLoading from "@/components/LogoLoading";
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Tag,
-  Calendar,
-  Percent,
-  DollarSign,
-  CheckCircle,
-  XCircle,
-  Clock,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  TagIcon,
+  PercentIcon,
+  DollarSignIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  SearchIcon, // Diperbaiki dari MagnifyingGlassIcon
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "lucide-react";
 
 // Interface untuk layanan
@@ -29,21 +31,32 @@ const discountTypeOptions: {
   label: string;
   icon: React.ReactNode;
 }[] = [
-  { value: "percentage", label: "Persentase (%)", icon: <Percent size={16} /> },
+  {
+    value: "percentage",
+    label: "Persentase (%)",
+    icon: <PercentIcon size={16} />,
+  },
   {
     value: "fixed_amount",
     label: "Nominal Tetap (Rp)",
-    icon: <DollarSign size={16} />,
+    icon: <DollarSignIcon size={16} />,
   },
 ];
 
+// Items per page
+const ITEMS_PER_PAGE = 20;
+
 export default function DiscountManagementPage() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const [filteredDiscounts, setFilteredDiscounts] = useState<Discount[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [formData, setFormData] = useState<Partial<Discount>>({
     code: "",
     description: "",
@@ -57,10 +70,43 @@ export default function DiscountManagementPage() {
     is_active: true,
   });
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredDiscounts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
   useEffect(() => {
     fetchDiscounts();
     fetchServices();
   }, []);
+
+  useEffect(() => {
+    // Filter discounts based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredDiscounts(discounts);
+    } else {
+      const filtered = discounts.filter(
+        (discount) =>
+          (discount.code &&
+            discount.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (discount.description &&
+            discount.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())) ||
+          (discount.type &&
+            discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredDiscounts(filtered);
+    }
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  }, [searchQuery, discounts]);
 
   const fetchDiscounts = async () => {
     const { data, error } = await supabase
@@ -68,7 +114,11 @@ export default function DiscountManagementPage() {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) console.error("Error fetching discounts:", error);
-    else setDiscounts(data || []);
+    else {
+      setDiscounts(data || []);
+      setFilteredDiscounts(data || []);
+      setTotalItems(data?.length || 0);
+    }
     setLoading(false);
   };
 
@@ -166,7 +216,32 @@ export default function DiscountManagementPage() {
       alert("Gagal menonaktifkan diskon.");
     } else {
       alert("Diskon berhasil dinonaktifkan.");
-      fetchDiscounts();
+
+      const updatedDiscounts = discounts.map((d) =>
+        d.id === id ? { ...d, is_active: false } : d
+      );
+      setDiscounts(updatedDiscounts);
+
+      // Update filtered discounts if needed
+      if (searchQuery.trim() === "") {
+        setFilteredDiscounts(updatedDiscounts);
+      } else {
+        // Reapply filters
+        const filtered = updatedDiscounts.filter(
+          (discount) =>
+            (discount.code &&
+              discount.code
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())) ||
+            (discount.description &&
+              discount.description
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())) ||
+            (discount.type &&
+              discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        setFilteredDiscounts(filtered);
+      }
     }
   };
 
@@ -180,27 +255,62 @@ export default function DiscountManagementPage() {
         label: "Non-aktif",
         color:
           "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
-        icon: <XCircle size={14} />,
+        icon: <XCircleIcon size={14} />,
       };
     if (startDate && now < startDate)
       return {
         label: "Terjadwal",
         color:
           "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-        icon: <Clock size={14} />,
+        icon: <ClockIcon size={14} />,
       };
     if (endDate && now > endDate)
       return {
         label: "Kadaluarsa",
         color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-        icon: <XCircle size={14} />,
+        icon: <XCircleIcon size={14} />,
       };
     return {
       label: "Aktif",
       color:
         "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      icon: <CheckCircle size={14} />,
+      icon: <CheckCircleIcon size={14} />,
     };
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   if (loading) {
@@ -221,17 +331,37 @@ export default function DiscountManagementPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki */}
+        {/* Header Section - Diperbaiki dengan Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <button
               onClick={() => openModal()}
               className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
-              <Plus size={20} className="mr-2" />
+              <PlusIcon size={20} className="mr-2" />
               Tambah Diskon
             </button>
+
+            <div className="relative w-full sm:w-auto">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Cari diskon..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredDiscounts.length)} dari{" "}
+          {filteredDiscounts.length} diskon
         </div>
 
         {/* Desktop Table View */}
@@ -260,7 +390,7 @@ export default function DiscountManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {discounts.map((discount) => {
+              {currentItems.map((discount) => {
                 const status = getDiscountStatus(discount);
                 return (
                   <tr
@@ -270,7 +400,7 @@ export default function DiscountManagementPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
                       {discount.code ? (
                         <span className="flex items-center gap-1">
-                          <Tag size={16} /> {discount.code}
+                          <TagIcon size={16} /> {discount.code}
                         </span>
                       ) : (
                         <span className="text-slate-500 dark:text-slate-400 italic">
@@ -305,14 +435,14 @@ export default function DiscountManagementPage() {
                           onClick={() => openModal(discount)}
                           className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                         >
-                          <Edit size={16} className="mr-1" />
+                          <EditIcon size={16} className="mr-1" />
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(discount.id)}
                           className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                         >
-                          <Trash2 size={16} className="mr-1" />
+                          <TrashIcon size={16} className="mr-1" />
                           Nonaktifkan
                         </button>
                       </div>
@@ -326,7 +456,7 @@ export default function DiscountManagementPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {discounts.map((discount) => {
+          {currentItems.map((discount) => {
             const status = getDiscountStatus(discount);
             return (
               <div
@@ -337,7 +467,7 @@ export default function DiscountManagementPage() {
                   <div>
                     {discount.code ? (
                       <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center">
-                        <Tag size={16} className="mr-2" />
+                        <TagIcon size={16} className="mr-2" />
                         {discount.code}
                       </h3>
                     ) : (
@@ -375,14 +505,14 @@ export default function DiscountManagementPage() {
                     onClick={() => openModal(discount)}
                     className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                   >
-                    <Edit size={16} className="mr-1" />
+                    <EditIcon size={16} className="mr-1" />
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(discount.id)}
                     className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                   >
-                    <Trash2 size={16} className="mr-1" />
+                    <TrashIcon size={16} className="mr-1" />
                     Nonaktifkan
                   </button>
                 </div>
@@ -392,22 +522,79 @@ export default function DiscountManagementPage() {
         </div>
 
         {/* Empty State */}
-        {discounts.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
-            <Tag className="mx-auto h-12 w-12 text-slate-400" />
+            <TagIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada diskon
+              {searchQuery
+                ? "Tidak ada diskon yang ditemukan"
+                : "Tidak ada diskon"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Belum ada diskon yang dibuat.
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : "Belum ada diskon yang dibuat."}
             </p>
-            <div className="mt-6">
+            {!searchQuery && (
+              <div className="mt-6">
+                <button
+                  onClick={() => openModal()}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                  Tambah Diskon Baru
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
               <button
-                onClick={() => openModal()}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="-ml-1 mr-2 h-5 w-5" />
-                Tambah Diskon Baru
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
               </button>
             </div>
           </div>

@@ -21,13 +21,49 @@ import {
   ComputerDesktopIcon,
   LightBulbIcon,
   ChatBubbleLeftIcon,
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+
+// Opsi untuk jenis proyek
+const projectTypes = [
+  "Logo",
+  "Branding",
+  "Banner",
+  "Brosur",
+  "Compro",
+  "Kemasan",
+  "Template",
+  "Icon",
+  "Custom",
+  "Lainnya",
+];
+
+// Opsi untuk aplikasi yang digunakan
+const applicationOptions = [
+  "Adobe Illustrator",
+  "Adobe Photoshop",
+  "Adobe AfterEffect",
+  "CorelDraw",
+  "Affinity Designer",
+  "Inkscape",
+  "Blender",
+  "Canva",
+];
+
+// Items per page
+const ITEMS_PER_PAGE = 20;
 
 export default function ProjectManagementPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const { toast, showToast, hideToast } = useToast();
 
   const [showModal, setShowModal] = useState(false);
@@ -43,7 +79,7 @@ export default function ProjectManagementPage() {
     image_url: "",
     deskripsi_proyek: "",
     komentar_proyek: "",
-    aplikasi_yang_digunakan: "",
+    aplikasi_yang_digunakan: [] as string[],
     filosofi_proyek: "",
   });
 
@@ -51,12 +87,49 @@ export default function ProjectManagementPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredProjects.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
   useEffect(() => {
     fetchProjects();
   }, []);
 
+  useEffect(() => {
+    // Filter projects based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredProjects(projects);
+    } else {
+      const filtered = projects.filter(
+        (project) =>
+          project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.owner?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  }, [searchQuery, projects]);
+
   const fetchProjects = async () => {
     try {
+      // Get total count first
+      const { count, error: countError } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true });
+
+      if (countError) throw countError;
+      setTotalItems(count || 0);
+
+      // Then get the data with pagination
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -64,6 +137,7 @@ export default function ProjectManagementPage() {
 
       if (error) throw error;
       setProjects(data || []);
+      setFilteredProjects(data || []);
     } catch (error) {
       console.error("Error fetching projects:", error);
       showToast("Gagal memuat proyek!", "error");
@@ -84,7 +158,7 @@ export default function ProjectManagementPage() {
       image_url: "",
       deskripsi_proyek: "",
       komentar_proyek: "",
-      aplikasi_yang_digunakan: "",
+      aplikasi_yang_digunakan: [],
       filosofi_proyek: "",
     });
     setImagePreview(null);
@@ -93,6 +167,30 @@ export default function ProjectManagementPage() {
 
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
+
+    // Parse aplikasi_yang_digunakan jika berupa string JSON
+    let apps: string[] = [];
+    if (project.aplikasi_yang_digunakan) {
+      try {
+        if (typeof project.aplikasi_yang_digunakan === "string") {
+          // Coba parse sebagai JSON array
+          if (project.aplikasi_yang_digunakan.startsWith("[")) {
+            apps = JSON.parse(project.aplikasi_yang_digunakan);
+          } else {
+            // Jika bukan JSON, pecah berdasarkan koma
+            apps = project.aplikasi_yang_digunakan
+              .split(",")
+              .map((app) => app.trim());
+          }
+        } else if (Array.isArray(project.aplikasi_yang_digunakan)) {
+          apps = project.aplikasi_yang_digunakan;
+        }
+      } catch (e) {
+        console.error("Error parsing aplikasi_yang_digunakan:", e);
+        apps = [project.aplikasi_yang_digunakan as string];
+      }
+    }
+
     setFormData({
       title: project.title,
       slug: project.slug,
@@ -103,7 +201,7 @@ export default function ProjectManagementPage() {
       image_url: project.image_url || "",
       deskripsi_proyek: project.deskripsi_proyek || "",
       komentar_proyek: project.komentar_proyek || "",
-      aplikasi_yang_digunakan: project.aplikasi_yang_digunakan || "",
+      aplikasi_yang_digunakan: apps,
       filosofi_proyek: project.filosofi_proyek || "",
     });
     setImagePreview(project.image_url || null);
@@ -170,6 +268,25 @@ export default function ProjectManagementPage() {
     }
   };
 
+  const handleApplicationChange = (app: string) => {
+    setFormData((prev) => {
+      const apps = [...prev.aplikasi_yang_digunakan];
+      if (apps.includes(app)) {
+        // Hapus jika sudah ada
+        return {
+          ...prev,
+          aplikasi_yang_digunakan: apps.filter((a) => a !== app),
+        };
+      } else {
+        // Tambahkan jika belum ada
+        return {
+          ...prev,
+          aplikasi_yang_digunakan: [...apps, app],
+        };
+      }
+    });
+  };
+
   const handleSaveProject = async () => {
     if (!formData.title.trim() || !formData.slug.trim()) {
       showToast("Judul dan Slug tidak boleh kosong!", "error");
@@ -186,7 +303,14 @@ export default function ProjectManagementPage() {
         setUploadingImage(false);
       }
 
-      const updatedFormData = { ...formData, image_url: imageUrl };
+      // Konversi array aplikasi ke string untuk disimpan di database
+      const updatedFormData = {
+        ...formData,
+        image_url: imageUrl,
+        aplikasi_yang_digunakan: JSON.stringify(
+          formData.aplikasi_yang_digunakan
+        ),
+      };
 
       if (editingProject) {
         const { error } = await supabase
@@ -238,6 +362,41 @@ export default function ProjectManagementPage() {
     });
   };
 
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
@@ -256,7 +415,7 @@ export default function ProjectManagementPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki */}
+        {/* Header Section - Diperbaiki dengan Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <button
@@ -266,7 +425,27 @@ export default function ProjectManagementPage() {
               <PlusIcon className="h-5 w-5 mr-2" />
               Tambah Proyek
             </button>
+
+            <div className="relative w-full sm:w-auto">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Cari proyek..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredProjects.length)} dari{" "}
+          {filteredProjects.length} proyek
         </div>
 
         {/* Desktop Table View */}
@@ -289,7 +468,7 @@ export default function ProjectManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {projects.map((project) => (
+              {currentItems.map((project) => (
                 <tr
                   key={project.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -338,7 +517,7 @@ export default function ProjectManagementPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {projects.map((project) => (
+          {currentItems.map((project) => (
             <div
               key={project.id}
               className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
@@ -384,22 +563,79 @@ export default function ProjectManagementPage() {
         </div>
 
         {/* Empty State */}
-        {projects.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
             <PhotoIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada proyek
+              {searchQuery
+                ? "Tidak ada proyek yang ditemukan"
+                : "Tidak ada proyek"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Belum ada proyek yang dibuat.
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : "Belum ada proyek yang dibuat."}
             </p>
-            <div className="mt-6">
+            {!searchQuery && (
+              <div className="mt-6">
+                <button
+                  onClick={handleAddProject}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                  Tambah Proyek Baru
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
               <button
-                onClick={handleAddProject}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                Tambah Proyek Baru
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -541,39 +777,27 @@ export default function ProjectManagementPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Aplikasi yang Digunakan
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.aplikasi_yang_digunakan}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          aplikasi_yang_digunakan: e.target.value,
-                        })
-                      }
-                      placeholder="Contoh: Figma, Adobe Photoshop, VS Code"
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column - Project Details */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Jenis Proyek
                     </label>
-                    <input
-                      type="text"
+                    <select
                       className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
                       value={formData.type}
                       onChange={(e) =>
                         setFormData({ ...formData, type: e.target.value })
                       }
-                    />
+                    >
+                      <option value="">Pilih Jenis Proyek</option>
+                      {projectTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                </div>
 
+                {/* Right Column - Project Details */}
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Owner Proyek
@@ -586,6 +810,35 @@ export default function ProjectManagementPage() {
                         setFormData({ ...formData, owner: e.target.value })
                       }
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Aplikasi yang Digunakan
+                    </label>
+                    <div className="border border-slate-300 dark:border-slate-600 rounded-md p-3 dark:bg-slate-800">
+                      <div className="grid grid-cols-2 gap-3">
+                        {applicationOptions.map((app) => (
+                          <div key={app} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`app-${app}`}
+                              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-700"
+                              checked={formData.aplikasi_yang_digunakan.includes(
+                                app
+                              )}
+                              onChange={() => handleApplicationChange(app)}
+                            />
+                            <label
+                              htmlFor={`app-${app}`}
+                              className="ml-2 text-sm text-slate-700 dark:text-slate-300"
+                            >
+                              {app}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div>

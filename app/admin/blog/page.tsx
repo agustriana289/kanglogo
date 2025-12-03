@@ -7,6 +7,11 @@ import Modal from "@/components/Modal";
 import Toast from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import LogoLoading from "@/components/LogoLoading";
+import {
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
 interface Article {
   id: number;
@@ -17,10 +22,17 @@ interface Article {
   created_at: string;
 }
 
+// Items per page
+const ITEMS_PER_PAGE = 20;
+
 export default function BlogManagementPage() {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     articleId: number;
@@ -33,9 +45,36 @@ export default function BlogManagementPage() {
   const [deleting, setDeleting] = useState(false);
   const { toast, showToast, hideToast } = useToast();
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredArticles.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
   useEffect(() => {
     fetchArticles();
   }, [filter]);
+
+  useEffect(() => {
+    // Filter articles based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredArticles(articles);
+    } else {
+      const filtered = articles.filter(
+        (article) =>
+          article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          article.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredArticles(filtered);
+    }
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  }, [searchQuery, articles]);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -56,6 +95,8 @@ export default function BlogManagementPage() {
         showToast("Gagal memuat artikel", "error");
       } else {
         setArticles(data || []);
+        setFilteredArticles(data || []);
+        setTotalItems(data?.length || 0);
       }
 
       setLoading(false);
@@ -86,9 +127,12 @@ export default function BlogManagementPage() {
         console.error("Error deleting article:", error);
         showToast("Gagal menghapus artikel", "error");
       } else {
-        setArticles(
-          articles.filter((article) => article.id !== deleteModal.articleId)
+        const updatedArticles = articles.filter(
+          (article) => article.id !== deleteModal.articleId
         );
+        setArticles(updatedArticles);
+        setFilteredArticles(updatedArticles);
+        setTotalItems(updatedArticles.length);
         showToast("Artikel berhasil dihapus", "success");
         setDeleteModal({ isOpen: false, articleId: 0, articleTitle: "" });
       }
@@ -107,6 +151,41 @@ export default function BlogManagementPage() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   if (loading) {
@@ -128,26 +207,41 @@ export default function BlogManagementPage() {
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <Link
-            href="/admin/blog/new"
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors w-full sm:w-auto text-center"
-          >
-            Tulis Artikel Baru
-          </Link>
-          <div className="flex flex-cols sm:flex-wrap gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Link
-              href="/admin/categories"
-              className="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300/80 transition-colors w-full sm:w-auto text-center"
+              href="/admin/blog/new"
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors w-full sm:w-auto text-center"
             >
-              Categories
+              Tulis Artikel Baru
             </Link>
+            <div className="flex gap-2">
+              <Link
+                href="/admin/categories"
+                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300/80 transition-colors w-full sm:w-auto text-center"
+              >
+                Categories
+              </Link>
 
-            <Link
-              href="/admin/comments"
-              className="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300/80 transition-colors w-full sm:w-auto text-center"
-            >
-              Comments
-            </Link>
+              <Link
+                href="/admin/comments"
+                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300/80 transition-colors w-full sm:w-auto text-center"
+              >
+                Comments
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative w-full sm:w-auto">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Cari artikel..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
@@ -186,6 +280,13 @@ export default function BlogManagementPage() {
           </button>
         </div>
 
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredArticles.length)} dari{" "}
+          {filteredArticles.length} artikel
+        </div>
+
         {/* Articles List - Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-600">
@@ -209,7 +310,7 @@ export default function BlogManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {articles.map((article) => (
+              {currentItems.map((article) => (
                 <tr key={article.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-slate-900 dark:text-white">
@@ -259,7 +360,7 @@ export default function BlogManagementPage() {
 
         {/* Articles List - Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {articles.map((article) => (
+          {currentItems.map((article) => (
             <div
               key={article.id}
               className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
@@ -306,7 +407,7 @@ export default function BlogManagementPage() {
         </div>
 
         {/* Empty State */}
-        {articles.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
             <svg
               className="mx-auto h-12 w-12 text-slate-400"
@@ -322,35 +423,92 @@ export default function BlogManagementPage() {
               />
             </svg>
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada artikel
+              {searchQuery
+                ? "Tidak ada artikel yang ditemukan"
+                : "Tidak ada artikel"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {filter === "all"
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : filter === "all"
                 ? "Belum ada artikel yang dibuat."
                 : `Tidak ada artikel dengan status "${
                     filter === "published" ? "Dipublikasikan" : "Draft"
                   }".`}
             </p>
-            <div className="mt-6">
-              <Link
-                href="/admin/blog/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              >
-                <svg
-                  className="-ml-1 mr-2 h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+            {!searchQuery && (
+              <div className="mt-6">
+                <Link
+                  href="/admin/blog/new"
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Tulis Artikel Baru
-              </Link>
+                  <svg
+                    className="-ml-1 mr-2 h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Tulis Artikel Baru
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         )}

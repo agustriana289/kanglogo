@@ -14,6 +14,9 @@ import {
   TrashIcon,
   FolderIcon,
   ExclamationTriangleIcon,
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 
 interface Category {
@@ -24,9 +27,16 @@ interface Category {
   created_at: string;
 }
 
+// Items per page
+const ITEMS_PER_PAGE = 20;
+
 export default function CategoriesManagementPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     categoryId: number;
@@ -39,9 +49,40 @@ export default function CategoriesManagementPage() {
   const [deleting, setDeleting] = useState(false);
   const { toast, showToast, hideToast } = useToast();
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  // Calculate the range of items to display
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredCategories.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    // Filter categories based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredCategories(categories);
+    } else {
+      const filtered = categories.filter(
+        (category) =>
+          category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          category.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (category.description &&
+            category.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()))
+      );
+      setFilteredCategories(filtered);
+    }
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  }, [searchQuery, categories]);
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -56,6 +97,8 @@ export default function CategoriesManagementPage() {
         showToast("Gagal memuat kategori", "error");
       } else {
         setCategories(data || []);
+        setFilteredCategories(data || []);
+        setTotalItems(data?.length || 0);
       }
 
       setLoading(false);
@@ -86,11 +129,29 @@ export default function CategoriesManagementPage() {
         console.error("Error deleting category:", error);
         showToast("Gagal menghapus kategori", "error");
       } else {
-        setCategories(
-          categories.filter(
-            (category) => category.id !== deleteModal.categoryId
-          )
+        const updatedCategories = categories.filter(
+          (category) => category.id !== deleteModal.categoryId
         );
+        setCategories(updatedCategories);
+        setTotalItems(updatedCategories.length);
+
+        // Update filtered categories if needed
+        if (searchQuery.trim() === "") {
+          setFilteredCategories(updatedCategories);
+        } else {
+          // Reapply filters
+          const filtered = updatedCategories.filter(
+            (category) =>
+              category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              category.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (category.description &&
+                category.description
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()))
+          );
+          setFilteredCategories(filtered);
+        }
+
         showToast("Kategori berhasil dihapus", "success");
         setDeleteModal({ isOpen: false, categoryId: 0, categoryName: "" });
       }
@@ -111,6 +172,41 @@ export default function CategoriesManagementPage() {
     });
   };
 
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push("...");
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push("...");
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
@@ -129,24 +225,46 @@ export default function CategoriesManagementPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
       <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki */}
+        {/* Header Section - Diperbaiki dengan Search */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <Link
-              href="/admin/blog"
-              className="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              Kembali Ke Blogs
-            </Link>
-            <Link
-              href="/admin/categories/new"
-              className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Tambah Kategori
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Link
+                href="/admin/blog"
+                className="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
+              >
+                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                Kembali Ke Blogs
+              </Link>
+              <Link
+                href="/admin/categories/new"
+                className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              >
+                <PlusIcon className="w-5 h-5 mr-2" />
+                Tambah Kategori
+              </Link>
+            </div>
+
+            <div className="relative w-full sm:w-auto">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Cari kategori..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Items Count */}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Menampilkan {indexOfFirstItem + 1}-
+          {Math.min(indexOfLastItem, filteredCategories.length)} dari{" "}
+          {filteredCategories.length} kategori
         </div>
 
         {/* Categories List - Desktop Table View */}
@@ -172,7 +290,7 @@ export default function CategoriesManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {categories.map((category) => (
+              {currentItems.map((category) => (
                 <tr key={category.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -221,7 +339,7 @@ export default function CategoriesManagementPage() {
 
         {/* Categories List - Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {categories.map((category) => (
+          {currentItems.map((category) => (
             <div
               key={category.id}
               className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
@@ -268,23 +386,80 @@ export default function CategoriesManagementPage() {
         </div>
 
         {/* Empty State */}
-        {categories.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="text-center py-12">
             <FolderIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada kategori
+              {searchQuery
+                ? "Tidak ada kategori yang ditemukan"
+                : "Tidak ada kategori"}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Belum ada kategori yang dibuat.
+              {searchQuery
+                ? "Coba ubah kata kunci pencarian Anda."
+                : "Belum ada kategori yang dibuat."}
             </p>
-            <div className="mt-6">
-              <Link
-                href="/admin/categories/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            {!searchQuery && (
+              <div className="mt-6">
+                <Link
+                  href="/admin/categories/new"
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  <PlusIcon className="-ml-1 mr-2 h-4 w-4" />
+                  Tambah Kategori Baru
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-slate-700 dark:text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="-ml-1 mr-2 h-4 w-4" />
-                Tambah Kategori Baru
-              </Link>
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`px-3 py-2 rounded-md border ${
+                      currentPage === page
+                        ? "bg-primary text-white border-primary"
+                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         )}
