@@ -376,7 +376,7 @@ export default function TaskManagementPage() {
 
             <div className="relative w-full sm:w-auto">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlass className="h-5 w-5 text-slate-400" />
+                <Search className="h-5 w-5 text-slate-400" />
               </div>
               <input
                 type="text"
