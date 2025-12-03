@@ -1,4 +1,3 @@
-// components/LogoLoading.tsx
 import React from "react";
 
 interface LogoLoadingProps {
@@ -28,7 +27,6 @@ const LogoLoading: React.FC<LogoLoadingProps> = ({
           x="0px"
           y="0px"
           viewBox="0 0 1080 1080"
-          style={{ enableBackground: "new 0 0 1080 1080" }}
           xmlSpace="preserve"
         >
           <style type="text/css">
