@@ -1,10 +1,10 @@
-// components/DynamicArticlesList.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import ArticleCard from './ArticleCard';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import ArticleCard from "./ArticleCard";
 
+// --- PERUBAHAN 1: PERBAIKI INTERFACE Article ---
 interface Article {
   id: number;
   title: string;
@@ -12,8 +12,12 @@ interface Article {
   excerpt: string;
   featured_image: string;
   published_at: string;
-  author_name: string;
+  author: {
+    // Ubah dari author_name menjadi object author
+    name: string;
+  };
   categories: {
+    // Ini harusnya array tunggal, bukan array bersarang
     id: number;
     name: string;
     slug: string;
@@ -24,12 +28,16 @@ interface DynamicArticlesListProps {
   initialCategory?: string;
 }
 
-export default function DynamicArticlesList({ initialCategory }: DynamicArticlesListProps) {
+export default function DynamicArticlesList({
+  initialCategory,
+}: DynamicArticlesListProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [categories, setCategories] = useState<{ id: number, name: string, slug: string }[]>([]);
+  const [categories, setCategories] = useState<
+    { id: number; name: string; slug: string }[]
+  >([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const articlesPerPage = 6;
@@ -48,17 +56,17 @@ export default function DynamicArticlesList({ initialCategory }: DynamicArticles
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('categories')
-        .select('id, name, slug')
-        .order('name');
+        .from("categories")
+        .select("id, name, slug")
+        .order("name");
 
       if (error) {
-        console.error('Error fetching categories:', error);
+        console.error("Error fetching categories:", error);
       } else {
         setCategories(data || []);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     }
   };
 
@@ -66,8 +74,9 @@ export default function DynamicArticlesList({ initialCategory }: DynamicArticles
     setLoading(true);
     try {
       let query = supabase
-        .from('articles')
-        .select(`
+        .from("articles")
+        .select(
+          `
           id,
           title,
           slug,
@@ -78,27 +87,35 @@ export default function DynamicArticlesList({ initialCategory }: DynamicArticles
           article_categories(
             categories(id, name, slug)
           )
-        `, { count: 'exact' })
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
+        `,
+          { count: "exact" }
+        )
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
         .range((page - 1) * articlesPerPage, page * articlesPerPage - 1);
 
       // Filter by category if selected
       if (selectedCategory) {
-        query = query.contains('article_categories.categories.slug', [selectedCategory]);
+        query = query.contains("article_categories.categories.slug", [
+          selectedCategory,
+        ]);
       }
 
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error fetching articles:', error);
+        console.error("Error fetching articles:", error);
       } else {
-        // Transform data
-        const transformedData = data?.map(article => ({
-          ...article,
-          author: { name: article.author_name },
-          categories: article.article_categories.map(ac => ac.categories)
-        })) || [];
+        // --- PERUBAHAN 2: PERBAIKI LOGIKA TRANSFORMASI DATA ---
+        const transformedData =
+          data?.map((article) => ({
+            ...article,
+            author: { name: article.author_name },
+            // Gunakan flatMap untuk "meratakan" array kategori yang bersarang
+            categories: article.article_categories.flatMap(
+              (ac) => ac.categories
+            ),
+          })) || [];
 
         setArticles(transformedData);
         setTotalPages(Math.ceil((count || 0) / articlesPerPage));
@@ -106,7 +123,7 @@ export default function DynamicArticlesList({ initialCategory }: DynamicArticles
 
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching articles:', error);
+      console.error("Error fetching articles:", error);
       setLoading(false);
     }
   };
@@ -120,7 +137,10 @@ export default function DynamicArticlesList({ initialCategory }: DynamicArticles
         </div>
       ) : (
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 class="text-xl font-semibold mb-4 text-blue-600 border-blue-200 border-b pb-2">New Updates</h3>
+          {/* --- PERUBAHAN 3: PERBAIKI 'class' MENJADI 'className' --- */}
+          <h3 className="text-xl font-semibold mb-4 text-blue-600 border-blue-200 border-b pb-2">
+            New Updates
+          </h3>
 
           <div className="grid grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
             {articles.map((article) => (
@@ -141,18 +161,21 @@ export default function DynamicArticlesList({ initialCategory }: DynamicArticles
             >
               Previous
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
-                key={pageNum}
-                onClick={() => setPage(pageNum)}
-                className={`px-4 py-2 rounded-md text-sm font-medium ${pageNum === page
-                  ? 'bg-primary text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+              (pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    pageNum === page
+                      ? "bg-primary text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                   }`}
-              >
-                {pageNum}
-              </button>
-            ))}
+                >
+                  {pageNum}
+                </button>
+              )
+            )}
             <button
               onClick={() => setPage(page + 1)}
               disabled={page === totalPages}
