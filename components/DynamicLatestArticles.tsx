@@ -1,9 +1,8 @@
-// components/DynamicLatestArticles.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 interface Article {
   id: number;
@@ -31,8 +30,9 @@ export default function DynamicLatestArticles() {
   const fetchArticles = async () => {
     try {
       const { data, error } = await supabase
-        .from('articles')
-        .select(`
+        .from("articles")
+        .select(
+          `
           id,
           title,
           slug,
@@ -43,27 +43,32 @@ export default function DynamicLatestArticles() {
           article_categories(
             categories(id, name, slug)
           )
-        `)
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
+        `
+        )
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
         .limit(10);
 
       if (error) {
-        console.error('Error fetching articles:', error);
+        console.error("Error fetching articles:", error);
       } else {
         // Transform data to match our interface
-        const transformedData = data?.map(article => ({
-          ...article,
-          author: { name: article.author_name },
-          categories: article.article_categories.map(ac => ac.categories)
-        })) || [];
+        const transformedData =
+          data?.map((article) => ({
+            ...article,
+            // Pertahankan author_name sebagai string, jangan ubah menjadi objek
+            // Gunakan flatMap untuk "meratakan" array kategori yang bersarang
+            categories: article.article_categories.flatMap(
+              (ac) => ac.categories
+            ),
+          })) || [];
 
         setArticles(transformedData);
       }
 
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching articles:', error);
+      console.error("Error fetching articles:", error);
       setLoading(false);
     }
   };
@@ -79,10 +84,10 @@ export default function DynamicLatestArticles() {
   // Format tanggal
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -90,7 +95,7 @@ export default function DynamicLatestArticles() {
   const getArticleUrl = (article: Article) => {
     const date = new Date(article.published_at);
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     return `/article/${year}/${month}/${article.slug}`;
   };
 
@@ -99,7 +104,11 @@ export default function DynamicLatestArticles() {
       <div className="widget Blog" data-version="2" id="Blog-1">
         <div className="my-12 max-w-6xl mx-auto">
           {/* Header */}
-          <div className="faqsSection px-4 sm:px-6 lg:px-8 section" id="faqsSection" name="Faqs Section">
+          <div
+            className="faqsSection px-4 sm:px-6 lg:px-8 section"
+            id="faqsSection"
+            name="Faqs Section"
+          >
             <h1 className="text-center max-w-2xl mx-auto font-manrope font-bold text-3xl text-slate-700 sm:mb-5 md:text-5xl leading-[50px]">
               <span className="text-primary">Artikel</span> Terbaru
             </h1>
@@ -124,9 +133,11 @@ export default function DynamicLatestArticles() {
                     </Link>
                   )}
                   <div className="mt-5 flex items-center gap-x-2 text-sm text-slate-700">
-                    <time dateTime={article.published_at}>{formatDate(article.published_at)}</time>
+                    <time dateTime={article.published_at}>
+                      {formatDate(article.published_at)}
+                    </time>
                     <span aria-hidden="true">•</span>
-                    <p>ditulis oleh {article.author.name}</p>
+                    <p>ditulis oleh {article.author_name}</p>
                   </div>
                   <div className="group relative mt-3">
                     <h3 className="text-lg font-semibold leading-6 text-slate-900 group-hover:text-slate-700">
@@ -135,7 +146,9 @@ export default function DynamicLatestArticles() {
                         {article.title}
                       </Link>
                     </h3>
-                    <p className="mt-5 line-clamp-2 text-sm font-normal leading-7 text-slate-700">{article.excerpt}</p>
+                    <p className="mt-5 line-clamp-2 text-sm font-normal leading-7 text-slate-700">
+                      {article.excerpt}
+                    </p>
                   </div>
                 </article>
               ))}
@@ -145,7 +158,10 @@ export default function DynamicLatestArticles() {
           {/* Pagination */}
           <div className="mt-8 mb-16">
             <div className="flex justify-center gap-2" id="blog-pager">
-              <Link className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500" href="/articles">
+              <Link
+                className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
+                href="/articles"
+              >
                 Semua artikel
               </Link>
             </div>
