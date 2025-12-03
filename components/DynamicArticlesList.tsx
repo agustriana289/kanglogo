@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import ArticleCard from "./ArticleCard";
 
 // --- PERUBAHAN 1: PERBAIKI INTERFACE Article ---
+// Interface ini disesuaikan dengan yang diharapkan oleh komponen ArticleCard
 interface Article {
   id: number;
   title: string;
@@ -12,12 +13,8 @@ interface Article {
   excerpt: string;
   featured_image: string;
   published_at: string;
-  author: {
-    // Ubah dari author_name menjadi object author
-    name: string;
-  };
+  author_name: string; // Diubah menjadi string langsung
   categories: {
-    // Ini harusnya array tunggal, bukan array bersarang
     id: number;
     name: string;
     slug: string;
@@ -107,11 +104,12 @@ export default function DynamicArticlesList({
         console.error("Error fetching articles:", error);
       } else {
         // --- PERUBAHAN 2: PERBAIKI LOGIKA TRANSFORMASI DATA ---
+        // Kita tidak perlu lagi membuat object `author`, cukup gunakan `author_name` langsung
+        // dan ratakan array kategori
         const transformedData =
           data?.map((article) => ({
             ...article,
-            author: { name: article.author_name },
-            // Gunakan flatMap untuk "meratakan" array kategori yang bersarang
+            // Properti author_name sudah ada dari hasil query, jadi tidak perlu diubah
             categories: article.article_categories.flatMap(
               (ac) => ac.categories
             ),
@@ -137,7 +135,6 @@ export default function DynamicArticlesList({
         </div>
       ) : (
         <div className="bg-white p-6 rounded-lg shadow">
-          {/* --- PERUBAHAN 3: PERBAIKI 'class' MENJADI 'className' --- */}
           <h3 className="text-xl font-semibold mb-4 text-blue-600 border-blue-200 border-b pb-2">
             New Updates
           </h3>
