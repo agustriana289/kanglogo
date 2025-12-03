@@ -14,9 +14,7 @@ import {
   TrashIcon,
   PhotoIcon,
   XMarkIcon,
-  ChatBubbleLeftBottomIcon,
-  StarIcon,
-  UserIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from "@heroicons/react/24/outline";
 
 export default function TestimonialManagementPage() {
@@ -319,7 +317,7 @@ export default function TestimonialManagementPage() {
         {/* Empty State */}
         {testimonials.length === 0 && (
           <div className="text-center py-12">
-            <ChatBubbleLeftBottomIcon className="mx-auto h-12 w-12 text-slate-400" />
+            <ChatBubbleLeftEllipsisIcon className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
               Tidak ada testimoni
             </h3>

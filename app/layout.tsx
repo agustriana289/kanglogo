@@ -78,7 +78,7 @@ export default async function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body
-        className={`${inter.variable} font-sans antialiased bg-slate-100 m-0 p-0`}
+        className={`${inter.className} font-sans antialiased bg-slate-100 m-0 p-0`}
       >
         <RootLayoutClient />
         <Header />
