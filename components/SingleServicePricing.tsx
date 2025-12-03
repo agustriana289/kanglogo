@@ -4,8 +4,10 @@ import LogoLoading from "./LogoLoading";
 
 export default function SingleServicePricing({
   service,
+  loading,
 }: {
-  service: Service;
+  service: Service | null;
+  loading: boolean;
 }) {
   if (!service) {
     return <div>Layanan tidak ditemukan.</div>;
