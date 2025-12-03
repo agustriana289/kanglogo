@@ -243,7 +243,7 @@ export default function TestimonialManagementPage() {
                 <div className="aspect-video relative">
                   <img
                     src={testimonial.image_url}
-                    alt={testimonial.alt_text}
+                    alt={testimonial.alt_text ?? ""}
                     className="w-full h-48 object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -306,7 +306,7 @@ export default function TestimonialManagementPage() {
               <div className="aspect-video relative">
                 <img
                   src={testimonial.image_url}
-                  alt={testimonial.alt_text}
+                  alt={testimonial.alt_text ?? ""}
                   className="w-full h-48 object-cover rounded-lg"
                 />
               </div>

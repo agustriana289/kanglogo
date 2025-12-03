@@ -364,12 +364,9 @@ export default function ServicesPage() {
         {/* Header Section - Diperbaiki */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Manajemen Layanan
-            </h1>
             <button
               onClick={handleAddService}
-              className="inline-flex items-center px-6 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Tambah Layanan

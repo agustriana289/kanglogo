@@ -339,12 +339,17 @@ export default function OrderManagementPage() {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Manajemen Pesanan
-              </h1>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                Total: {filteredOrders.length} pesanan
-              </p>
+              <select
+                value={selectedFilter}
+                onChange={handleFilterChange}
+                className="block w-full sm:w-auto rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
+              >
+                {filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <div className="relative w-full sm:w-auto">
@@ -359,17 +364,6 @@ export default function OrderManagementPage() {
                   onChange={handleSearchChange}
                 />
               </div>
-              <select
-                value={selectedFilter}
-                onChange={handleFilterChange}
-                className="block w-full sm:w-auto rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-              >
-                {filterOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
