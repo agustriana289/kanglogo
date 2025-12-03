@@ -1,4 +1,3 @@
-doc.setFont; // app/api/invoice/[invoice_number]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
