@@ -1,4 +1,3 @@
-// components/ArticleContent.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -44,7 +43,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
   const fetchRelatedArticles = async () => {
     try {
-      // Get articles from the same categories
+      // Get articles from same categories
       const categoryIds = article.categories.map((c) => c.id);
 
       if (categoryIds.length === 0) return;
@@ -72,7 +71,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
       if (relatedArticleIds.length === 0) return;
 
-      // Fetch the actual articles
+      // Fetch actual articles
       const { data, error } = await supabase
         .from("articles")
         .select(
@@ -132,21 +131,24 @@ export default function ArticleContent({ article }: ArticleContentProps) {
   const processContent = (content: string) => {
     // Ganti semua <p> yang seharusnya <h2> kembali menjadi <h2>
     // Contoh: <p>1. Pahami Karakter...</p> menjadi <h2>1. Pahami Karakter...</h2>
+    // --- PERUBAHAN 1 ---
     let processedContent = content.replace(
-      /<p>(\d+\.\s+.*?)<\/p>/gs,
+      /<p>(\d+\.\s+[\s\S]*?)<\/p>/g,
       "<h2>$1</h2>"
     );
 
     // Perbaiki format list yang dipecah menjadi <p> terpisah dengan panah
     // Contoh: <p>→ Mana yang paling...</p> menjadi <li>Mana yang paling...</li>
+    // --- PERUBAHAN 2 ---
     processedContent = processedContent.replace(
-      /<p>\s*→\s*(.*?)<\/p>/gs,
+      /<p>\s*→\s*([\s\S]*?)<\/p>/g,
       "<li>$1</li>"
     );
 
     // Perbaiki list item dengan centang
+    // --- PERUBAHAN 3 ---
     processedContent = processedContent.replace(
-      /<p>\s*✓\s*(.*?)<\/p>/gs,
+      /<p>\s*✓\s*([\s\S]*?)<\/p>/g,
       "<li>$1</li>"
     );
 
