@@ -1,5 +1,5 @@
-// app/projects/[slug]/page.tsx
 import { notFound } from "next/navigation";
+import { headers } from "next/headers"; // Tambahkan import ini
 import { supabase } from "@/lib/supabase";
 import { Project } from "@/types/project";
 import ShareButtons from "./ShareButtons";
@@ -48,6 +48,12 @@ export default async function ProjectDetailPage({
   params: { slug: string };
 }) {
   const project = await getProject(params.slug);
+
+  // --- TAMBAHKAN BAGIAN INI ---
+  const requestHeaders = headers();
+  const host = requestHeaders.get("host");
+  const url = `https://${host}/projects/${params.slug}`;
+  // --- AKHIR TAMBAHAN ---
 
   return (
     <section className="py-16 bg-slate-100">
@@ -160,7 +166,9 @@ export default async function ProjectDetailPage({
               </div>
             )}
 
-            <ShareButtons title={project.title} />
+            {/* --- PERUBAHAN KRUSIAL ADA DI SINI --- */}
+            <ShareButtons title={project.title} url={url} />
+            {/* --- AKHIR PERUBAHAN --- */}
           </div>
         </div>
       </div>
