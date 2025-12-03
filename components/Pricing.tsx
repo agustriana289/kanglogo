@@ -1,4 +1,3 @@
-// components/Pricing.tsx
 "use client"; // Tetap client component karena ada interaksi klik
 
 import { useState, useEffect } from "react";
@@ -176,7 +175,7 @@ export default function Pricing() {
         {/* --- Bagian 2: Grid Layanan Lainnya --- */}
         <div className="text-center justify-center">
           <a
-            class="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
+            className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
             href="/services"
           >
             Semua layanan
