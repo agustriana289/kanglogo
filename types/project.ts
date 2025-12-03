@@ -1,4 +1,3 @@
-// types/project.ts
 export interface Project {
   id: number;
   slug: string;
@@ -14,5 +13,4 @@ export interface Project {
   komentar_proyek?: string;
   aplikasi_yang_digunakan?: string;
   filosofi_proyek?: string;
-  created_at?: string;
 }
