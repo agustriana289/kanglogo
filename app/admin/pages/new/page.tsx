@@ -147,7 +147,7 @@ export default function NewPageForm() {
               name="meta_description"
               id="meta_description"
               rows={3}
-              value={formData.meta_description}
+              value={formData.meta_description ?? ""}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             ></textarea>
@@ -164,7 +164,7 @@ export default function NewPageForm() {
               id="content"
               rows={15}
               required
-              value={formData.content}
+              value={formData.content ?? ""}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border font-mono text-sm"
             ></textarea>
