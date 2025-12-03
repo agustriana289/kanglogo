@@ -100,14 +100,14 @@ export default function DynamicLatestArticles() {
   };
 
   return (
-    <div className="section" id="Content" name="blog">
+    <div className="section" id="Content" data-name="blog">
       <div className="widget Blog" data-version="2" id="Blog-1">
         <div className="my-12 max-w-6xl mx-auto">
           {/* Header */}
           <div
             className="faqsSection px-4 sm:px-6 lg:px-8 section"
             id="faqsSection"
-            name="Faqs Section"
+            data-name="Faqs Section"
           >
             <h1 className="text-center max-w-2xl mx-auto font-manrope font-bold text-3xl text-slate-700 sm:mb-5 md:text-5xl leading-[50px]">
               <span className="text-primary">Artikel</span> Terbaru
