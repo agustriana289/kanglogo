@@ -6,7 +6,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Service, ServicePackage } from "@/types/service";
 import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
-import { Discount } from "@/types/discount"; // PERUBAHAN: Import tipe Discount
+import { Discount } from "@/types/discount";
+import LogoLoading from "@/components/LogoLoading";
 
 export default function NewOrderPageContent() {
   const searchParams = useSearchParams();
@@ -232,8 +233,13 @@ export default function NewOrderPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            Pembelian Jasa
+          </p>
+        </div>
       </div>
     );
   }
@@ -255,7 +261,7 @@ export default function NewOrderPageContent() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-primary">
-            Order {service.title}
+            Pembelian Jasa {service.title}
           </h1>
         </div>
 
@@ -266,13 +272,13 @@ export default function NewOrderPageContent() {
                 <thead className="border-b">
                   <tr>
                     <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
-                      PACKAGE NAME
+                      PAKET
                     </th>
                     <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                      DURATION
+                      ESTIMASI
                     </th>
                     <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
-                      PRICE
+                      HARGA
                     </th>
                   </tr>
                 </thead>
@@ -283,7 +289,7 @@ export default function NewOrderPageContent() {
                         {selectedPackage.name}
                       </div>
                       <div className="text-sm text-gray-500 mt-2">
-                        <div className="font-semibold mb-1">Features:</div>
+                        <div className="font-semibold mb-1">Fitur:</div>
                         <ul className="list-disc list-inside space-y-1">
                           {selectedPackage.features.map((feature, i) => (
                             <li key={i}>{feature}</li>
@@ -312,14 +318,14 @@ export default function NewOrderPageContent() {
                   {/* PERUBAHAN: Tampilkan diskon jika ada */}
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount ({appliedDiscount?.code})</span>
+                      <span>Diskon ({appliedDiscount?.code})</span>
                       <span className="font-medium">
                         - Rp {discountAmount.toLocaleString("id-ID")}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tax</span>
+                    <span className="text-gray-600">Pajak</span>
                     <span className="font-medium">Rp 0</span>
                   </div>
                   <div className="border-t pt-2 mt-2">
@@ -336,7 +342,7 @@ export default function NewOrderPageContent() {
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Customer Data
+                Data Pelanggan
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -346,7 +352,7 @@ export default function NewOrderPageContent() {
                     htmlFor="customer_name"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Full Name
+                    Nama Lengkap
                   </label>
                   <input
                     type="text"
@@ -384,7 +390,7 @@ export default function NewOrderPageContent() {
                     htmlFor="customer_whatsapp"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    WhatsApp Number
+                    Nomor WhatsApp
                   </label>
                   <input
                     type="tel"
@@ -404,7 +410,7 @@ export default function NewOrderPageContent() {
                     htmlFor="discount_code"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Discount Code
+                    Kode Diskon
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -424,7 +430,7 @@ export default function NewOrderPageContent() {
                         disabled={isApplyingDiscount || !formData.discount_code}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50"
                       >
-                        {isApplyingDiscount ? "Applying..." : "Apply"}
+                        {isApplyingDiscount ? "Menerapkan..." : "Terapkan"}
                       </button>
                     ) : (
                       <button
@@ -432,7 +438,7 @@ export default function NewOrderPageContent() {
                         onClick={removeDiscount}
                         className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
                       >
-                        Remove
+                        Hapus
                       </button>
                     )}
                   </div>
@@ -452,7 +458,7 @@ export default function NewOrderPageContent() {
                     htmlFor="payment_method"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Payment Method
+                    Metode Pembayaran
                   </label>
                   <select
                     id="payment_method"
@@ -479,7 +485,7 @@ export default function NewOrderPageContent() {
                     disabled={submitting}
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
-                    {submitting ? "Processing..." : "Pay Now"}
+                    {submitting ? "Memproses..." : "Bayar Sekarang"}
                   </button>
                 </div>
               </form>

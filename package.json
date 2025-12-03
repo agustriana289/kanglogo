@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "ESLINT_NO_DEV_ERRORS=true next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -24,6 +25,7 @@
     "react-quill": "^2.0.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.0.7",
     "@tailwindcss/typography": "^0.5.19",
     "@types/react": "19.2.7",
     "autoprefixer": "^10.4.22",

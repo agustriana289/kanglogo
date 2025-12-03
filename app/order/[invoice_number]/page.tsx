@@ -16,6 +16,7 @@ import { Order } from "@/types/order";
 import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
 import html2pdf from "html2pdf.js";
+import LogoLoading from "@/components/LogoLoading";
 
 export default function InvoiceDetailPage({
   params,
@@ -159,21 +160,26 @@ export default function InvoiceDetailPage({
   const getDownloadButtonText = () => {
     if (isDownloading) return "Downloading...";
     if (order?.status === "completed" && order.final_file_link)
-      return "Download File";
-    return "Download";
+      return "Unduh File";
+    return "Unduh";
   };
 
   const getDownloadButtonTextLong = () => {
     if (isDownloading) return "Downloading...";
     if (order?.status === "completed" && order.final_file_link)
-      return "Download File";
-    return "Download Invoice";
+      return "Unduh File";
+    return "Unduh Invoice";
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            Memuat Pesanan
+          </p>
+        </div>
       </div>
     );
   }
@@ -181,7 +187,7 @@ export default function InvoiceDetailPage({
   if (!order) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Invoice not found</div>
+        <div className="text-gray-600">Invoice tidak ditemukan</div>
       </div>
     );
   }
@@ -255,7 +261,7 @@ export default function InvoiceDetailPage({
                 onClick={() => window.print()}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Print
+                Cetak
               </button>
             </div>
           </div>
@@ -267,7 +273,7 @@ export default function InvoiceDetailPage({
               <div className="grid grid-cols-2 gap-8">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 mb-2">
-                    Pay to:
+                    Bayar ke:
                   </h3>
                   <div className="text-gray-900 font-semibold mb-1">
                     KangLogo.com
@@ -280,7 +286,7 @@ export default function InvoiceDetailPage({
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 mb-2">
-                    Invoice to:
+                    Invoice untuk:
                   </h3>
                   <div className="text-gray-900 font-semibold mb-1">
                     {order.customer_name}
@@ -299,19 +305,19 @@ export default function InvoiceDetailPage({
                 <thead className="border-b">
                   <tr>
                     <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
-                      PRODUCT NAME
+                      PAKET
                     </th>
                     <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                      ESTIMATION
+                      ESTIMASI
                     </th>
                     <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
-                      PRICE
+                      HARGA
                     </th>
                     <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                      DISCOUNT
+                      DISKON
                     </th>
                     <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
-                      TOTAL PRICE
+                      TOTAL HARGA
                     </th>
                   </tr>
                 </thead>
@@ -349,7 +355,7 @@ export default function InvoiceDetailPage({
                   {order.discount_amount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">
-                        Discount{" "}
+                        Diskon{" "}
                         {order.discount_code ? `(${order.discount_code})` : ""}
                       </span>
                       <span className="font-medium text-green-600">
@@ -381,10 +387,10 @@ export default function InvoiceDetailPage({
                   <Clock className="text-yellow-600" size={24} />
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900">
-                      Payment Deadline
+                      Batas Waktu Pembayaran
                     </div>
                     <div className="text-sm text-gray-600">
-                      Complete payment before time runs out
+                      Selesaikan pembayaran sebelum waktu habis
                     </div>
                   </div>
                   <div className="flex gap-2 text-2xl font-bold text-yellow-600">
@@ -416,7 +422,7 @@ export default function InvoiceDetailPage({
                 onClick={copyLink}
                 className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium"
               >
-                <Copy size={18} /> {copied ? "Copied!" : "Copy Link"}
+                <Copy size={18} /> {copied ? "Disalin!" : "Salin Tautan"}
               </button>
               {order.status === "pending_payment" && (
                 <button
@@ -436,7 +442,7 @@ export default function InvoiceDetailPage({
                   disabled
                   className="bg-green-100 text-green-800 py-3 px-4 rounded-lg font-medium cursor-not-allowed"
                 >
-                  Paid
+                  Dibayar
                 </button>
               )}
             </div>
@@ -445,7 +451,7 @@ export default function InvoiceDetailPage({
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
-                <span className="text-sm text-gray-600">Invoice total:</span>
+                <span className="text-sm text-gray-600">Total Invoice:</span>
                 <span className="text-2xl font-bold">
                   Rp {order.final_price.toLocaleString("id-ID")}
                 </span>
@@ -468,7 +474,9 @@ export default function InvoiceDetailPage({
                 {order.payment_deadline && (
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="text-gray-400" />
-                    <span className="text-gray-600">Payment deadline:</span>
+                    <span className="text-gray-600">
+                      Batas Waktu Pembayaran:
+                    </span>
                     <span className="font-medium ml-auto">
                       {formatDate(order.payment_deadline)}
                     </span>
@@ -481,7 +489,7 @@ export default function InvoiceDetailPage({
               <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <CreditCard size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Payment Method:</span>
+                  <span className="text-gray-600">Metode Pembayaran:</span>
                   <span className="font-medium ml-auto">
                     {paymentMethod.type}
                   </span>
@@ -497,7 +505,7 @@ export default function InvoiceDetailPage({
 
                 <div className="flex items-center gap-2">
                   <Hash size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Account Number:</span>
+                  <span className="text-gray-600">No Akun/Rekening:</span>
                   <span className="font-medium ml-auto">
                     {paymentMethod.account_number}
                   </span>
@@ -505,7 +513,7 @@ export default function InvoiceDetailPage({
 
                 <div className="flex items-center gap-2">
                   <User size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Holder Name:</span>
+                  <span className="text-gray-600">Atas Nama:</span>
                   <span className="font-medium ml-auto">
                     {paymentMethod.holder_name}
                   </span>

@@ -7,8 +7,9 @@ import { id } from "date-fns/locale";
 import CommentSection from "./CommentSection";
 import ShareButtons from "./ShareButtons";
 import SubscriptionForm from "./SubscriptionForm";
-import Sidebar from "./Sidebar"; // <-- 1. Impor komponen Sidebar
+import Sidebar from "./Sidebar";
 import React from "react";
+import LogoLoading from "./LogoLoading";
 
 interface Article {
   id: number;
@@ -36,6 +37,8 @@ interface ArticleContentProps {
 
 export default function ArticleContent({ article }: ArticleContentProps) {
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
+  // Add loading state
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchRelatedArticles();
@@ -46,7 +49,10 @@ export default function ArticleContent({ article }: ArticleContentProps) {
       // Get articles from same categories
       const categoryIds = article.categories.map((c) => c.id);
 
-      if (categoryIds.length === 0) return;
+      if (categoryIds.length === 0) {
+        setLoading(false);
+        return;
+      }
 
       // First, get article IDs that share categories
       const { data: relatedArticleCategories, error: categoryError } =
@@ -61,6 +67,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
           "Error fetching related article categories:",
           categoryError
         );
+        setLoading(false);
         return;
       }
 
@@ -69,7 +76,10 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         ...new Set(relatedArticleCategories?.map((ac) => ac.article_id) || []),
       ];
 
-      if (relatedArticleIds.length === 0) return;
+      if (relatedArticleIds.length === 0) {
+        setLoading(false);
+        return;
+      }
 
       // Fetch actual articles
       const { data, error } = await supabase
@@ -110,6 +120,9 @@ export default function ArticleContent({ article }: ArticleContentProps) {
       }
     } catch (error) {
       console.error("Error fetching related articles:", error);
+    } finally {
+      // Set loading to false when done
+      setLoading(false);
     }
   };
 
@@ -176,6 +189,19 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
     return processedContent;
   };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            {article.title}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     // <-- 2. Ubah container utama dan tambahkan grid

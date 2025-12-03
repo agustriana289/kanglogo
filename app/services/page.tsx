@@ -6,6 +6,7 @@ import { Service } from "@/types/service";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import PublicFAQ from "@/components/PublicFAQ";
+import LogoLoading from "@/components/LogoLoading";
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -51,8 +52,13 @@ export default function ServicesPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            Dipercaya oleh ratusan klien lokal hingga internasional.
+          </p>
+        </div>
       </div>
     );
   }

@@ -1,8 +1,8 @@
 // components/FAQ.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface FAQ {
   id: number;
@@ -26,37 +26,29 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
   const fetchFAQs = async () => {
     try {
       let query = supabase
-        .from('faqs')
-        .select('*')
-        .order('featured', { ascending: false })
-        .order('created_at', { ascending: true });
+        .from("faqs")
+        .select("*")
+        .order("featured", { ascending: false })
+        .order("created_at", { ascending: true });
 
       if (showFeaturedOnly) {
-        query = query.eq('featured', true).limit(4);
+        query = query.eq("featured", true).limit(4);
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
-        console.error('Error fetching FAQs:', error);
+        console.error("Error fetching FAQs:", error);
       } else {
         setFaqs(data || []);
       }
-      
+
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching FAQs:', error);
+      console.error("Error fetching FAQs:", error);
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
 
   return (
     <section className="pt-12 sm:pt-24" id="faq">
@@ -67,7 +59,8 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
             <span className="text-primary">Punya Pertanyaan ?</span> Cek disini
           </h1>
           <p className="sm:max-w-2xl sm:mx-auto text-center text-base font-normal leading-7 text-gray-500 mb-9">
-            Sebelum mengajukan pertanyaan, yuk lihat dulu jawaban yang sudah ada.
+            Sebelum mengajukan pertanyaan, yuk lihat dulu jawaban yang sudah
+            ada.
           </p>
         </div>
 
@@ -76,9 +69,13 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 md:gap-y-12">
             {faqs.map((item) => (
               <dl key={item.id}>
-                <dt className="font-medium leading-6 text-gray-700 text-lg mt-4">{item.question}</dt>
+                <dt className="font-medium leading-6 text-gray-700 text-lg mt-4">
+                  {item.question}
+                </dt>
                 <dd className="mt-4">
-                  <p className="text-base font-normal leading-7 text-slate-700">{item.answer}</p>
+                  <p className="text-base font-normal leading-7 text-slate-700">
+                    {item.answer}
+                  </p>
                 </dd>
               </dl>
             ))}
@@ -100,7 +97,12 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
               </svg>
             </a>
           </div>

@@ -58,14 +58,6 @@ export default function PublicFAQ({ serviceTitle }: PublicFAQProps) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <section className="pt-12 sm:pt-24" id="faq">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">

@@ -16,6 +16,7 @@ import {
   FunnelIcon,
   TagIcon,
 } from "@heroicons/react/24/outline";
+import LogoLoading from "@/components/LogoLoading";
 
 // Tambahkan interface untuk memperluas MarketplaceAsset dengan tags
 interface AssetWithTags extends MarketplaceAsset {
@@ -139,30 +140,15 @@ export default function MarketplacePage() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-slate-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h1 className="text-base font-normal leading-7 text-slate-700">
-              <span className="text-primary">Marketplace</span> Aset Digital
-            </h1>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
-              >
-                <div className="w-full h-64 bg-slate-200"></div>
-                <div className="p-6">
-                  <div className="h-6 bg-slate-200 rounded mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded mb-2 w-3/4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            Jelajahi logo, ikon, dan aset grafis berkualitas tinggi untuk proyek
+            Anda.
+          </p>
         </div>
-      </section>
+      </div>
     );
   }
 

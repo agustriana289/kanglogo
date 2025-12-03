@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import LogoLoading from "./LogoLoading";
 
 // Definisikan tipe untuk data yang akan digunakan
 interface HeroContent {
@@ -84,12 +85,16 @@ export default function Hero() {
     }
   };
 
-  // Jika masih loading, tampilkan loading state
   if (loading) {
     return (
-      <section className="flex pt-12 pb-6 px-6 md:px-20 items-center justify-center bg-primary">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-      </section>
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            Selamat Datang di KangLogo..com
+          </p>
+        </div>
+      </div>
     );
   }
 

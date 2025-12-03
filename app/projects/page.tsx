@@ -14,16 +14,19 @@ import {
   TagIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
+import LogoLoading from "@/components/LogoLoading";
 
 export default function AllProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [owners, setOwners] = useState<string[]>([]);
+  const [years, setYears] = useState<string[]>([]); // Tambahkan state untuk tahun
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("Semua");
   const [selectedOwner, setSelectedOwner] = useState("Semua");
+  const [selectedYear, setSelectedYear] = useState("Semua"); // Tambahkan state untuk tahun yang dipilih
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export default function AllProjectsPage() {
 
   useEffect(() => {
     filterProjects();
-  }, [projects, searchQuery, selectedType, selectedOwner]);
+  }, [projects, searchQuery, selectedType, selectedOwner, selectedYear]); // Tambahkan selectedYear ke dependency
 
   const fetchProjects = async () => {
     try {
@@ -55,6 +58,21 @@ export default function AllProjectsPage() {
         ...new Set(data?.map((project) => project.owner).filter(Boolean)),
       ];
       setOwners(uniqueOwners);
+
+      // Extract unique years from start_date
+      const projectYears = data
+        ?.map((project) => {
+          if (project.start_date) {
+            return new Date(project.start_date).getFullYear().toString();
+          }
+          return null;
+        })
+        .filter(Boolean) as string[];
+
+      const uniqueYears = [...new Set(projectYears)].sort(
+        (a, b) => parseInt(b) - parseInt(a)
+      );
+      setYears(uniqueYears);
     } catch (error) {
       console.error("Error fetching projects:", error);
     } finally {
@@ -87,6 +105,19 @@ export default function AllProjectsPage() {
       filtered = filtered.filter((project) => project.owner === selectedOwner);
     }
 
+    // Filter by year
+    if (selectedYear !== "Semua") {
+      filtered = filtered.filter((project) => {
+        if (project.start_date) {
+          const projectYear = new Date(project.start_date)
+            .getFullYear()
+            .toString();
+          return projectYear === selectedYear;
+        }
+        return false;
+      });
+    }
+
     setFilteredProjects(filtered);
   };
 
@@ -103,37 +134,25 @@ export default function AllProjectsPage() {
     setSearchQuery("");
     setSelectedType("Semua");
     setSelectedOwner("Semua");
+    setSelectedYear("Semua"); // Reset filter tahun
   };
 
   const hasActiveFilters =
-    searchQuery || selectedType !== "Semua" || selectedOwner !== "Semua";
+    searchQuery ||
+    selectedType !== "Semua" ||
+    selectedOwner !== "Semua" ||
+    selectedYear !== "Semua"; // Tambahkan filter tahun ke pengecekan
 
   if (loading) {
     return (
-      <section className="py-16 bg-slate-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h1 className="text-4xl font-extrabold text-slate-900 sm:text-5xl">
-              Semua <span className="text-primary">Proyek</span>
-            </h1>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
-              >
-                <div className="w-full h-64 bg-slate-200"></div>
-                <div className="p-6">
-                  <div className="h-6 bg-slate-200 rounded mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded mb-2 w-3/4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center justify-center">
+          <LogoLoading size="xl" />
+          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
+            Jelajahi karya-karya terbaik yang telah kami hasilkan.
+          </p>
         </div>
-      </section>
+      </div>
     );
   }
 
@@ -216,34 +235,34 @@ export default function AllProjectsPage() {
                 </div>
               )}
 
-              {/* Owner Filter */}
-              {owners.length > 0 && (
+              {/* Year Filter - Tambahkan filter tahun */}
+              {years.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-slate-700 mb-2">
-                    Owner
+                    Tahun
                   </h3>
                   <div className="space-y-2">
                     <button
-                      onClick={() => setSelectedOwner("Semua")}
+                      onClick={() => setSelectedYear("Semua")}
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedOwner === "Semua"
+                        selectedYear === "Semua"
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
                       Semua
                     </button>
-                    {owners.map((owner) => (
+                    {years.map((year) => (
                       <button
-                        key={owner}
-                        onClick={() => setSelectedOwner(owner)}
+                        key={year}
+                        onClick={() => setSelectedYear(year)}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedOwner === owner
+                          selectedYear === year
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
-                        {owner}
+                        {year}
                       </button>
                     ))}
                   </div>
@@ -330,6 +349,40 @@ export default function AllProjectsPage() {
                           }`}
                         >
                           {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Year Filter - Tambahkan filter tahun untuk mobile */}
+                {years.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-slate-700 mb-2">
+                      Tahun
+                    </h3>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setSelectedYear("Semua")}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                          selectedYear === "Semua"
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        Semua
+                      </button>
+                      {years.map((year) => (
+                        <button
+                          key={year}
+                          onClick={() => setSelectedYear(year)}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                            selectedYear === year
+                              ? "bg-primary text-white"
+                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          {year}
                         </button>
                       ))}
                     </div>
@@ -434,6 +487,16 @@ export default function AllProjectsPage() {
                         {project.type}
                       </span>
                     </div>
+
+                    {/* Tambahkan tampilan tahun */}
+                    {project.start_date && (
+                      <div className="flex items-center text-sm text-slate-600 mb-2">
+                        <CalendarIcon className="h-4 w-4 mr-1" />
+                        <span>
+                          {new Date(project.start_date).getFullYear()}
+                        </span>
+                      </div>
+                    )}
 
                     <Link
                       href={`/projects/${project.slug}`}

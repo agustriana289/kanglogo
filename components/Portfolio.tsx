@@ -32,19 +32,6 @@ export default function Portfolio() {
     fetchProjects();
   }, []);
 
-  if (loading) {
-    return (
-      <section className="py-12 sm:py-24 bg-slate-100" id="porto">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            <p className="mt-4 text-slate-600">Memuat portofolio...</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="py-12 sm:py-24 bg-slate-100" id="porto">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-hidden">
