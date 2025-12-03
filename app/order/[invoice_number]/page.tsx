@@ -1,385 +1,514 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Download, Copy, Clock, CheckCircle, CreditCard, Hash, User, CircleDollarSign } from 'lucide-react';
-import { Order } from '@/types/order';
-import { PaymentMethod } from '@/types/payment-method';
-import { supabase } from '@/lib/supabase';
-import html2pdf from 'html2pdf.js';
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Download,
+  Copy,
+  Clock,
+  CheckCircle,
+  CreditCard,
+  Hash,
+  User,
+  CircleDollarSign,
+} from "lucide-react";
+import { Order } from "@/types/order";
+import { PaymentMethod } from "@/types/payment-method";
+import { supabase } from "@/lib/supabase";
+import html2pdf from "html2pdf.js";
 
-export default function InvoiceDetailPage({ params }: { params: { invoice_number: string } }) {
-    const router = useRouter();
-    const invoiceRef = useRef<HTMLDivElement>(null);
-    const [order, setOrder] = useState<Order | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
-    const [copied, setCopied] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
+export default function InvoiceDetailPage({
+  params,
+}: {
+  params: { invoice_number: string };
+}) {
+  const router = useRouter();
+  const invoiceRef = useRef<HTMLDivElement>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            const { data: orderData, error: orderError } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('invoice_number', params.invoice_number)
-                .single();
+  useEffect(() => {
+    const fetchOrder = async () => {
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("invoice_number", params.invoice_number)
+        .single();
 
-            if (orderError || !orderData) {
-                console.error('Error fetching order:', orderError);
-                setLoading(false);
-                return;
-            }
+      if (orderError || !orderData) {
+        console.error("Error fetching order:", orderError);
+        setLoading(false);
+        return;
+      }
 
-            console.log('Order data:', orderData);
-            setOrder(orderData);
+      console.log("Order data:", orderData);
+      setOrder(orderData);
 
-            if (orderData.payment_method_id) {
-                const { data: paymentData, error: paymentError } = await supabase
-                    .from('payment_methods')
-                    .select('*')
-                    .eq('id', orderData.payment_method_id)
-                    .single();
+      if (orderData.payment_method_id) {
+        const { data: paymentData, error: paymentError } = await supabase
+          .from("payment_methods")
+          .select("*")
+          .eq("id", orderData.payment_method_id)
+          .single();
 
-                if (!paymentError && paymentData) {
-                    setPaymentMethod(paymentData);
-                }
-            } else if (orderData.payment_method) {
-                const { data: paymentData, error: paymentError } = await supabase
-                    .from('payment_methods')
-                    .select('*')
-                    .or(`name.ilike.%${orderData.payment_method}%,type.ilike.%${orderData.payment_method}%`)
-                    .limit(1)
-                    .maybeSingle();
+        if (!paymentError && paymentData) {
+          setPaymentMethod(paymentData);
+        }
+      } else if (orderData.payment_method) {
+        const { data: paymentData, error: paymentError } = await supabase
+          .from("payment_methods")
+          .select("*")
+          .or(
+            `name.ilike.%${orderData.payment_method}%,type.ilike.%${orderData.payment_method}%`
+          )
+          .limit(1)
+          .maybeSingle();
 
-                if (paymentData) {
-                    setPaymentMethod(paymentData);
-                }
-            }
+        if (paymentData) {
+          setPaymentMethod(paymentData);
+        }
+      }
 
-            setLoading(false);
+      setLoading(false);
 
-            // Timer
-            if (orderData.payment_deadline && orderData.status === 'pending_payment') {
-                const updateTimer = () => {
-                    const now = new Date().getTime();
-                    const dueTime = new Date(orderData.payment_deadline).getTime();
-                    const difference = dueTime - now;
+      // Timer
+      if (
+        orderData.payment_deadline &&
+        orderData.status === "pending_payment"
+      ) {
+        const updateTimer = () => {
+          const now = new Date().getTime();
+          const dueTime = new Date(orderData.payment_deadline).getTime();
+          const difference = dueTime - now;
 
-                    if (difference > 0) {
-                        const hours = Math.floor(difference / (1000 * 60 * 60));
-                        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-                        setTimeLeft({ hours, minutes, seconds });
-                    } else {
-                        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-                    }
-                };
-
-                updateTimer();
-                const timer = setInterval(updateTimer, 1000);
-                return () => clearInterval(timer);
-            }
+          if (difference > 0) {
+            const hours = Math.floor(difference / (1000 * 60 * 60));
+            const minutes = Math.floor(
+              (difference % (1000 * 60 * 60)) / (1000 * 60)
+            );
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            setTimeLeft({ hours, minutes, seconds });
+          } else {
+            setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+          }
         };
 
-        fetchOrder();
-    }, [params.invoice_number]);
-
-    const copyLink = () => {
-        navigator.clipboard.writeText(window.location.href);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        updateTimer();
+        const timer = setInterval(updateTimer, 1000);
+        return () => clearInterval(timer);
+      }
     };
 
-    const downloadFile = async () => {
-        if (!order) return;
+    fetchOrder();
+  }, [params.invoice_number]);
 
-        setIsDownloading(true);
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-        try {
-            // Jika order completed dan ada final_file_link, download file final
-            if (order.status === 'completed' && order.final_file_link) {
-                window.open(order.final_file_link, '_blank');
-            }
-            // Jika tidak, generate dan download invoice PDF
-            else {
-                if (!invoiceRef.current) return;
+  const downloadFile = async () => {
+    if (!order) return;
 
-                const options = {
-                    margin: 10,
-                    filename: `Invoice-${order.invoice_number}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
+    setIsDownloading(true);
 
-                await html2pdf().set(options).from(invoiceRef.current).save();
-            }
-        } catch (error) {
-            console.error('Error downloading:', error);
-            alert('Gagal mendownload. Silakan coba lagi.');
-        } finally {
-            setIsDownloading(false);
-        }
-    };
+    try {
+      // Jika order completed dan ada final_file_link, download file final
+      if (order.status === "completed" && order.final_file_link) {
+        window.open(order.final_file_link, "_blank");
+      }
+      // Jika tidak, generate dan download invoice PDF
+      else {
+        if (!invoiceRef.current) return;
 
-    const getDownloadButtonText = () => {
-        if (isDownloading) return 'Downloading...';
-        if (order?.status === 'completed' && order.final_file_link) return 'Download File';
-        return 'Download';
-    };
+        const options: Html2PdfOptions = {
+          margin: 10,
+          filename: "invoice.pdf",
+          image: { type: "jpeg", quality: 0.98 }, // Pastikan ini 'jpeg', 'png', atau 'webp'
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        };
 
-    const getDownloadButtonTextLong = () => {
-        if (isDownloading) return 'Downloading...';
-        if (order?.status === 'completed' && order.final_file_link) return 'Download File';
-        return 'Download Invoice';
-    };
-
-    if (loading) {
-        return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-gray-600">Loading...</div>
-        </div>;
+        await html2pdf().set(options).from(invoiceRef.current).save();
+      }
+    } catch (error) {
+      console.error("Error downloading:", error);
+      alert("Gagal mendownload. Silakan coba lagi.");
+    } finally {
+      setIsDownloading(false);
     }
+  };
 
-    if (!order) {
-        return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-gray-600">Invoice not found</div>
-        </div>;
-    }
+  const getDownloadButtonText = () => {
+    if (isDownloading) return "Downloading...";
+    if (order?.status === "completed" && order.final_file_link)
+      return "Download File";
+    return "Download";
+  };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'paid':
-            case 'completed':
-            case 'accepted':
-                return 'bg-green-100 text-green-800 border-green-200';
-            case 'pending_payment':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'in_progress':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800 border-red-200';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
-    };
+  const getDownloadButtonTextLong = () => {
+    if (isDownloading) return "Downloading...";
+    if (order?.status === "completed" && order.final_file_link)
+      return "Download File";
+    return "Download Invoice";
+  };
 
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'pending_payment': return 'Pending Payment';
-            case 'paid': return 'Paid';
-            case 'accepted': return 'Accepted';
-            case 'in_progress': return 'In Progress';
-            case 'completed': return 'Completed';
-            case 'cancelled': return 'Cancelled';
-            default: return status;
-        }
-    };
-
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-    };
-
-    const priceBeforeDiscount = order.final_price + order.discount_amount;
-    const subtotal = priceBeforeDiscount;
-    const tax = 0;
-
+  if (loading) {
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="container mx-auto px-4 max-w-7xl">
-                <div className="mb-6">
-                    <div className="flex justify-between items-center">
-                        <h1 className="text-3xl font-bold text-primary">Invoice #{order.invoice_number}</h1>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={downloadFile}
-                                disabled={isDownloading}
-                                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2 border disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Download size={18} /> {getDownloadButtonText()}
-                            </button>
-                            <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                Print
-                            </button>
-                        </div>
-                    </div>
-                </div >
-
-                <div ref={invoiceRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6 bg-white rounded-lg shadow p-4">
-                        <div className="p-6">
-                            <div className="grid grid-cols-2 gap-8">
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-500 mb-2">Pay to:</h3>
-                                    <div className="text-gray-900 font-semibold mb-1">KangLogo.com</div>
-                                    <div className="text-sm text-gray-600">
-                                        Majalengka, Indonesia<br />
-                                        halo@kanglogo.com
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-500 mb-2">Invoice to:</h3>
-                                    <div className="text-gray-900 font-semibold mb-1">{order.customer_name}</div>
-                                    <div className="text-sm text-gray-600">
-                                        {order.customer_email}<br />
-                                        {order.customer_whatsapp}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="overflow-hidden">
-                            <table className="w-full">
-                                <thead className="border-b">
-                                    <tr>
-                                        <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">PRODUCT NAME</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">ESTIMATION</th>
-                                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">PRICE</th>
-                                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">DISCOUNT</th>
-                                        <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">TOTAL PRICE</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="border-b">
-                                        <td className="py-4 px-6">
-                                            <div className="font-medium text-gray-900">{order.package_details?.name || 'Service Package'}</div>
-                                        </td>
-                                        <td className="py-4 px-4 text-center text-gray-700">{order.package_details?.duration || '-'}</td>
-                                        <td className="py-4 px-4 text-right text-gray-700">Rp {priceBeforeDiscount.toLocaleString('id-ID')}</td>
-                                        <td className="py-4 px-4 text-center text-gray-700">Rp {order.discount_amount.toLocaleString('id-ID')}</td>
-                                        <td className="py-4 px-6 text-right font-medium text-gray-900">Rp {order.final_price.toLocaleString('id-ID')}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                            <div className="p-6">
-                                <div className="max-w-xs ml-auto space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Subtotal</span>
-                                        <span className="font-medium">Rp {subtotal.toLocaleString('id-ID')}</span>
-                                    </div>
-                                    {order.discount_amount > 0 && (
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-600">Discount {order.discount_code ? `(${order.discount_code})` : ''}</span>
-                                            <span className="font-medium text-green-600">- Rp {order.discount_amount.toLocaleString('id-ID')}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Tax</span>
-                                        <span className="font-medium">Rp {tax.toLocaleString('id-ID')}</span>
-                                    </div>
-                                    <div className="border-t pt-2 mt-2">
-                                        <div className="flex justify-between text-base font-bold">
-                                            <span>Total</span>
-                                            <span>Rp {order.final_price.toLocaleString('id-ID')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {order.status === 'pending_payment' && order.payment_deadline && (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <div className="flex items-center gap-3">
-                                    <Clock className="text-yellow-600" size={24} />
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-gray-900">Payment Deadline</div>
-                                        <div className="text-sm text-gray-600">Complete payment before time runs out</div>
-                                    </div>
-                                    <div className="flex gap-2 text-2xl font-bold text-yellow-600">
-                                        <div className="bg-white px-3 py-2 rounded">{String(timeLeft.hours).padStart(2, '0')}</div>
-                                        <span className="py-2">:</span>
-                                        <div className="bg-white px-3 py-2 rounded">{String(timeLeft.minutes).padStart(2, '0')}</div>
-                                        <span className="py-2">:</span>
-                                        <div className="bg-white px-3 py-2 rounded">{String(timeLeft.seconds).padStart(2, '0')}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-3 gap-4">
-                            <button
-                                onClick={downloadFile}
-                                disabled={isDownloading}
-                                className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Download size={18} /> {getDownloadButtonTextLong()}
-                            </button>
-                            <button onClick={copyLink} className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium">
-                                <Copy size={18} /> {copied ? 'Copied!' : 'Copy Link'}
-                            </button>
-                            {order.status === 'pending_payment' && (
-                                <button onClick={() => router.push(`/order/${order.invoice_number}/confirm`)} className="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-medium">
-                                    Confirm Payment
-                                </button>
-                            )}
-                            {(order.status === 'paid' || order.status === 'accepted' || order.status === 'in_progress' || order.status === 'completed') && (
-                                <button disabled className="bg-green-100 text-green-800 py-3 px-4 rounded-lg font-medium cursor-not-allowed">
-                                    Paid
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <span className="text-sm text-gray-600">Invoice total:</span>
-                                <span className="text-2xl font-bold">Rp {order.final_price.toLocaleString('id-ID')}</span>
-                            </div>
-                            <button className={`w-full py-2 px-4 rounded-lg border font-medium mb-4 ${getStatusColor(order.status)}`}>
-                                {getStatusLabel(order.status)}
-                            </button>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle size={16} className="text-gray-400" />
-                                    <span className="text-gray-600">Created:</span>
-                                    <span className="font-medium ml-auto">{formatDate(order.created_at)}</span>
-                                </div>
-                                {order.payment_deadline && (
-                                    <div className="flex items-center gap-2">
-                                        <Clock size={16} className="text-gray-400" />
-                                        <span className="text-gray-600">Payment deadline:</span>
-                                        <span className="font-medium ml-auto">{formatDate(order.payment_deadline)}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {paymentMethod && (
-                            <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-4">
-
-                                <div className="flex items-center gap-2">
-                                    <CreditCard size={16} className="text-gray-400" />
-                                    <span className="text-gray-600">Payment Method:</span>
-                                    <span className="font-medium ml-auto">{paymentMethod.type}</span>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <CreditCard size={16} className="text-gray-400" />
-                                    <span className="text-gray-600">Bank/E-wallet:</span>
-                                    <span className="font-medium ml-auto">{paymentMethod.name}</span>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <Hash size={16} className="text-gray-400" />
-                                    <span className="text-gray-600">Account Number:</span>
-                                    <span className="font-medium ml-auto">{paymentMethod.account_number}</span>
-                                </div>
-
-
-                                <div className="flex items-center gap-2">
-                                    <User size={16} className="text-gray-400" />
-                                    <span className="text-gray-600">Holder Name:</span>
-                                    <span className="font-medium ml-auto">{paymentMethod.holder_name}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div >
-        </div >
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
     );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Invoice not found</div>
+      </div>
+    );
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "paid":
+      case "completed":
+      case "accepted":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "pending_payment":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "in_progress":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending_payment":
+        return "Pending Payment";
+      case "paid":
+        return "Paid";
+      case "accepted":
+        return "Accepted";
+      case "in_progress":
+        return "In Progress";
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      default:
+        return status;
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const priceBeforeDiscount = order.final_price + order.discount_amount;
+  const subtotal = priceBeforeDiscount;
+  const tax = 0;
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-primary">
+              Invoice #{order.invoice_number}
+            </h1>
+            <div className="flex gap-3">
+              <button
+                onClick={downloadFile}
+                disabled={isDownloading}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2 border disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download size={18} /> {getDownloadButtonText()}
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div ref={invoiceRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6 bg-white rounded-lg shadow p-4">
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-8">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                    Pay to:
+                  </h3>
+                  <div className="text-gray-900 font-semibold mb-1">
+                    KangLogo.com
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Majalengka, Indonesia
+                    <br />
+                    halo@kanglogo.com
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                    Invoice to:
+                  </h3>
+                  <div className="text-gray-900 font-semibold mb-1">
+                    {order.customer_name}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {order.customer_email}
+                    <br />
+                    {order.customer_whatsapp}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-hidden">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr>
+                    <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
+                      PRODUCT NAME
+                    </th>
+                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                      ESTIMATION
+                    </th>
+                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
+                      PRICE
+                    </th>
+                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                      DISCOUNT
+                    </th>
+                    <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
+                      TOTAL PRICE
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b">
+                    <td className="py-4 px-6">
+                      <div className="font-medium text-gray-900">
+                        {order.package_details?.name || "Service Package"}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center text-gray-700">
+                      {order.package_details?.duration || "-"}
+                    </td>
+                    <td className="py-4 px-4 text-right text-gray-700">
+                      Rp {priceBeforeDiscount.toLocaleString("id-ID")}
+                    </td>
+                    <td className="py-4 px-4 text-center text-gray-700">
+                      Rp {order.discount_amount.toLocaleString("id-ID")}
+                    </td>
+                    <td className="py-4 px-6 text-right font-medium text-gray-900">
+                      Rp {order.final_price.toLocaleString("id-ID")}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="p-6">
+                <div className="max-w-xs ml-auto space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium">
+                      Rp {subtotal.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  {order.discount_amount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">
+                        Discount{" "}
+                        {order.discount_code ? `(${order.discount_code})` : ""}
+                      </span>
+                      <span className="font-medium text-green-600">
+                        - Rp {order.discount_amount.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Tax</span>
+                    <span className="font-medium">
+                      Rp {tax.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="border-t pt-2 mt-2">
+                    <div className="flex justify-between text-base font-bold">
+                      <span>Total</span>
+                      <span>
+                        Rp {order.final_price.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {order.status === "pending_payment" && order.payment_deadline && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Clock className="text-yellow-600" size={24} />
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900">
+                      Payment Deadline
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Complete payment before time runs out
+                    </div>
+                  </div>
+                  <div className="flex gap-2 text-2xl font-bold text-yellow-600">
+                    <div className="bg-white px-3 py-2 rounded">
+                      {String(timeLeft.hours).padStart(2, "0")}
+                    </div>
+                    <span className="py-2">:</span>
+                    <div className="bg-white px-3 py-2 rounded">
+                      {String(timeLeft.minutes).padStart(2, "0")}
+                    </div>
+                    <span className="py-2">:</span>
+                    <div className="bg-white px-3 py-2 rounded">
+                      {String(timeLeft.seconds).padStart(2, "0")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                onClick={downloadFile}
+                disabled={isDownloading}
+                className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download size={18} /> {getDownloadButtonTextLong()}
+              </button>
+              <button
+                onClick={copyLink}
+                className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium"
+              >
+                <Copy size={18} /> {copied ? "Copied!" : "Copy Link"}
+              </button>
+              {order.status === "pending_payment" && (
+                <button
+                  onClick={() =>
+                    router.push(`/order/${order.invoice_number}/confirm`)
+                  }
+                  className="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  Confirm Payment
+                </button>
+              )}
+              {(order.status === "paid" ||
+                order.status === "accepted" ||
+                order.status === "in_progress" ||
+                order.status === "completed") && (
+                <button
+                  disabled
+                  className="bg-green-100 text-green-800 py-3 px-4 rounded-lg font-medium cursor-not-allowed"
+                >
+                  Paid
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-sm text-gray-600">Invoice total:</span>
+                <span className="text-2xl font-bold">
+                  Rp {order.final_price.toLocaleString("id-ID")}
+                </span>
+              </div>
+              <button
+                className={`w-full py-2 px-4 rounded-lg border font-medium mb-4 ${getStatusColor(
+                  order.status
+                )}`}
+              >
+                {getStatusLabel(order.status)}
+              </button>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Created:</span>
+                  <span className="font-medium ml-auto">
+                    {formatDate(order.created_at)}
+                  </span>
+                </div>
+                {order.payment_deadline && (
+                  <div className="flex items-center gap-2">
+                    <Clock size={16} className="text-gray-400" />
+                    <span className="text-gray-600">Payment deadline:</span>
+                    <span className="font-medium ml-auto">
+                      {formatDate(order.payment_deadline)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {paymentMethod && (
+              <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <CreditCard size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Payment Method:</span>
+                  <span className="font-medium ml-auto">
+                    {paymentMethod.type}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <CreditCard size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Bank/E-wallet:</span>
+                  <span className="font-medium ml-auto">
+                    {paymentMethod.name}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Hash size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Account Number:</span>
+                  <span className="font-medium ml-auto">
+                    {paymentMethod.account_number}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <User size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Holder Name:</span>
+                  <span className="font-medium ml-auto">
+                    {paymentMethod.holder_name}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
