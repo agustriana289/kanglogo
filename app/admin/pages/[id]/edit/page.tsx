@@ -183,7 +183,7 @@ export default function EditPageForm() {
               id="content"
               rows={15}
               required
-              value={formData.content}
+              value={formData.content ?? ""}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border font-mono text-sm"
             ></textarea>
