@@ -1,4 +1,3 @@
-// components/PageForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,7 +28,14 @@ export default function PageForm({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      // Pastikan semua field memiliki nilai default yang tepat
+      setFormData({
+        title: initialData.title || "",
+        slug: initialData.slug || "",
+        content: initialData.content || "",
+        meta_description: initialData.meta_description || "",
+        is_published: initialData.is_published || false,
+      });
     } else {
       // Reset form untuk mode "buat baru"
       setFormData({
@@ -87,7 +93,7 @@ export default function PageForm({
           name="title"
           id="title"
           required
-          value={formData.title}
+          value={formData.title || ""}
           onChange={handleTitleChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
         />
@@ -104,7 +110,7 @@ export default function PageForm({
           name="slug"
           id="slug"
           required
-          value={formData.slug}
+          value={formData.slug || ""}
           onChange={handleInputChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
         />
@@ -120,7 +126,7 @@ export default function PageForm({
           name="meta_description"
           id="meta_description"
           rows={3}
-          value={formData.meta_description}
+          value={formData.meta_description || ""}
           onChange={handleInputChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
         ></textarea>
@@ -137,7 +143,7 @@ export default function PageForm({
           id="content"
           rows={15}
           required
-          value={formData.content}
+          value={formData.content || ""}
           onChange={handleInputChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border font-mono text-sm"
         ></textarea>
@@ -150,7 +156,7 @@ export default function PageForm({
           type="checkbox"
           name="is_published"
           id="is_published"
-          checked={formData.is_published}
+          checked={formData.is_published || false}
           onChange={handleInputChange}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
