@@ -1,4 +1,3 @@
-// components/Header.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,10 +5,32 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import WidgetArea from "./WidgetArea";
 
+// Definisikan tipe untuk data yang akan digunakan
+interface Settings {
+  logo_url?: string;
+  website_name?: string;
+  website_phone?: string;
+}
+
+interface LinkCategory {
+  id: number;
+  name: string;
+  location: string;
+  order_index: number;
+}
+
+interface Link {
+  id: number;
+  category_id: number;
+  label: string;
+  url: string;
+  order_index: number;
+}
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [settings, setSettings] = useState<any>(null);
-  const [navLinks, setNavLinks] = useState<any[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [navLinks, setNavLinks] = useState<Link[]>([]);
   const pathname = usePathname();
 
   // Jangan tampilkan header di halaman admin dan login
@@ -69,7 +90,9 @@ export default function Header() {
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const waLink = `https://wa.me/${settings?.website_phone.replace(/\D/g, "")}`;
+  const waLink = `https://wa.me/${
+    settings?.website_phone?.replace(/\D/g, "") || ""
+  }`;
   const waDisplay = settings?.website_phone;
   const logoUrl = settings?.logo_url;
 
@@ -80,7 +103,7 @@ export default function Header() {
         <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex-1 md:flex md:items-center md:gap-12">
-              <div className="section" id="nav-logo" name="Logo">
+              <div className="section" id="nav-logo" data-name="Logo">
                 <div className="widget Header" data-version="2" id="Header1">
                   <a
                     className="flex items-center space-x-3 rtl:space-x-reverse logo"
@@ -99,7 +122,7 @@ export default function Header() {
             <div
               className="navMenu mr-4 section"
               id="navMenu"
-              name="Navigation Menu"
+              data-name="Navigation Menu"
             >
               <div className="widget LinkList" data-version="2" id="LinkList1">
                 <div className="md:flex md:items-center md:gap-12">
