@@ -132,7 +132,7 @@ export default function InvoiceDetailPage({
       else {
         if (!invoiceRef.current) return;
 
-        const options: Html2PdfOptions = {
+        const options = {
           margin: 10,
           filename: "invoice.pdf",
           image: { type: "jpeg" as const, quality: 0.98 },
