@@ -1,5 +1,5 @@
-// app/store/[slug]/page.tsx
 import { notFound } from "next/navigation";
+import { headers } from "next/headers"; // Tambahkan import ini
 import { supabase } from "@/lib/supabase";
 import { MarketplaceAsset } from "@/types/marketplace";
 import dynamic from "next/dynamic";
@@ -65,6 +65,12 @@ export default async function AssetDetailPage({
   params: { slug: string };
 }) {
   const asset = await getAsset(params.slug);
+
+  // --- TAMBAHKAN BAGIAN INI ---
+  const requestHeaders = headers();
+  const host = requestHeaders.get("host");
+  const url = `https://${host}/store/${params.slug}`;
+  // --- AKHIR TAMBAHAN ---
 
   return (
     <section className="py-16 bg-slate-100">
@@ -168,7 +174,9 @@ export default async function AssetDetailPage({
               </button>
             </div>
 
-            <ShareButtons title={asset.nama_aset} />
+            {/* --- PERUBAHAN KRUSIAL ADA DI SINI --- */}
+            <ShareButtons title={asset.nama_aset} url={url} />
+            {/* --- AKHIR PERUBAHAN --- */}
           </div>
         </div>
       </div>
