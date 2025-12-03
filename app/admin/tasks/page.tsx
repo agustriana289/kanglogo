@@ -16,7 +16,7 @@ import {
   User,
   FileText,
   DollarSign,
-  MagnifyingGlass,
+  Search,
 } from "lucide-react";
 
 // Tipe untuk data order yang sudah di-join dengan tabel services
