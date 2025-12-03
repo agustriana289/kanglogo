@@ -166,7 +166,7 @@ export default function EditPageForm() {
               name="meta_description"
               id="meta_description"
               rows={3}
-              value={formData.meta_description}
+              value={formData.meta_description ?? ""}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             ></textarea>
