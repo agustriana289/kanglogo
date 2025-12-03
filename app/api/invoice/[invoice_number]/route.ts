@@ -1,4 +1,4 @@
-// app/api/invoice/[invoice_number]/route.ts
+doc.setFont; // app/api/invoice/[invoice_number]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
@@ -57,16 +57,16 @@ export async function GET(
     // Info Penjual dan Pembeli
     doc.setFontSize(10);
     doc.text("Dari:", 14, 55);
-    doc.setFont(helvetica, "bold");
+    doc.setFont("helvetica", "bold");
     doc.text("Kanglogo", 14, 62);
-    doc.setFont(helvetica, "normal");
+    doc.setFont("helvetica", "normal");
     doc.text("Jl. Contoh No. 123, Kota", 14, 69);
     doc.text("email@kanglogo.com", 14, 76);
 
     doc.text("Kepada:", 105, 55);
-    doc.setFont(helvetica, "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(order.customer_name, 105, 62);
-    doc.setFont(helvetica, "normal");
+    doc.setFont("helvetica", "normal");
     doc.text(order.customer_email, 105, 69);
     doc.text(order.customer_whatsapp, 105, 76);
 
@@ -87,7 +87,7 @@ export async function GET(
     // Total Harga
     const finalY = (doc as any).lastAutoTable.finalY || 90;
     doc.setFontSize(12);
-    doc.setFont(helvetica, "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(
       `Total: Rp ${order.final_price.toLocaleString("id-ID")}`,
       14,
@@ -96,7 +96,7 @@ export async function GET(
 
     // Footer
     doc.setFontSize(10);
-    doc.setFont(helvetica, "normal");
+    doc.setFont("helvetica", "normal");
     doc.text("Terima kasih atas kepercayaan Anda.", 105, 280, {
       align: "center",
     });
