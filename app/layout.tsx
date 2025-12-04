@@ -1,4 +1,3 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import "react-quill/dist/quill.snow.css";
 import { Inter } from "next/font/google";
@@ -14,7 +13,6 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-// Generate metadata dinamis dari Supabase
 export async function generateMetadata(): Promise<Metadata> {
   const { data: settings } = await supabase
     .from("website_settings")
@@ -32,9 +30,9 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: settings?.favicon_url || "",
     },
+    manifest: "/manifest.json",
   };
 
-  // Tambah meta tags dari database
   if (metaTags && metaTags.length > 0) {
     const otherMeta: { [name: string]: string | number | (string | number)[] } =
       {};
@@ -69,14 +67,6 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <head>
-        <script
-          src="https://www.google.com/recaptcha/api.js"
-          async
-          defer
-        ></script>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
       <body
         className={`${inter.className} font-sans antialiased bg-slate-100 m-0 p-0`}
       >
