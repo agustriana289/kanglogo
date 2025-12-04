@@ -96,6 +96,17 @@ export default function MarketplaceManagementPage() {
     setCurrentPage(1);
   }, [searchQuery, assets]);
 
+  // Auto generate slug from nama_aset
+  useEffect(() => {
+    if (formData.nama_aset) {
+      const slug = formData.nama_aset
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      setFormData((prev) => ({ ...prev, slug }));
+    }
+  }, [formData.nama_aset]);
+
   const fetchAssets = async () => {
     try {
       const { data, error } = await supabase
@@ -238,9 +249,18 @@ export default function MarketplaceManagementPage() {
   };
 
   const handleSaveAsset = async () => {
-    if (!formData.nama_aset.trim() || !formData.slug.trim()) {
-      showToast("Nama Aset dan Slug tidak boleh kosong!", "error");
+    if (!formData.nama_aset.trim()) {
+      showToast("Nama Aset tidak boleh kosong!", "error");
       return;
+    }
+
+    // Generate slug from nama_aset if not editing
+    let slug = formData.slug;
+    if (!editingAsset || slug === "") {
+      slug = formData.nama_aset
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
     }
 
     setSaving(true);
@@ -253,7 +273,7 @@ export default function MarketplaceManagementPage() {
         setUploadingImage(false);
       }
 
-      const updatedFormData = { ...formData, image_url: imageUrl };
+      const updatedFormData = { ...formData, slug, image_url: imageUrl };
 
       if (editingAsset) {
         const { error } = await supabase
@@ -730,21 +750,26 @@ export default function MarketplaceManagementPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Slug (URL-friendly)
+                      Kategori Aset
                     </label>
-                    <input
-                      type="text"
+                    <select
                       className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.slug}
+                      value={formData.kategori_aset}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          slug: e.target.value
-                            .toLowerCase()
-                            .replace(/\s+/g, "-"),
+                          kategori_aset: e.target.value,
                         })
                       }
-                    />
+                    >
+                      <option value="">Pilih Kategori</option>
+                      <option value="Aset Digital">Aset Digital</option>
+                      <option value="Ikon">Ikon</option>
+                      <option value="Logo">Logo</option>
+                      <option value="Maskot">Maskot</option>
+                      <option value="Template">Template</option>
+                      <option value="Vector">Vector</option>
+                    </select>
                   </div>
 
                   <div>
@@ -795,24 +820,6 @@ export default function MarketplaceManagementPage() {
                         onChange={handleImageChange}
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Kategori Aset
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.kategori_aset}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          kategori_aset: e.target.value,
-                        })
-                      }
-                      placeholder="Contoh: Logo, Icon, Illustration"
-                    />
                   </div>
 
                   <div>
@@ -885,8 +892,7 @@ export default function MarketplaceManagementPage() {
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Jenis Lisensi
                     </label>
-                    <input
-                      type="text"
+                    <select
                       className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
                       value={formData.jenis_lisensi}
                       onChange={(e) =>
@@ -895,8 +901,15 @@ export default function MarketplaceManagementPage() {
                           jenis_lisensi: e.target.value,
                         })
                       }
-                      placeholder="Contoh: Commercial Use, Personal Use"
-                    />
+                    >
+                      <option value="">Pilih Jenis Lisensi</option>
+                      <option value="Penggunaan Komersial">
+                        Penggunaan Komersial
+                      </option>
+                      <option value="Keperluan pribadi">
+                        Keperluan pribadi
+                      </option>
+                    </select>
                   </div>
 
                   <div>
