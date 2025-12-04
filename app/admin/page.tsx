@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import LogoLoading from "@/components/LogoLoading";
+import { useRouter } from "next/navigation";
 import {
   format,
   startOfMonth,
@@ -50,6 +51,8 @@ interface Project {
 // --- Komponen Utama Dashboard ---
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
+  const router = useRouter();
   const [stats, setStats] = useState({
     ordersThisWeek: 0,
     ordersThisWeekIncome: 0,
@@ -76,207 +79,245 @@ export default function AdminDashboard() {
   >([]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      const now = new Date();
-      const thisMonthStart = startOfMonth(now);
-      const thisMonthEnd = endOfMonth(now);
-      const lastMonthStart = startOfMonth(subMonths(now, 1));
-      const lastMonthEnd = endOfMonth(subMonths(now, 1));
-      const fourteenDaysAgo = subDays(now, 13); // 14 hari terakhir
-
-      // Periode untuk statistik baru
-      const thisWeekStart = subDays(now, 6); // 7 hari terakhir
-      const lastWeekStart = subDays(now, 13);
-      const lastWeekEnd = subDays(now, 7);
-      const thisYearStart = new Date(now.getFullYear(), 0, 1);
-      const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
-      const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
-
+    // Fungsi untuk memeriksa autentikasi
+    const checkAuth = async () => {
       try {
-        // --- Statistik Utama ---
-        const [
-          ordersThisWeekRes,
-          ordersLastWeekRes,
-          ordersThisMonthRes,
-          ordersLastMonthRes,
-          ordersThisYearRes,
-          ordersLastYearRes,
-          ordersTotalRes,
-          pendingTasksRes,
-          completedTasksRes,
-        ] = await Promise.all([
-          // This Week
-          supabase
-            .from("orders")
-            .select("final_price")
-            .gte("created_at", thisWeekStart.toISOString()),
-          // Last Week
-          supabase
-            .from("orders")
-            .select("final_price")
-            .gte("created_at", lastWeekStart.toISOString())
-            .lte("created_at", lastWeekEnd.toISOString()),
-          // This Month
-          supabase
-            .from("orders")
-            .select("final_price")
-            .gte("created_at", thisMonthStart.toISOString())
-            .lte("created_at", thisMonthEnd.toISOString()),
-          // Last Month
-          supabase
-            .from("orders")
-            .select("final_price")
-            .gte("created_at", lastMonthStart.toISOString())
-            .lte("created_at", lastMonthEnd.toISOString()),
-          // This Year
-          supabase
-            .from("orders")
-            .select("final_price")
-            .gte("created_at", thisYearStart.toISOString()),
-          // Last Year
-          supabase
-            .from("orders")
-            .select("final_price")
-            .gte("created_at", lastYearStart.toISOString())
-            .lte("created_at", lastYearEnd.toISOString()),
-          // Total All Time
-          supabase.from("orders").select("final_price"),
-          // Pending Tasks
-          supabase
-            .from("orders")
-            .select("id", { count: "exact" })
-            .eq("status", "in_progress"),
-          // Completed Tasks
-          supabase
-            .from("orders")
-            .select("id", { count: "exact" })
-            .eq("status", "completed"),
-        ]);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        // --- Data untuk Grafik dan Daftar ---
-        const [chartDataRes, tasksRes, recentProjectsRes, serviceStatsRes] =
-          await Promise.all([
-            supabase
-              .from("orders")
-              .select("created_at, final_price, status")
-              .gte("created_at", fourteenDaysAgo.toISOString()),
-            // Mengambil data orders dan menggabungkannya dengan tabel services
-            supabase
-              .from("orders")
-              .select(
-                `
-              *,
-              services ( title )
-            `
-              )
-              .in("status", ["in_progress", "completed"]) // Hanya mengambil status yang relevan untuk task
-              .order("work_deadline", { ascending: true }),
-            supabase
-              .from("projects")
-              .select("id, title, created_at")
-              .order("created_at", { ascending: false })
-              .limit(5),
-            // Service statistics
-            supabase.from("orders").select("service_id, services(title)"),
-          ]);
+        if (!session) {
+          // Redirect ke halaman login jika tidak ada session
+          router.push("/login");
+          return;
+        }
 
-        // --- Proses Data Statistik ---
-        const calculateStats = (res: any) => ({
-          count: res.data?.length || 0,
-          income:
-            res.data?.reduce(
-              (sum: number, order: any) => sum + (order.final_price || 0),
-              0
-            ) || 0,
-        });
-
-        const thisWeek = calculateStats(ordersThisWeekRes);
-        const lastWeek = calculateStats(ordersLastWeekRes);
-        const thisMonth = calculateStats(ordersThisMonthRes);
-        const lastMonth = calculateStats(ordersLastMonthRes);
-        const thisYear = calculateStats(ordersThisYearRes);
-        const lastYear = calculateStats(ordersLastYearRes);
-        const total = calculateStats(ordersTotalRes);
-
-        setStats({
-          ordersThisWeek: thisWeek.count,
-          ordersThisWeekIncome: thisWeek.income,
-          ordersThisMonth: thisMonth.count,
-          ordersThisMonthIncome: thisMonth.income,
-          ordersThisYear: thisYear.count,
-          ordersThisYearIncome: thisYear.income,
-          ordersTotal: total.count,
-          ordersTotalIncome: total.income,
-          ordersLastWeek: lastWeek.count,
-          ordersLastMonth: lastMonth.count,
-          ordersLastYear: lastYear.count,
-          pendingTasks: pendingTasksRes.count || 0,
-          completedTasks: completedTasksRes.count || 0,
-        });
-
-        // --- Proses Data Grafik ---
-        const ordersByDay =
-          chartDataRes.data?.reduce((acc: any, order: any) => {
-            const day = format(new Date(order.created_at), "dd MMM", {
-              locale: id,
-            });
-            if (!acc[day]) {
-              acc[day] = { orders: 0, income: 0 };
-            }
-            acc[day].orders += 1;
-            // Hitung income untuk semua status, bukan hanya completed
-            acc[day].income += order.final_price || 0;
-            return acc;
-          }, {}) || {};
-
-        const chart = eachDayOfInterval({
-          start: fourteenDaysAgo,
-          end: now,
-        }).map((day) => {
-          const dayString = format(day, "dd MMM", { locale: id });
-          return {
-            date: dayString,
-            orders: ordersByDay[dayString]?.orders || 0,
-            income: ordersByDay[dayString]?.income || 0,
-          };
-        });
-        setChartData(chart);
-
-        // --- Proses Service Statistics ---
-        const serviceCounts: Record<string, number> = {};
-        serviceStatsRes.data?.forEach((order: any) => {
-          const serviceName = order.services?.title || "Unknown";
-          serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
-        });
-
-        const totalServices = Object.values(serviceCounts).reduce(
-          (a: number, b: number) => a + b,
-          0
-        );
-        const serviceStatsArray = Object.entries(serviceCounts)
-          .map(([name, count]) => ({
-            service_name: name,
-            count: count as number,
-            percentage: ((count as number) / totalServices) * 100,
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 3);
-
-        setServiceStats(serviceStatsArray);
-
-        // --- Set Data Lainnya ---
-        setTasks((tasksRes.data as OrderWithService[]) || []);
-        setRecentProjects(recentProjectsRes.data || []);
+        setAuthChecked(true);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error checking authentication:", error);
+        router.push("/login");
       }
     };
 
-    fetchDashboardData();
-  }, []);
+    checkAuth();
+
+    // Set up listener untuk perubahan auth
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    // Hanya jalankan fetchDashboardData jika user sudah terautentikasi
+    if (authChecked) {
+      const fetchDashboardData = async () => {
+        setLoading(true);
+        const now = new Date();
+        const thisMonthStart = startOfMonth(now);
+        const thisMonthEnd = endOfMonth(now);
+        const lastMonthStart = startOfMonth(subMonths(now, 1));
+        const lastMonthEnd = endOfMonth(subMonths(now, 1));
+        const fourteenDaysAgo = subDays(now, 13); // 14 hari terakhir
+
+        // Periode untuk statistik baru
+        const thisWeekStart = subDays(now, 6); // 7 hari terakhir
+        const lastWeekStart = subDays(now, 13);
+        const lastWeekEnd = subDays(now, 7);
+        const thisYearStart = new Date(now.getFullYear(), 0, 1);
+        const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+        const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
+
+        try {
+          // --- Statistik Utama ---
+          const [
+            ordersThisWeekRes,
+            ordersLastWeekRes,
+            ordersThisMonthRes,
+            ordersLastMonthRes,
+            ordersThisYearRes,
+            ordersLastYearRes,
+            ordersTotalRes,
+            pendingTasksRes,
+            completedTasksRes,
+          ] = await Promise.all([
+            // This Week
+            supabase
+              .from("orders")
+              .select("final_price")
+              .gte("created_at", thisWeekStart.toISOString()),
+            // Last Week
+            supabase
+              .from("orders")
+              .select("final_price")
+              .gte("created_at", lastWeekStart.toISOString())
+              .lte("created_at", lastWeekEnd.toISOString()),
+            // This Month
+            supabase
+              .from("orders")
+              .select("final_price")
+              .gte("created_at", thisMonthStart.toISOString())
+              .lte("created_at", thisMonthEnd.toISOString()),
+            // Last Month
+            supabase
+              .from("orders")
+              .select("final_price")
+              .gte("created_at", lastMonthStart.toISOString())
+              .lte("created_at", lastMonthEnd.toISOString()),
+            // This Year
+            supabase
+              .from("orders")
+              .select("final_price")
+              .gte("created_at", thisYearStart.toISOString()),
+            // Last Year
+            supabase
+              .from("orders")
+              .select("final_price")
+              .gte("created_at", lastYearStart.toISOString())
+              .lte("created_at", lastYearEnd.toISOString()),
+            // Total All Time
+            supabase.from("orders").select("final_price"),
+            // Pending Tasks
+            supabase
+              .from("orders")
+              .select("id", { count: "exact" })
+              .eq("status", "in_progress"),
+            // Completed Tasks
+            supabase
+              .from("orders")
+              .select("id", { count: "exact" })
+              .eq("status", "completed"),
+          ]);
+
+          // --- Data untuk Grafik dan Daftar ---
+          const [chartDataRes, tasksRes, recentProjectsRes, serviceStatsRes] =
+            await Promise.all([
+              supabase
+                .from("orders")
+                .select("created_at, final_price, status")
+                .gte("created_at", fourteenDaysAgo.toISOString()),
+              // Mengambil data orders dan menggabungkannya dengan tabel services
+              supabase
+                .from("orders")
+                .select(
+                  `
+                *,
+                services ( title )
+              `
+                )
+                .in("status", ["in_progress", "completed"]) // Hanya mengambil status yang relevan untuk task
+                .order("work_deadline", { ascending: true }),
+              supabase
+                .from("projects")
+                .select("id, title, created_at")
+                .order("created_at", { ascending: false })
+                .limit(5),
+              // Service statistics
+              supabase.from("orders").select("service_id, services(title)"),
+            ]);
+
+          // --- Proses Data Statistik ---
+          const calculateStats = (res: any) => ({
+            count: res.data?.length || 0,
+            income:
+              res.data?.reduce(
+                (sum: number, order: any) => sum + (order.final_price || 0),
+                0
+              ) || 0,
+          });
+
+          const thisWeek = calculateStats(ordersThisWeekRes);
+          const lastWeek = calculateStats(ordersLastWeekRes);
+          const thisMonth = calculateStats(ordersThisMonthRes);
+          const lastMonth = calculateStats(ordersLastMonthRes);
+          const thisYear = calculateStats(ordersThisYearRes);
+          const lastYear = calculateStats(ordersLastYearRes);
+          const total = calculateStats(ordersTotalRes);
+
+          setStats({
+            ordersThisWeek: thisWeek.count,
+            ordersThisWeekIncome: thisWeek.income,
+            ordersThisMonth: thisMonth.count,
+            ordersThisMonthIncome: thisMonth.income,
+            ordersThisYear: thisYear.count,
+            ordersThisYearIncome: thisYear.income,
+            ordersTotal: total.count,
+            ordersTotalIncome: total.income,
+            ordersLastWeek: lastWeek.count,
+            ordersLastMonth: lastMonth.count,
+            ordersLastYear: lastYear.count,
+            pendingTasks: pendingTasksRes.count || 0,
+            completedTasks: completedTasksRes.count || 0,
+          });
+
+          // --- Proses Data Grafik ---
+          const ordersByDay =
+            chartDataRes.data?.reduce((acc: any, order: any) => {
+              const day = format(new Date(order.created_at), "dd MMM", {
+                locale: id,
+              });
+              if (!acc[day]) {
+                acc[day] = { orders: 0, income: 0 };
+              }
+              acc[day].orders += 1;
+              // Hitung income untuk semua status, bukan hanya completed
+              acc[day].income += order.final_price || 0;
+              return acc;
+            }, {}) || {};
+
+          const chart = eachDayOfInterval({
+            start: fourteenDaysAgo,
+            end: now,
+          }).map((day) => {
+            const dayString = format(day, "dd MMM", { locale: id });
+            return {
+              date: dayString,
+              orders: ordersByDay[dayString]?.orders || 0,
+              income: ordersByDay[dayString]?.income || 0,
+            };
+          });
+          setChartData(chart);
+
+          // --- Proses Service Statistics ---
+          const serviceCounts: Record<string, number> = {};
+          serviceStatsRes.data?.forEach((order: any) => {
+            const serviceName = order.services?.title || "Unknown";
+            serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
+          });
+
+          const totalServices = Object.values(serviceCounts).reduce(
+            (a: number, b: number) => a + b,
+            0
+          );
+          const serviceStatsArray = Object.entries(serviceCounts)
+            .map(([name, count]) => ({
+              service_name: name,
+              count: count as number,
+              percentage: ((count as number) / totalServices) * 100,
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 3);
+
+          setServiceStats(serviceStatsArray);
+
+          // --- Set Data Lainnya ---
+          setTasks((tasksRes.data as OrderWithService[]) || []);
+          setRecentProjects(recentProjectsRes.data || []);
+        } catch (error) {
+          console.error("Error fetching dashboard data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchDashboardData();
+    }
+  }, [authChecked]);
 
   // --- Helper Functions ---
   const formatCurrency = (amount: number) => {
@@ -359,7 +400,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  if (loading) {
+  if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
@@ -419,9 +460,22 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <div className="px-4 sm:px-6 lg:px-8 py-4">
-        {}
+        {/* Tombol Logout */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push("/login");
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Statistik Cards */}
         <div className="grid rounded-2xl border border-gray-200 bg-white sm:grid-cols-2 xl:grid-cols-4 dark:border-gray-800 dark:bg-gray-900 mb-8 shadow-md">
-          {}
+          {/* Pesanan Minggu Ini */}
           <div className="border-b border-gray-200 px-6 py-5 sm:border-r xl:border-b-0 dark:border-gray-800">
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Pesanan Minggu Ini
@@ -450,7 +504,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {}
+          {/* Pesanan Bulan Ini */}
           <div className="border-b border-gray-200 px-6 py-5 xl:border-r xl:border-b-0 dark:border-gray-800">
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Pesanan Bulan Ini
@@ -479,7 +533,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {}
+          {/* Pesanan Tahun Ini */}
           <div className="border-b border-gray-200 px-6 py-5 sm:border-r sm:border-b-0 dark:border-gray-800">
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Pesanan Tahun Ini
@@ -508,7 +562,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {}
+          {/* Total Semua Pesanan */}
           <div className="px-6 py-5">
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Total Semua Pesanan
@@ -523,7 +577,7 @@ export default function AdminDashboard() {
 
         <div className="flex flex-col sm:flex-row gap-6">
           <div className="w-full lg:w-8/12">
-            {}
+            {/* Grafik Penghasilan */}
             <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
@@ -534,7 +588,7 @@ export default function AdminDashboard() {
               <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 sm:px-6 sm:pt-6 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div className="max-w-full overflow-x-auto custom-scrollbar">
                   <div className="relative w-full" style={{ height: "280px" }}>
-                    {}
+                    {/* Y-axis labels */}
                     <div className="absolute left-0 top-0 h-full w-12 flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 pb-8">
                       <span>2.5jt</span>
                       <span>1jt</span>
@@ -545,7 +599,7 @@ export default function AdminDashboard() {
                       <span>0</span>
                     </div>
 
-                    {}
+                    {/* Grid lines */}
                     <div className="absolute left-14 right-0 top-0 h-full flex flex-col justify-between pb-8">
                       <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
                       <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -556,7 +610,7 @@ export default function AdminDashboard() {
                       <div className="w-full border-t-2 border-gray-400 dark:border-gray-600"></div>
                     </div>
 
-                    {}
+                    {/* Bars */}
                     <div
                       className="absolute left-14 right-0 bottom-8 flex items-end justify-between gap-2"
                       style={{ height: "215px" }}
@@ -566,14 +620,14 @@ export default function AdminDashboard() {
                           key={index}
                           className="flex-1 flex flex-col items-center justify-end"
                         >
-                          {}
+                          {/* Income value */}
                           {item.income > 0 && (
                             <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 whitespace-nowrap">
                               {formatCurrency(item.income)}
                             </div>
                           )}
 
-                          {}
+                          {/* Bar */}
                           <div
                             className="w-full bg-blue-600 dark:bg-blue-500 rounded-t relative"
                             style={{
@@ -581,7 +635,7 @@ export default function AdminDashboard() {
                               minHeight: item.income > 0 ? "8px" : "0",
                             }}
                           >
-                            {}
+                            {/* Order count */}
                             {item.orders > 0 && (
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <span className="text-white text-xs font-semibold">
@@ -594,7 +648,7 @@ export default function AdminDashboard() {
                       ))}
                     </div>
 
-                    {}
+                    {/* X-axis labels */}
                     <div className="absolute left-14 right-0 bottom-0 h-8 flex items-start justify-between gap-2">
                       {chartData.map((item, index) => (
                         <div
@@ -608,7 +662,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {}
+                {/* Total income */}
                 <div className="mt-4 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Penghasilan 14 Hari Terakhir:
@@ -620,7 +674,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {}
+            {/* Statistik Layanan */}
             <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
@@ -629,7 +683,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex flex-col items-center gap-8 xl:flex-row">
-                {}
+                {/* Pie chart */}
                 <div
                   className="relative flex items-center justify-center"
                   style={{ width: "240px", height: "240px" }}
@@ -687,7 +741,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {}
+                {/* Legend */}
                 <div className="flex flex-col items-start gap-6 sm:flex-row xl:flex-col">
                   {serviceStats.map((service, index) => {
                     const colors = [
@@ -722,9 +776,9 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {}
+          {/* Task List dan Proyek Terbaru */}
           <div className="space-y-6 w-full lg:w-4/12">
-            {}
+            {/* Task List */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -740,7 +794,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {}
+              {/* Tugas Aktif */}
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
                   Tugas Aktif
@@ -777,7 +831,7 @@ export default function AdminDashboard() {
                 </ul>
               </div>
 
-              {}
+              {/* Tugas Selesai */}
               <div>
                 <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
                   Selesai
@@ -817,7 +871,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {}
+            {/* Proyek Terbaru */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 Proyek Terbaru
