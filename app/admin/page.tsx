@@ -1,10 +1,10 @@
-// app/admin/dashboard/page.tsx
+// app/admin/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LogoLoading from "@/components/LogoLoading";
-import { useRouter } from "next/navigation";
 import {
   format,
   startOfMonth,
@@ -91,6 +91,19 @@ export default function AdminDashboard() {
           router.push("/login");
           return;
         }
+
+        // Jika Anda memiliki sistem role, Anda bisa menambahkan pengecekan di sini
+        // Contoh:
+        // const { data: profile } = await supabase
+        //   .from('profiles')
+        //   .select('role')
+        //   .eq('id', session.user.id)
+        //   .single();
+        //
+        // if (!profile || profile.role !== 'admin') {
+        //   router.push('/');
+        //   return;
+        // }
 
         setAuthChecked(true);
       } catch (error) {
