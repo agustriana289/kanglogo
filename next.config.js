@@ -1,21 +1,28 @@
-// next.config.js
 const withPWA = require("next-pwa")({
-  dest: "public", // Folder tempat service worker akan disimpan
+  dest: "public",
   register: true,
   skipWaiting: true,
+});
 
-  // INI BAGIAN YANG PENTING
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
+
+const nextConfig = {
+  images: {
+    domains: ["i.ibb.co", "ibb.co"],
+  },
+
   manifest: {
-    name: "KangLogo.com Dashboard", // Nama lengkap aplikasi (akan muncul di prompt install)
-    short_name: "KangLogo.com", // Nama singkat (akan muncul di homescreen)
-    description: "Aplikasi admin untuk mengelola KangLogo.com", // Deskripsi aplikasi
-    start_url: "/admin", // Halaman yang dibuka saat ikon diklik
-    display: "standalone", // Tampilan fullscreen tanpa browser
-    background_color: "#ffffff", // Warna background splash screen
-    theme_color: "#000000", // Warna tema browser
-    orientation: "portrait", // Orientasi layar
+    name: "KangLogo.com Dashboard",
+    short_name: "KangLogo.com",
+    description: "Aplikasi admin untuk mengelola KangLogo.com",
+    start_url: "/admin",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#000000",
+    orientation: "portrait",
 
-    // Pastikan Anda memiliki ikon-ikon ini di folder public/icons/
     icons: [
       {
         src: "/icons/icon-192x192.png",
@@ -28,18 +35,6 @@ const withPWA = require("next-pwa")({
         type: "image/png",
       },
     ],
-  },
-});
-
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
-
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // ... konfigurasi lainnya
-  images: {
-    domains: ["i.ibb.co", "ibb.co"],
   },
 };
 
