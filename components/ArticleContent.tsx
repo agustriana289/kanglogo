@@ -10,6 +10,7 @@ import SubscriptionForm from "./SubscriptionForm";
 import Sidebar from "./Sidebar";
 import React from "react";
 import LogoLoading from "./LogoLoading";
+import WidgetArea from "./WidgetArea";
 
 interface Article {
   id: number;
@@ -311,6 +312,8 @@ export default function ArticleContent({ article }: ArticleContentProps) {
               __html: processContent(article.content),
             }}
           />
+
+          <WidgetArea position="Blog_footer" />
 
           {/* Share Buttons */}
           <div className="mb-8">

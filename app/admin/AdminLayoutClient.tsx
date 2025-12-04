@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; // 1. Tambahkan useRouter di sini
 import {
   HomeIcon,
   FolderIcon,
@@ -47,6 +47,8 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter(); // 2. Inisialisasi router di sini
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -444,7 +446,7 @@ export default function AdminLayoutClient({
                 <button
                   onClick={async () => {
                     await supabase.auth.signOut();
-                    router.push("/login");
+                    router.push("/login"); // Router sekarang sudah terdefinisi
                   }}
                   className="relative text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
                 >

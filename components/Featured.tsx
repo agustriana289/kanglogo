@@ -43,7 +43,7 @@ export default function Featured() {
       {/* Pembatas Bergelombang (Divider) */}
       <div className="divider absolute top-0 left-0 w-full">
         <svg
-          className="transform rotate-180 absolute bottom-0 fill-slate-100 h-[150px] w-full"
+          className="transform rotate-180 absolute bottom-0 fill-slate-100 h-[120px] md:h-[150px] w-full"
           preserveAspectRatio="none"
           viewBox="0 0 1000 37"
           xmlns="http://www.w3.org/2000/svg"
