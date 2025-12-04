@@ -109,9 +109,6 @@ export default function NewWidgetPage() {
               <option value="marketplace_sidebar">Marketplace Sidebar</option>
               <option value="marketplace_header">Marketplace Header</option>
               <option value="marketplace_footer">Marketplace Footer</option>
-              <option value="testimoni_sidebar">Testimoni Sidebar</option>
-              <option value="testimoni_header">Testimoni Header</option>
-              <option value="testimoni_footer">Testimoni Footer</option>
               <option value="proyek_sidebar">Proyek Sidebar</option>
               <option value="proyek_header">Proyek Header</option>
               <option value="proyek_footer">Proyek Footer</option>

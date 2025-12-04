@@ -316,7 +316,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
           <WidgetArea position="Blog_footer" />
 
           {/* Share Buttons */}
-          <div className="mb-8">
+          <div className="mt-8 mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Bagikan artikel ini
             </h3>

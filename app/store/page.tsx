@@ -17,6 +17,7 @@ import {
   TagIcon,
 } from "@heroicons/react/24/outline";
 import LogoLoading from "@/components/LogoLoading";
+import WidgetArea from "@/components/WidgetArea";
 
 // Tambahkan interface untuk memperluas MarketplaceAsset dengan tags
 interface AssetWithTags extends MarketplaceAsset {
@@ -165,6 +166,8 @@ export default function MarketplacePage() {
           </p>
         </div>
 
+        <WidgetArea position="marketplace_header" />
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar with filters */}
           <div className="lg:w-1/4">
@@ -208,11 +211,10 @@ export default function MarketplacePage() {
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedCategory === category
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
+                        }`}
                     >
                       {category}
                     </button>
@@ -230,11 +232,10 @@ export default function MarketplacePage() {
                     <button
                       key={type}
                       onClick={() => setSelectedType(type)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedType === type
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
+                        }`}
                     >
                       {type}
                     </button>
@@ -255,11 +256,10 @@ export default function MarketplacePage() {
                         onClick={() =>
                           setSelectedTag(selectedTag === tag ? "" : tag)
                         }
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
-                          selectedTag === tag
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         {tag}
                       </button>
@@ -331,11 +331,10 @@ export default function MarketplacePage() {
                         <button
                           key={category}
                           onClick={() => setSelectedCategory(category)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                            selectedCategory === category
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {category}
                         </button>
@@ -343,6 +342,8 @@ export default function MarketplacePage() {
                     )}
                   </div>
                 </div>
+
+                <WidgetArea position="marketplace_sidebar" />
 
                 {/* Type Filter */}
                 <div className="mb-6">
@@ -354,11 +355,10 @@ export default function MarketplacePage() {
                       <button
                         key={type}
                         onClick={() => setSelectedType(type)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedType === type
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         {type}
                       </button>
@@ -379,11 +379,10 @@ export default function MarketplacePage() {
                           onClick={() =>
                             setSelectedTag(selectedTag === tag ? "" : tag)
                           }
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
-                            selectedTag === tag
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {tag}
                         </button>
@@ -444,11 +443,10 @@ export default function MarketplacePage() {
                       )}
                       <div className="absolute top-2 right-2">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            asset.jenis === "premium"
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${asset.jenis === "premium"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-green-100 text-green-800"
-                          }`}
+                            }`}
                         >
                           {asset.jenis === "premium" ? (
                             <StarIcon className="h-4 w-4 mr-1" />
@@ -532,6 +530,8 @@ export default function MarketplacePage() {
                 )}
               </div>
             )}
+
+            <WidgetArea position="marketplace_footer" />
           </div>
         </div>
       </div>

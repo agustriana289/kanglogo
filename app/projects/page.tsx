@@ -15,6 +15,7 @@ import {
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import LogoLoading from "@/components/LogoLoading";
+import WidgetArea from "@/components/WidgetArea";
 
 export default function AllProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -168,6 +169,8 @@ export default function AllProjectsPage() {
           </p>
         </div>
 
+        <WidgetArea position="proyek_header" />
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar with filters */}
           <div className="lg:w-1/4">
@@ -210,11 +213,10 @@ export default function AllProjectsPage() {
                   <div className="space-y-2">
                     <button
                       onClick={() => setSelectedType("Semua")}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedType === "Semua"
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === "Semua"
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
+                        }`}
                     >
                       Semua
                     </button>
@@ -222,11 +224,10 @@ export default function AllProjectsPage() {
                       <button
                         key={type}
                         onClick={() => setSelectedType(type)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedType === type
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         {type}
                       </button>
@@ -244,11 +245,10 @@ export default function AllProjectsPage() {
                   <div className="space-y-2">
                     <button
                       onClick={() => setSelectedYear("Semua")}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedYear === "Semua"
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === "Semua"
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
+                        }`}
                     >
                       Semua
                     </button>
@@ -256,11 +256,10 @@ export default function AllProjectsPage() {
                       <button
                         key={year}
                         onClick={() => setSelectedYear(year)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedYear === year
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === year
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         {year}
                       </button>
@@ -268,6 +267,8 @@ export default function AllProjectsPage() {
                   </div>
                 </div>
               )}
+
+              <WidgetArea position="proyek_sidebar" />
             </div>
           </div>
 
@@ -330,11 +331,10 @@ export default function AllProjectsPage() {
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedType("Semua")}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedType === "Semua"
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === "Semua"
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         Semua
                       </button>
@@ -342,11 +342,10 @@ export default function AllProjectsPage() {
                         <button
                           key={type}
                           onClick={() => setSelectedType(type)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                            selectedType === type
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {type}
                         </button>
@@ -364,11 +363,10 @@ export default function AllProjectsPage() {
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedYear("Semua")}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedYear === "Semua"
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === "Semua"
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         Semua
                       </button>
@@ -376,11 +374,10 @@ export default function AllProjectsPage() {
                         <button
                           key={year}
                           onClick={() => setSelectedYear(year)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                            selectedYear === year
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === year
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {year}
                         </button>
@@ -398,11 +395,10 @@ export default function AllProjectsPage() {
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedOwner("Semua")}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedOwner === "Semua"
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedOwner === "Semua"
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         Semua
                       </button>
@@ -410,11 +406,10 @@ export default function AllProjectsPage() {
                         <button
                           key={owner}
                           onClick={() => setSelectedOwner(owner)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                            selectedOwner === owner
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedOwner === owner
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {owner}
                         </button>
@@ -543,6 +538,8 @@ export default function AllProjectsPage() {
                 )}
               </div>
             )}
+
+            <WidgetArea position="proyek_footer" />
           </div>
         </div>
       </div>

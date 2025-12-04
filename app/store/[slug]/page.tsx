@@ -12,6 +12,7 @@ import {
   TagIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import WidgetArea from "@/components/WidgetArea";
 
 // Import ShareButtons secara dinamis dengan ssr: false
 const ShareButtons = dynamic(() => import("./ShareButtons"), {
@@ -75,6 +76,7 @@ export default async function AssetDetailPage({
   return (
     <section className="py-16 bg-slate-100">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <WidgetArea position="marketplace_header" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Kolom Kiri: Gambar */}
           <div className="relative w-full h-80 lg:h-full lg:min-h-[600px] rounded-2xl overflow-hidden shadow-xl">
@@ -102,11 +104,10 @@ export default async function AssetDetailPage({
                 {asset.nama_aset}
               </h1>
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  asset.jenis === "premium"
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${asset.jenis === "premium"
                     ? "bg-yellow-100 text-yellow-800"
                     : "bg-green-100 text-green-800"
-                }`}
+                  }`}
               >
                 {asset.jenis === "premium" ? (
                   <StarIcon className="h-4 w-4 mr-1" />
@@ -164,11 +165,10 @@ export default async function AssetDetailPage({
 
             <div className="pt-6 border-t border-slate-200">
               <button
-                className={`w-full py-3 px-6 rounded-lg font-medium text-white ${
-                  asset.jenis === "premium"
+                className={`w-full py-3 px-6 rounded-lg font-medium text-white ${asset.jenis === "premium"
                     ? "bg-primary hover:bg-primary/90"
                     : "bg-green-600 hover:bg-green-700"
-                } transition-colors`}
+                  } transition-colors`}
               >
                 {asset.jenis === "premium" ? "Beli Sekarang" : "Unduh Gratis"}
               </button>
@@ -179,6 +179,7 @@ export default async function AssetDetailPage({
             {/* --- AKHIR PERUBAHAN --- */}
           </div>
         </div>
+        <WidgetArea position="marketplace_footer" />
       </div>
     </section>
   );
