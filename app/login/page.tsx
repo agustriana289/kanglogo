@@ -35,15 +35,32 @@ export default function LoginPage() {
         console.error("Login error:", loginError);
         setError(`Error: ${loginError.message}`);
         setLoading(false);
-      } else {
-        console.log("Login successful:", data);
-
-        // Tunggu sebentar untuk memastikan token tersimpan
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Gunakan window.location untuk redirect yang lebih forceful
-        window.location.href = "/admin";
+        return;
       }
+
+      if (!data.session) {
+        console.error("No session returned after login");
+        setError("Login failed: No session created");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Login successful:", data);
+      console.log("Session created:", data.session);
+
+      // Verify session is saved
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error("Session verification failed");
+        setError("Login failed: Session not persisted");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Session verified, redirecting to admin...");
+
+      // Use Next.js router instead of window.location
+      router.push("/admin");
     } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(`Unexpected error: ${err.message}`);

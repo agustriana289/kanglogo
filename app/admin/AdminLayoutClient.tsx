@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   HomeIcon,
   FolderIcon,
@@ -46,6 +46,7 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -53,6 +54,45 @@ export default function AdminLayoutClient({
     useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error getting session:", error);
+          router.push("/login");
+          return;
+        }
+
+        if (!session) {
+          console.log("No session found, redirecting to login");
+          router.push("/login");
+          return;
+        }
+
+        setIsAuthChecked(true);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        router.push("/login");
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
 
   // Fetch settings dari Supabase
   useEffect(() => {
@@ -271,6 +311,18 @@ export default function AdminLayoutClient({
     return date.toLocaleDateString("id-ID");
   };
 
+  // Show loading while checking authentication
+  if (!isAuthChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-100 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Memeriksa autentikasi...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-100 dark:bg-slate-800">
       {/* Overlay untuk mobile */}
@@ -283,9 +335,8 @@ export default function AdminLayoutClient({
 
       {/* Sidebar */}
       <aside
-        className={`${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed lg:relative lg:translate-x-0 z-50 w-80 bg-white dark:bg-slate-700 shadow-lg transition-transform duration-300 h-full overflow-hidden bg-no-repeat bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]`}
+        className={`${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } fixed lg:relative lg:translate-x-0 z-50 w-80 bg-white dark:bg-slate-700 shadow-lg transition-transform duration-300 h-full overflow-hidden bg-no-repeat bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]`}
       >
         <div className="h-full flex flex-col">
           {/* Logo & Close Button */}
@@ -315,11 +366,10 @@ export default function AdminLayoutClient({
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors duration-200 ${
-                    isActive
-                      ? "bg-primary text-white"
-                      : "text-white hover:bg-white/90 hover:text-primary"
-                  }`}
+                  className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors duration-200 ${isActive
+                    ? "bg-primary text-white"
+                    : "text-white hover:bg-white/90 hover:text-primary"
+                    }`}
                 >
                   <IconComponent className="w-5 h-5 mr-3" />
                   <span className="text-sm font-medium">{item.label}</span>
@@ -385,11 +435,10 @@ export default function AdminLayoutClient({
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${
-                              !notification.is_read
-                                ? "bg-blue-50 dark:bg-blue-900/20"
-                                : ""
-                            }`}
+                            className={`p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${!notification.is_read
+                              ? "bg-blue-50 dark:bg-blue-900/20"
+                              : ""
+                              }`}
                             onClick={() => {
                               markAsRead(notification.id);
                               window.location.href = notification.link;
