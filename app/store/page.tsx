@@ -211,10 +211,11 @@ export default function MarketplacePage() {
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                        selectedCategory === category
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                      }`}
                     >
                       {category}
                     </button>
@@ -232,10 +233,11 @@ export default function MarketplacePage() {
                     <button
                       key={type}
                       onClick={() => setSelectedType(type)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                        selectedType === type
                           ? "bg-primary text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                      }`}
                     >
                       {type}
                     </button>
@@ -256,10 +258,11 @@ export default function MarketplacePage() {
                         onClick={() =>
                           setSelectedTag(selectedTag === tag ? "" : tag)
                         }
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
+                          selectedTag === tag
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                        }`}
                       >
                         {tag}
                       </button>
@@ -331,10 +334,11 @@ export default function MarketplacePage() {
                         <button
                           key={category}
                           onClick={() => setSelectedCategory(category)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                            selectedCategory === category
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
+                          }`}
                         >
                           {category}
                         </button>
@@ -355,10 +359,11 @@ export default function MarketplacePage() {
                       <button
                         key={type}
                         onClick={() => setSelectedType(type)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                          selectedType === type
                             ? "bg-primary text-white"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                        }`}
                       >
                         {type}
                       </button>
@@ -379,10 +384,11 @@ export default function MarketplacePage() {
                           onClick={() =>
                             setSelectedTag(selectedTag === tag ? "" : tag)
                           }
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
+                            selectedTag === tag
                               ? "bg-primary text-white"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
+                          }`}
                         >
                           {tag}
                         </button>
@@ -443,10 +449,11 @@ export default function MarketplacePage() {
                       )}
                       <div className="absolute top-2 right-2">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${asset.jenis === "premium"
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            asset.jenis === "premium"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-green-100 text-green-800"
-                            }`}
+                          }`}
                         >
                           {asset.jenis === "premium" ? (
                             <StarIcon className="h-4 w-4 mr-1" />
@@ -459,7 +466,7 @@ export default function MarketplacePage() {
                     </div>
                   </Link>
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">
                       {asset.nama_aset}
                     </h3>
 
@@ -478,18 +485,6 @@ export default function MarketplacePage() {
                           </span>
                         )}
                       </div>
-                    </div>
-                    <div className="flex items-center text-sm justify-between text-slate-500 mb-4">
-                      <Link
-                        href={`/store/${asset.slug}`}
-                        className="text-primary font-semibold hover:underline"
-                      >
-                        Lihat Detail &rarr;
-                      </Link>
-                      <span className="flex">
-                        <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                        {asset.jenis_lisensi}
-                      </span>
                     </div>
                   </div>
                 </div>
