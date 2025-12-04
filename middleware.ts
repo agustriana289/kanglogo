@@ -3,11 +3,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  // Dapatkan token dari cookies
-  const token = req.cookies.get("sb-access-token")?.value;
+  // Dapatkan semua cookies yang dimulai dengan 'sb-'
+  const supabaseCookies = req.cookies
+    .getAll()
+    .filter((cookie) => cookie.name.startsWith("sb-"));
 
-  // Jika tidak ada token dan user mencoba mengakses halaman admin
-  if (!token && req.nextUrl.pathname.startsWith("/admin")) {
+  // Jika tidak ada cookies Supabase dan user mencoba mengakses halaman admin
+  if (
+    supabaseCookies.length === 0 &&
+    req.nextUrl.pathname.startsWith("/admin")
+  ) {
     // Redirect ke halaman login
     return NextResponse.redirect(new URL("/login", req.url));
   }
