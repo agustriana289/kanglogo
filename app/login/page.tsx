@@ -59,8 +59,8 @@ export default function LoginPage() {
 
       console.log("Session verified, redirecting to admin...");
 
-      // Use Next.js router instead of window.location
-      router.push("/admin");
+      // Use window.location for full page reload (ensures session is loaded)
+      window.location.href = "/admin";
     } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(`Unexpected error: ${err.message}`);
