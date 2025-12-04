@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import "react-quill/dist/quill.snow.css";
 import { Inter } from "next/font/google";
@@ -14,6 +15,7 @@ const inter = Inter({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  // Ambil metadata dinamis dari Supabase UNTUK KEPERLUAN SEO SAJA
   const { data: settings } = await supabase
     .from("website_settings")
     .select("website_name,website_description,favicon_url")
@@ -24,15 +26,29 @@ export async function generateMetadata(): Promise<Metadata> {
     .select("*")
     .order("created_at", { ascending: true });
 
+  // Metadata utama, gunakan data dinamis dari Supabase
   const metadata: Metadata = {
-    title: settings?.website_name || "",
-    description: settings?.website_description || "",
+    title: settings?.website_name || "KangLogo.com Dashboard",
+    description:
+      settings?.website_description ||
+      "Aplikasi Admin Dashboard untuk KangLogo.com",
     icons: {
-      icon: settings?.favicon_url || "",
+      icon: settings?.favicon_url || "/icons/icon-192x192.png",
     },
+
+    // --- Metadata PWA yang STATIS ---
+    // Ini adalah bagian terpenting. Kita mendefinisikannya secara langsung.
     manifest: "/manifest.json",
+    themeColor: "#4559f2",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "KangLogo.com",
+    },
+    // --- Akhir Metadata PWA Statis ---
   };
 
+  // Tambah meta tags dinamis lainnya dari database
   if (metaTags && metaTags.length > 0) {
     const otherMeta: { [name: string]: string | number | (string | number)[] } =
       {};
@@ -60,7 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return metadata;
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
