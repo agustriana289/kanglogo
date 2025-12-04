@@ -94,8 +94,10 @@ export default function AdminLayoutClient({
   }, [router]);
 
 
-  // Fetch settings dari Supabase
+  // Fetch settings dari Supabase - only after auth check
   useEffect(() => {
+    if (!isAuthChecked) return;
+
     const fetchSettings = async () => {
       try {
         const { data, error } = await supabase
@@ -114,10 +116,12 @@ export default function AdminLayoutClient({
     };
 
     fetchSettings();
-  }, []);
+  }, [isAuthChecked]);
 
-  // Fetch notifications dari Supabase
+  // Fetch notifications dari Supabase - only after auth check
   useEffect(() => {
+    if (!isAuthChecked) return;
+
     const fetchNotifications = async () => {
       try {
         const { data, error } = await supabase
@@ -165,7 +169,7 @@ export default function AdminLayoutClient({
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [isAuthChecked]);
 
   // Tutup dropdown notifikasi saat klik di luar
   useEffect(() => {
