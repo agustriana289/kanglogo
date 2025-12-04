@@ -79,11 +79,50 @@ export default function AdminDashboard() {
     { service_name: string; count: number; percentage: number }[]
   >([]);
 
-  // Auth check is now handled by AdminLayoutClient
-  // This useEffect just sets authChecked to true immediately
   useEffect(() => {
-    setAuthChecked(true);
-  }, []);
+    // Check authentication
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error getting session:", error);
+          setError("Error getting session: " + error.message);
+          router.push("/login");
+          return;
+        }
+
+        if (!session) {
+          console.log("No session found, redirecting to login");
+          router.push("/login");
+          return;
+        }
+
+        console.log("Session found, user authenticated");
+        setAuthChecked(true);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setError("Error checking authentication");
+        router.push("/login");
+      }
+    };
+
+    checkAuth();
+
+    // Set up listener untuk perubahan auth
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   useEffect(() => {
     // Hanya jalankan fetchDashboardData jika user sudah terautentikasi
@@ -457,8 +496,8 @@ export default function AdminDashboard() {
               <div>
                 <span
                   className={`flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium ${stats.ordersThisWeek >= stats.ordersLastWeek
-                      ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
-                      : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
+                    ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
+                    : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
                     }`}
                 >
                   {stats.ordersThisWeek >= stats.ordersLastWeek ? "+" : ""}
@@ -485,8 +524,8 @@ export default function AdminDashboard() {
               <div>
                 <span
                   className={`flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium ${stats.ordersThisMonth >= stats.ordersLastMonth
-                      ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
-                      : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
+                    ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
+                    : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
                     }`}
                 >
                   {stats.ordersThisMonth >= stats.ordersLastMonth ? "+" : ""}
@@ -513,8 +552,8 @@ export default function AdminDashboard() {
               <div>
                 <span
                   className={`flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium ${stats.ordersThisYear >= stats.ordersLastYear
-                      ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
-                      : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
+                    ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
+                    : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
                     }`}
                 >
                   {stats.ordersThisYear >= stats.ordersLastYear ? "+" : ""}
