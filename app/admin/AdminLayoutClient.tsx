@@ -21,6 +21,7 @@ import {
   ClipboardIcon,
   ViewColumnsIcon,
   BellIcon,
+  PowerIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
   ClockIcon,
@@ -335,7 +336,7 @@ export default function AdminLayoutClient({
         <header className="bg-white dark:bg-slate-700 shadow-md h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-600">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-slate-600 dark:text-white"
+            className="text-slate-600 dark:text-white md:none"
           >
             <Bars3Icon className="w-6 h-6" />
           </button>
@@ -347,7 +348,7 @@ export default function AdminLayoutClient({
             </div>
             <div className="flex items-center space-x-4">
               {/* Notification Dropdown */}
-              <div className="relative" ref={notificationRef}>
+              <div className="relative flex gap-3" ref={notificationRef}>
                 <button
                   onClick={() =>
                     setIsNotificationDropdownOpen(!isNotificationDropdownOpen)
@@ -439,6 +440,16 @@ export default function AdminLayoutClient({
                     )}
                   </div>
                 )}
+
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    router.push("/login");
+                  }}
+                  className="relative text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <PowerIcon className="w-6 h-6" />
+                </button>
               </div>
             </div>
           </div>

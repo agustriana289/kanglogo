@@ -468,19 +468,6 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <div className="px-4 sm:px-6 lg:px-8 py-4">
-        {/* Tombol Logout */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push("/login");
-            }}
-            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-
         {/* Statistik Cards */}
         <div className="grid rounded-2xl border border-gray-200 bg-white sm:grid-cols-2 xl:grid-cols-4 dark:border-gray-800 dark:bg-gray-900 mb-8 shadow-md">
           {/* Pesanan Minggu Ini */}
