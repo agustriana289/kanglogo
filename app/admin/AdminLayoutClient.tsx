@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   FolderIcon,
@@ -46,7 +46,6 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -54,50 +53,10 @@ export default function AdminLayoutClient({
     useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
-  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // Check authentication on component mount
+  // NO AUTH CHECK HERE - Let the page.tsx handle it
+  // Fetch settings dari Supabase
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Error getting session:", error);
-          router.push("/login");
-          return;
-        }
-
-        if (!session) {
-          console.log("No session found, redirecting to login");
-          router.push("/login");
-          return;
-        }
-
-        setIsAuthChecked(true);
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-        router.push("/login");
-      }
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || !session) {
-        router.push("/login");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router]);
-
-
-  // Fetch settings dari Supabase - only after auth check
-  useEffect(() => {
-    if (!isAuthChecked) return;
-
     const fetchSettings = async () => {
       try {
         const { data, error } = await supabase
@@ -116,12 +75,10 @@ export default function AdminLayoutClient({
     };
 
     fetchSettings();
-  }, [isAuthChecked]);
+  }, []);
 
-  // Fetch notifications dari Supabase - only after auth check
+  // Fetch notifications dari Supabase
   useEffect(() => {
-    if (!isAuthChecked) return;
-
     const fetchNotifications = async () => {
       try {
         const { data, error } = await supabase
@@ -169,7 +126,7 @@ export default function AdminLayoutClient({
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [isAuthChecked]);
+  }, []);
 
   // Tutup dropdown notifikasi saat klik di luar
   useEffect(() => {
@@ -315,18 +272,6 @@ export default function AdminLayoutClient({
     return date.toLocaleDateString("id-ID");
   };
 
-  // Show loading while checking authentication
-  if (!isAuthChecked) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-100 dark:bg-slate-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">Memeriksa autentikasi...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen bg-slate-100 dark:bg-slate-800">
       {/* Overlay untuk mobile */}
@@ -371,8 +316,8 @@ export default function AdminLayoutClient({
                   href={item.href}
                   onClick={() => setIsSidebarOpen(false)}
                   className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors duration-200 ${isActive
-                    ? "bg-primary text-white"
-                    : "text-white hover:bg-white/90 hover:text-primary"
+                      ? "bg-primary text-white"
+                      : "text-white hover:bg-white/90 hover:text-primary"
                     }`}
                 >
                   <IconComponent className="w-5 h-5 mr-3" />
@@ -440,8 +385,8 @@ export default function AdminLayoutClient({
                           <div
                             key={notification.id}
                             className={`p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${!notification.is_read
-                              ? "bg-blue-50 dark:bg-blue-900/20"
-                              : ""
+                                ? "bg-blue-50 dark:bg-blue-900/20"
+                                : ""
                               }`}
                             onClick={() => {
                               markAsRead(notification.id);
@@ -477,31 +422,31 @@ export default function AdminLayoutClient({
                           <BellIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                           <p className="text-slate-500 dark:text-slate-400">
                             Tidak ada notifikasi
-                          </p>
+                          </}</p>
                         </div>
                       )}
-                    </div>
+                  </div>
 
                     {notifications.length > 0 && (
-                      <div className="p-2 border-t border-slate-200 dark:border-slate-700">
-                        <Link
-                          href="/admin/notifications"
-                          className="block w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                        >
-                          Lihat Semua Notifikasi
-                        </Link>
-                      </div>
-                    )}
+                  <div className="p-2 border-t border-slate-200 dark:border-slate-700">
+                    <Link
+                      href="/admin/notifications"
+                      className="block w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                    >
+                      Lihat Semua Notifikasi
+                    </Link>
                   </div>
                 )}
               </div>
+                )}
             </div>
           </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-auto sm:p-6">{children}</main>
       </div>
-    </div>
+    </header>
+
+        {/* Content */ }
+  <main className="flex-1 overflow-auto sm:p-6">{children}</main>
+      </div >
+    </div >
   );
 }
