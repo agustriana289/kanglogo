@@ -52,6 +52,7 @@ interface Project {
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [stats, setStats] = useState({
     ordersThisWeek: 0,
@@ -84,30 +85,25 @@ export default function AdminDashboard() {
       try {
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession();
 
-        if (!session) {
-          // Redirect ke halaman login jika tidak ada session
+        if (error) {
+          console.error("Error getting session:", error);
+          setError("Error getting session: " + error.message);
           router.push("/login");
           return;
         }
 
-        // Jika Anda memiliki sistem role, Anda bisa menambahkan pengecekan di sini
-        // Contoh:
-        // const { data: profile } = await supabase
-        //   .from('profiles')
-        //   .select('role')
-        //   .eq('id', session.user.id)
-        //   .single();
-        //
-        // if (!profile || profile.role !== 'admin') {
-        //   router.push('/');
-        //   return;
-        // }
+        if (!session) {
+          router.push("/login");
+          return;
+        }
 
         setAuthChecked(true);
       } catch (error) {
         console.error("Error checking authentication:", error);
+        setError("Error checking authentication");
         router.push("/login");
       }
     };
@@ -131,22 +127,24 @@ export default function AdminDashboard() {
     if (authChecked) {
       const fetchDashboardData = async () => {
         setLoading(true);
-        const now = new Date();
-        const thisMonthStart = startOfMonth(now);
-        const thisMonthEnd = endOfMonth(now);
-        const lastMonthStart = startOfMonth(subMonths(now, 1));
-        const lastMonthEnd = endOfMonth(subMonths(now, 1));
-        const fourteenDaysAgo = subDays(now, 13); // 14 hari terakhir
-
-        // Periode untuk statistik baru
-        const thisWeekStart = subDays(now, 6); // 7 hari terakhir
-        const lastWeekStart = subDays(now, 13);
-        const lastWeekEnd = subDays(now, 7);
-        const thisYearStart = new Date(now.getFullYear(), 0, 1);
-        const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
-        const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
+        setError(null);
 
         try {
+          const now = new Date();
+          const thisMonthStart = startOfMonth(now);
+          const thisMonthEnd = endOfMonth(now);
+          const lastMonthStart = startOfMonth(subMonths(now, 1));
+          const lastMonthEnd = endOfMonth(subMonths(now, 1));
+          const fourteenDaysAgo = subDays(now, 13); // 14 hari terakhir
+
+          // Periode untuk statistik baru
+          const thisWeekStart = subDays(now, 6); // 7 hari terakhir
+          const lastWeekStart = subDays(now, 13);
+          const lastWeekEnd = subDays(now, 7);
+          const thisYearStart = new Date(now.getFullYear(), 0, 1);
+          const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+          const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
+
           // --- Statistik Utama ---
           const [
             ordersThisWeekRes,
@@ -323,6 +321,9 @@ export default function AdminDashboard() {
           setRecentProjects(recentProjectsRes.data || []);
         } catch (error) {
           console.error("Error fetching dashboard data:", error);
+          setError(
+            "Error fetching dashboard data: " + (error as Error).message
+          );
         } finally {
           setLoading(false);
         }
@@ -348,22 +349,31 @@ export default function AdminDashboard() {
 
   const handleStatusChange = async (taskId: number, newStatus: string) => {
     setUpdatingTaskId(taskId);
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("id", taskId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", taskId);
 
-    if (error) {
-      console.error("Error updating task status:", error);
-    } else {
-      // Update local state
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
+      if (error) {
+        console.error("Error updating task status:", error);
+        setError("Error updating task status: " + error.message);
+      } else {
+        // Update local state
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === taskId ? { ...task, status: newStatus } : task
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Unexpected error updating task status:", error);
+      setError(
+        "Unexpected error updating task status: " + (error as Error).message
       );
+    } finally {
+      setUpdatingTaskId(null);
     }
-    setUpdatingTaskId(null);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -375,44 +385,27 @@ export default function AdminDashboard() {
     });
   };
 
-  const StatCard = ({
-    title,
-    value,
-    icon: Icon,
-    change,
-    changeType,
-  }: {
-    title: string;
-    value: string | number;
-    icon: any;
-    change: number;
-    changeType: "increase" | "decrease";
-  }) => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-          <Icon className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+  // Tampilkan error jika ada
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-red-500 text-xl mb-4">Error</div>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
-        <span
-          className={`flex items-center text-sm font-semibold ${
-            changeType === "increase" ? "text-green-500" : "text-red-500"
-          }`}
-        >
-          {changeType === "increase" ? (
-            <TrendingUp className="w-4 h-4 mr-1" />
-          ) : (
-            <TrendingDown className="w-4 h-4 mr-1" />
-          )}
-          {change.toFixed(2)}%
-        </span>
       </div>
-      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-        {value}
-      </h3>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{title}</p>
-    </div>
-  );
+    );
+  }
 
+  // Tampilkan loading selama pengecekan auth atau pengambilan data
   if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
