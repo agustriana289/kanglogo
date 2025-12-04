@@ -59,8 +59,9 @@ export default function LoginPage() {
 
       console.log("Session verified, redirecting to admin...");
 
-      // Use window.location for full page reload (ensures session is loaded)
-      window.location.href = "/admin";
+      // Refresh router to update server state (cookies) then navigate
+      router.refresh();
+      router.push("/admin");
     } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(`Unexpected error: ${err.message}`);
