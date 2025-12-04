@@ -316,8 +316,8 @@ export default function AdminLayoutClient({
                   href={item.href}
                   onClick={() => setIsSidebarOpen(false)}
                   className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors duration-200 ${isActive
-                      ? "bg-primary text-white"
-                      : "text-white hover:bg-white/90 hover:text-primary"
+                    ? "bg-primary text-white"
+                    : "text-white hover:bg-white/90 hover:text-primary"
                     }`}
                 >
                   <IconComponent className="w-5 h-5 mr-3" />
@@ -385,8 +385,8 @@ export default function AdminLayoutClient({
                           <div
                             key={notification.id}
                             className={`p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${!notification.is_read
-                                ? "bg-blue-50 dark:bg-blue-900/20"
-                                : ""
+                              ? "bg-blue-50 dark:bg-blue-900/20"
+                              : ""
                               }`}
                             onClick={() => {
                               markAsRead(notification.id);
@@ -422,30 +422,30 @@ export default function AdminLayoutClient({
                           <BellIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                           <p className="text-slate-500 dark:text-slate-400">
                             Tidak ada notifikasi
-                          </}</p>
+                          </p>
                         </div>
                       )}
-                  </div>
+                    </div>
 
                     {notifications.length > 0 && (
-                  <div className="p-2 border-t border-slate-200 dark:border-slate-700">
-                    <Link
-                      href="/admin/notifications"
-                      className="block w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                    >
-                      Lihat Semua Notifikasi
-                    </Link>
+                      <div className="p-2 border-t border-slate-200 dark:border-slate-700">
+                        <Link
+                          href="/admin/notifications"
+                          className="block w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                        >
+                          Lihat Semua Notifikasi
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-                )}
             </div>
           </div>
-      </div>
-    </header>
+        </header>
 
-        {/* Content */ }
-  <main className="flex-1 overflow-auto sm:p-6">{children}</main>
+        {/* Content */}
+        <main className="flex-1 overflow-auto sm:p-6">{children}</main>
       </div >
     </div >
   );
