@@ -69,6 +69,7 @@ export default function PublicNotificationPopup() {
           customer_name,
           package_details,
           final_price,
+          discount_amount,
           created_at,
           services (
             title
@@ -85,6 +86,7 @@ export default function PublicNotificationPopup() {
           id,
           customer_name,
           price,
+          discount_amount,
           created_at,
           marketplace_assets (
             nama_aset
@@ -108,7 +110,7 @@ export default function PublicNotificationPopup() {
                         customerName: order.customer_name,
                         productName: order.services?.title || "Jasa Desain",
                         packageName: order.package_details?.name,
-                        price: order.final_price,
+                        price: (order.final_price || 0) + (order.discount_amount || 0),
                         createdAt: order.created_at,
                     });
                 });
@@ -122,7 +124,7 @@ export default function PublicNotificationPopup() {
                         type: "store",
                         customerName: order.customer_name,
                         productName: order.marketplace_assets?.nama_aset || "Produk Digital",
-                        price: order.price,
+                        price: (order.price || 0) + (order.discount_amount || 0),
                         createdAt: order.created_at,
                     });
                 });

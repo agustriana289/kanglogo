@@ -253,7 +253,7 @@ export default function TaskManagementPage() {
               </>
             ) : (
               <TaskListSection
-                title={selectedTaskGroup === 'All' ? 'Semua' : selectedTaskGroup === 'Todo' ? 'Diterima' : selectedTaskGroup === 'InProgress' ? 'Dikerjakan' : 'Selesai'}
+                title={selectedTaskGroup === 'Todo' ? 'Diterima' : selectedTaskGroup === 'InProgress' ? 'Dikerjakan' : 'Selesai'}
                 tasks={filteredTasks}
                 badgeColor="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                 formatDate={formatDate}
@@ -351,41 +351,34 @@ function TaskCard({ task, isList, formatDate, getStatusLabel, getStatusColor }: 
   const displayTitle = task.services?.title || task.package_details?.name || "Pesanan Kustom";
 
   return (
-    <div className={`group relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 dark:bg-slate-800 dark:border-gray-700 dark:hover:border-gray-600 transition p-4 ${isList ? 'flex flex-col sm:flex-row sm:items-center justify-between gap-4' : ''}`}>
-      <div className="flex items-start justify-between gap-4 w-full">
-        <div className="flex items-start gap-4">
-          {/* Checkbox Placeholder */}
-          <div className="pt-1">
-            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.status === STATUS_COMPLETED ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-blue-400 bg-white dark:bg-slate-900 dark:border-gray-600'}`}>
-              {task.status === STATUS_COMPLETED && <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />}
-            </div>
-          </div>
-
-          <div>
-            <h4 className={`text-sm font-semibold mb-1 ${task.status === STATUS_COMPLETED ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'} group-hover:text-primary transition-colors`}>
-              {displayTitle}
-            </h4>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                <UserIcon className="w-3.5 h-3.5" />
-                <span>{task.customer_name}</span>
-              </div>
-            </div>
+    <div className="p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700 rounded-lg group">
+      <div className="flex items-start gap-3">
+        {/* Checkbox */}
+        <div className={`mt-0.5 flex-shrink-0 ${task.status === STATUS_COMPLETED ? 'text-green-500' : 'text-slate-400'}`}>
+          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.status === STATUS_COMPLETED ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-blue-400 bg-white dark:bg-slate-900 dark:border-gray-600'}`}>
+            {task.status === STATUS_COMPLETED && <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />}
           </div>
         </div>
-      </div>
-
-      <div className={`flex items-center gap-3 ${isList ? 'w-full sm:w-auto mt-3 sm:mt-0 justify-between sm:justify-end' : 'mt-4 justify-between border-t border-gray-50 dark:border-gray-700/50 pt-3'}`}>
-        {/* Status Badge */}
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getStatusColor(task.status)}`}>
-          {getStatusLabel(task.status)}
-        </span>
-
-        <div className="flex items-center gap-3">
-          {/* Date */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400" title="Deadline">
-            <ClockIcon className="w-3.5 h-3.5" />
-            <span>{formatDate(task.work_deadline)}</span>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-medium truncate ${task.status === STATUS_COMPLETED ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-200'}`}>
+            {displayTitle}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {task.customer_name}
+          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getStatusColor(task.status)}`}>
+              {getStatusLabel(task.status)}
+            </span>
+            <span className="text-[10px] text-slate-400">
+              {formatDate(task.created_at)}
+            </span>
+            {task.work_deadline && (
+              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                <ClockIcon className="w-3 h-3" />
+                {formatDate(task.work_deadline)}
+              </span>
+            )}
           </div>
         </div>
       </div>

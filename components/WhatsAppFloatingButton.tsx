@@ -131,7 +131,7 @@ export default function WhatsAppFloatingButton() {
                         {/* Avatar */}
                         <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-green-100 to-green-200 flex-shrink-0">
                             <img
-                                src="https://cdn-icons-png.flaticon.com/128/15678/15678795.png"
+                                src="/icons/avatar.png"
                                 alt="Admin"
                                 className="w-full h-full object-cover"
                             />
