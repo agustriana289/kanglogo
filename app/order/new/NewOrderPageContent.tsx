@@ -222,6 +222,27 @@ export default function NewOrderPageContent() {
         status: "pending_payment",
       });
 
+      // Kirim email notifikasi ke pelanggan dan admin
+      try {
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "service",
+            invoiceNumber: invoiceNumber,
+            customerName: formData.customer_name,
+            customerEmail: formData.customer_email,
+            customerWhatsapp: formData.customer_whatsapp,
+            productName: `${service.title} - ${selectedPackage.name}`,
+            price: finalPrice,
+            discountAmount: discountAmount,
+          }),
+        });
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+        // Don't block order creation if email fails
+      }
+
       router.push(`/order/${newOrder.invoice_number}`);
     } catch (error) {
       console.error("Error creating order:", error);

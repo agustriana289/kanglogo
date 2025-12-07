@@ -138,6 +138,27 @@ export default function PurchaseModal({ asset, isOpen, onClose }: PurchaseModalP
                 asset.nama_aset
             );
 
+            // Kirim email notifikasi ke pelanggan dan admin
+            try {
+                await fetch("/api/send-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        type: "store",
+                        invoiceNumber: newOrderNumber,
+                        customerName: formData.customer_name,
+                        customerEmail: formData.customer_email,
+                        customerWhatsapp: formData.customer_whatsapp ? `${formData.country_code}${formData.customer_whatsapp}` : "",
+                        productName: asset.nama_aset,
+                        price: finalPrice,
+                        discountAmount: discountAmount,
+                    }),
+                });
+            } catch (emailError) {
+                console.error("Error sending email notification:", emailError);
+                // Don't block order creation if email fails
+            }
+
             setOrderNumber(newOrderNumber);
             setStep("success");
         } catch (error: any) {

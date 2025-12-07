@@ -3,7 +3,7 @@
 import { AlertProvider } from "@/components/providers/AlertProvider";
 
 import { supabase } from "@/lib/supabase";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation"; // 1. Tambahkan useRouter di sini
 import {
@@ -34,13 +34,20 @@ import {
   TagIcon,
   StarIcon,
   ListBulletIcon,
+  BellAlertIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
+import {
+  isPushNotificationSupported,
+  requestNotificationPermission,
+  getNotificationPermission,
+  showLocalNotification,
+} from "@/lib/push-notifications";
 
 // Tipe untuk notifikasi
 interface Notification {
   id: number;
-  type: "comment" | "discount" | "order" | "task" | "order_status";
+  type: "comment" | "discount" | "order" | "task" | "order_status" | "store";
   title: string;
   message: string;
   link: string;
@@ -66,8 +73,29 @@ export default function AdminLayoutClient({
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [openGroups, setOpenGroups] = useState<string[]>(["Layanan"]); // Default open
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null);
+  const [showPushBanner, setShowPushBanner] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
+
+  // Check push notification permission on mount
+  useEffect(() => {
+    if (isPushNotificationSupported()) {
+      const permission = getNotificationPermission();
+      setPushPermission(permission);
+      // Show banner if permission not yet granted
+      if (permission === "default") {
+        setShowPushBanner(true);
+      }
+    }
+  }, []);
+
+  // Request push notification permission
+  const handleRequestPushPermission = useCallback(async () => {
+    const permission = await requestNotificationPermission();
+    setPushPermission(permission);
+    setShowPushBanner(false);
+  }, []);
 
   // NO AUTH CHECK HERE - Let the page.tsx handle it
   // Fetch settings dari Supabase
@@ -136,13 +164,25 @@ export default function AdminLayoutClient({
           schema: "public",
           table: "notifications",
         },
-        (payload) => {
+        async (payload) => {
+          const newNotification = payload.new as Notification;
+
           // Tambahkan notifikasi baru ke state
           setNotifications((prev) => [
-            payload.new as Notification,
+            newNotification,
             ...prev.slice(0, 9),
           ]);
           setUnreadCount((prev) => prev + 1);
+
+          // Show push notification if permission granted
+          if (getNotificationPermission() === "granted") {
+            showLocalNotification({
+              title: newNotification.title || "Notifikasi Baru",
+              message: newNotification.message || "",
+              link: newNotification.link,
+              type: newNotification.type,
+            });
+          }
         }
       )
       .subscribe();
@@ -611,6 +651,32 @@ export default function AdminLayoutClient({
               </div>
             </div>
           </header>
+
+          {/* Push Notification Permission Banner */}
+          {showPushBanner && (
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BellAlertIcon className="w-6 h-6" />
+                <span className="text-sm font-medium">
+                  Aktifkan notifikasi untuk mendapatkan update pesanan terbaru di ponsel Anda
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRequestPushPermission}
+                  className="bg-white text-blue-600 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Aktifkan
+                </button>
+                <button
+                  onClick={() => setShowPushBanner(false)}
+                  className="text-white/80 hover:text-white p-1"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Content */}
           <main className="flex-1 overflow-auto sm:p-6">{children}</main>
