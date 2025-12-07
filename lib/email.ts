@@ -1,35 +1,47 @@
 // lib/email.ts
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid build-time errors
+let resendInstance: Resend | null = null;
+
+function getResend(): Resend {
+  if (!resendInstance) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY environment variable is not set");
+    }
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendInstance;
+}
+
 const ADMIN_EMAIL = "halo@kanglogo.com";
 const FROM_EMAIL = "halo@kanglogo.com";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://kanglogo.com";
 
 interface OrderEmailData {
-    type: "service" | "store";
-    invoiceNumber: string;
-    customerName: string;
-    customerEmail: string;
-    customerWhatsapp: string;
-    productName: string;
-    price: number;
-    discountAmount: number;
+  type: "service" | "store";
+  invoiceNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerWhatsapp: string;
+  productName: string;
+  price: number;
+  discountAmount: number;
 }
 
 // Kirim email notifikasi ke pelanggan
 export async function sendCustomerOrderEmail(data: OrderEmailData) {
-    const { type, invoiceNumber, customerEmail, productName, customerName } = data;
+  const { type, invoiceNumber, customerEmail, productName, customerName } = data;
 
-    const isStore = type === "store";
-    const orderType = isStore ? "Pembelian" : "Pemesanan";
-    const productType = isStore ? "Aset Digital" : "Jasa Layanan";
-    const invoicePath = isStore ? `/store/invoice/${invoiceNumber}` : `/order/${invoiceNumber}`;
-    const invoiceUrl = `${SITE_URL}${invoicePath}`;
+  const isStore = type === "store";
+  const orderType = isStore ? "Pembelian" : "Pemesanan";
+  const productType = isStore ? "Aset Digital" : "Jasa Layanan";
+  const invoicePath = isStore ? `/store/invoice/${invoiceNumber}` : `/order/${invoiceNumber}`;
+  const invoiceUrl = `${SITE_URL}${invoicePath}`;
 
-    const subject = `${orderType} ${productType} (${productName}) di Kanglogo.com`;
+  const subject = `${orderType} ${productType} (${productName}) di Kanglogo.com`;
 
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
       <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
         <h1 style="margin: 0; font-size: 24px;">Kanglogo.com</h1>
@@ -72,44 +84,44 @@ export async function sendCustomerOrderEmail(data: OrderEmailData) {
     </div>
   `;
 
-    try {
-        const { data: result, error } = await resend.emails.send({
-            from: `Kanglogo <${FROM_EMAIL}>`,
-            to: customerEmail,
-            subject,
-            html: htmlContent,
-        });
+  try {
+    const { data: result, error } = await getResend().emails.send({
+      from: `Kanglogo <${FROM_EMAIL}>`,
+      to: customerEmail,
+      subject,
+      html: htmlContent,
+    });
 
-        if (error) {
-            console.error("Error sending customer email:", error);
-            return { success: false, error };
-        }
-
-        return { success: true, data: result };
-    } catch (error) {
-        console.error("Error sending customer email:", error);
-        return { success: false, error };
+    if (error) {
+      console.error("Error sending customer email:", error);
+      return { success: false, error };
     }
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error sending customer email:", error);
+    return { success: false, error };
+  }
 }
 
 // Kirim email notifikasi ke admin
 export async function sendAdminOrderEmail(data: OrderEmailData) {
-    const { type, invoiceNumber, customerName, customerEmail, customerWhatsapp, productName, price, discountAmount } = data;
+  const { type, invoiceNumber, customerName, customerEmail, customerWhatsapp, productName, price, discountAmount } = data;
 
-    const isStore = type === "store";
-    const orderType = isStore ? "Pembelian" : "Pesanan";
+  const isStore = type === "store";
+  const orderType = isStore ? "Pembelian" : "Pesanan";
 
-    const subject = `${orderType} Baru [${invoiceNumber}] telah dibuat`;
+  const subject = `${orderType} Baru [${invoiceNumber}] telah dibuat`;
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
       <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
         <h1 style="margin: 0; font-size: 24px;">📦 ${orderType} Baru!</h1>
@@ -171,35 +183,35 @@ export async function sendAdminOrderEmail(data: OrderEmailData) {
     </div>
   `;
 
-    try {
-        const { data: result, error } = await resend.emails.send({
-            from: `Kanglogo Admin <${FROM_EMAIL}>`,
-            to: ADMIN_EMAIL,
-            subject,
-            html: htmlContent,
-        });
+  try {
+    const { data: result, error } = await getResend().emails.send({
+      from: `Kanglogo Admin <${FROM_EMAIL}>`,
+      to: ADMIN_EMAIL,
+      subject,
+      html: htmlContent,
+    });
 
-        if (error) {
-            console.error("Error sending admin email:", error);
-            return { success: false, error };
-        }
-
-        return { success: true, data: result };
-    } catch (error) {
-        console.error("Error sending admin email:", error);
-        return { success: false, error };
+    if (error) {
+      console.error("Error sending admin email:", error);
+      return { success: false, error };
     }
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error sending admin email:", error);
+    return { success: false, error };
+  }
 }
 
 // Fungsi utama untuk mengirim kedua email sekaligus
 export async function sendOrderNotificationEmails(data: OrderEmailData) {
-    const [customerResult, adminResult] = await Promise.all([
-        sendCustomerOrderEmail(data),
-        sendAdminOrderEmail(data),
-    ]);
+  const [customerResult, adminResult] = await Promise.all([
+    sendCustomerOrderEmail(data),
+    sendAdminOrderEmail(data),
+  ]);
 
-    return {
-        customer: customerResult,
-        admin: adminResult,
-    };
+  return {
+    customer: customerResult,
+    admin: adminResult,
+  };
 }
