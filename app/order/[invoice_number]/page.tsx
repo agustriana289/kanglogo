@@ -238,7 +238,8 @@ export default function InvoiceDetailPage({
     });
   };
 
-  const priceBeforeDiscount = order.final_price + order.discount_amount;
+  const discountAmount = order.discount_amount || 0;
+  const priceBeforeDiscount = order.final_price + discountAmount;
   const subtotal = priceBeforeDiscount;
   const tax = 0;
 
@@ -322,10 +323,10 @@ export default function InvoiceDetailPage({
                         <p className="text-gray-700">Rp {priceBeforeDiscount.toLocaleString("id-ID")}</p>
                       </div>
                     </div>
-                    {order.discount_amount > 0 && (
+                    {discountAmount > 0 && (
                       <div>
                         <p className="text-xs text-gray-500 uppercase mb-1">Diskon</p>
-                        <p className="text-green-600 font-medium">- Rp {order.discount_amount.toLocaleString("id-ID")}</p>
+                        <p className="text-green-600 font-medium">- Rp {discountAmount.toLocaleString("id-ID")}</p>
                       </div>
                     )}
                     <div className="border-t pt-3">
@@ -371,7 +372,7 @@ export default function InvoiceDetailPage({
                           Rp {priceBeforeDiscount.toLocaleString("id-ID")}
                         </td>
                         <td className="py-4 px-4 text-center text-gray-700">
-                          Rp {order.discount_amount.toLocaleString("id-ID")}
+                          Rp {discountAmount.toLocaleString("id-ID")}
                         </td>
                         <td className="py-4 px-6 text-right font-medium text-gray-900">
                           Rp {order.final_price.toLocaleString("id-ID")}
@@ -389,14 +390,14 @@ export default function InvoiceDetailPage({
                         Rp {subtotal.toLocaleString("id-ID")}
                       </span>
                     </div>
-                    {order.discount_amount > 0 && (
+                    {discountAmount > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">
                           Diskon{" "}
                           {order.discount_code ? `(${order.discount_code})` : ""}
                         </span>
                         <span className="font-medium text-green-600">
-                          - Rp {order.discount_amount.toLocaleString("id-ID")}
+                          - Rp {discountAmount.toLocaleString("id-ID")}
                         </span>
                       </div>
                     )}

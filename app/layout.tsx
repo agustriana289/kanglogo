@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import RootLayoutClient from "./RootLayoutClient";
 import PublicNotificationPopup from "@/components/PublicNotificationPopup";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
+import NotificationProvider from "@/components/NotificationProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -92,12 +93,14 @@ export default function RootLayout({
       <body
         className={`${inter.className} font-sans antialiased bg-slate-100 m-0 p-0`}
       >
-        <RootLayoutClient />
-        <Header />
-        {children}
-        <Footer />
-        <PublicNotificationPopup />
-        <WhatsAppFloatingButton />
+        <NotificationProvider>
+          <RootLayoutClient />
+          <Header />
+          {children}
+          <Footer />
+          <PublicNotificationPopup />
+          <WhatsAppFloatingButton />
+        </NotificationProvider>
         <Script
           src="https://www.google.com/recaptcha/api.js"
           strategy="lazyOnload"

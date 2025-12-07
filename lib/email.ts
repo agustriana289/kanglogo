@@ -196,6 +196,20 @@ export async function sendAdminOrderEmail(data: OrderEmailData) {
       return { success: false, error };
     }
 
+    // --- INTEGRASI PUSH NOTIFICATION ---
+    // Kirim push notif ke admin saat ada pesanan baru
+    // Kita panggil API push secara asynchronous tanpa menunggu (fire and forget)
+    fetch(`${SITE_URL}/api/push/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: `📦 ${orderType} Baru!`,
+        message: `${customerName} membeli ${productName} seharga ${formatCurrency(price)}`,
+        url: "/admin/orders", // Redirect ke halaman order
+        icon: "/icons/icon-192x192.png"
+      })
+    }).catch(err => console.error("Failed to trigger push notification:", err));
+
     return { success: true, data: result };
   } catch (error) {
     console.error("Error sending admin email:", error);

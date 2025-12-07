@@ -201,7 +201,7 @@ export default function PublicNotificationPopup() {
                 top-6 left-4 right-4 sm:left-auto sm:right-auto sm:top-auto 
                 
                 /* Desktop: Bottom left with proper spacing */
-                sm:bottom-28 sm:left-6 
+                sm:bottom-10 sm:left-12 
                 
                 ${isVisible
                     ? "opacity-100 translate-y-0"

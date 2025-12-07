@@ -30,7 +30,7 @@ self.addEventListener("push", function (event) {
         const data = event.data.json();
         const options = {
             body: data.message || data.body || "",
-            icon: "/icons/icon-192x192.png",
+            icon: data.icon || "/icons/icon-192x192.png",
             badge: "/icons/icon-192x192.png",
             data: {
                 url: data.link || data.url || "/admin",

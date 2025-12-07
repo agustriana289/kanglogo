@@ -6,6 +6,7 @@ import {
     requestNotificationPermission,
     getNotificationPermission,
     subscribeToNotifications,
+    subscribeUserToPush,
 } from "@/lib/push-notifications";
 
 interface NotificationProviderProps {
@@ -42,6 +43,12 @@ export default function NotificationProvider({ children }: NotificationProviderP
                 setIsSubscribed(true);
             });
 
+            // Also register for background push
+            subscribeUserToPush().then((sub) => {
+                if (sub) console.log("Subscribed to background push");
+            });
+
+
             return () => {
                 if (unsubscribe) {
                     unsubscribe();
@@ -53,9 +60,8 @@ export default function NotificationProvider({ children }: NotificationProviderP
     // Auto-request permission when the component mounts (only once)
     useEffect(() => {
         if (isPushNotificationSupported() && permissionStatus === "default") {
-            // We'll let the user trigger the permission request manually
-            // Uncomment below to auto-request on mount:
-            // handleRequestPermission();
+            // Auto-request permission on mount for better UX
+            handleRequestPermission();
         }
     }, [permissionStatus, handleRequestPermission]);
 
