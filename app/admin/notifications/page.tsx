@@ -14,6 +14,7 @@ import {
   FolderIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
+import { useAlert } from "@/components/providers/AlertProvider";
 
 // Tipe untuk notifikasi
 interface Notification {
@@ -34,6 +35,7 @@ export default function NotificationsPage() {
     []
   );
   const [actionLoading, setActionLoading] = useState(false);
+  const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
     fetchNotifications();
@@ -89,16 +91,20 @@ export default function NotificationsPage() {
       setSelectedNotifications([]);
     } catch (error) {
       console.error("Error marking as read:", error);
-      alert("Gagal menandai notifikasi sebagai dibaca.");
+      showAlert("error", "Gagal", "Gagal menandai notifikasi sebagai dibaca.");
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDelete = async (ids: number[]) => {
-    if (
-      !confirm(`Apakah Anda yakin ingin menghapus ${ids.length} notifikasi?`)
-    ) {
+    const confirmed = await showConfirm(
+      "Hapus Notifikasi",
+      `Apakah Anda yakin ingin menghapus ${ids.length} notifikasi?`,
+      "error",
+      "Ya, Hapus"
+    );
+    if (!confirmed) {
       return;
     }
 
@@ -115,7 +121,7 @@ export default function NotificationsPage() {
       setSelectedNotifications([]);
     } catch (error) {
       console.error("Error deleting notifications:", error);
-      alert("Gagal menghapus notifikasi.");
+      showAlert("error", "Gagal", "Gagal menghapus notifikasi.");
     } finally {
       setActionLoading(false);
     }
@@ -214,11 +220,10 @@ export default function NotificationsPage() {
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`flex items-start p-4 rounded-lg border transition-colors ${
-                  !notification.is_read
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                    : "bg-white dark:bg-slate-700 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-600"
-                }`}
+                className={`flex items-start p-4 rounded-lg border transition-colors ${!notification.is_read
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                  : "bg-white dark:bg-slate-700 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-600"
+                  }`}
               >
                 <input
                   type="checkbox"

@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import Modal from "@/components/Modal";
-import Toast from "@/components/Toast";
-import { useToast } from "@/hooks/useToast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 import {
   MagnifyingGlassIcon,
@@ -33,17 +31,7 @@ export default function BlogManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    articleId: number;
-    articleTitle: string;
-  }>({
-    isOpen: false,
-    articleId: 0,
-    articleTitle: "",
-  });
-  const [deleting, setDeleting] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -92,7 +80,7 @@ export default function BlogManagementPage() {
 
       if (error) {
         console.error("Error fetching articles:", error);
-        showToast("Gagal memuat artikel", "error");
+        showAlert("error", "Error", "Gagal memuat artikel");
       } else {
         setArticles(data || []);
         setFilteredArticles(data || []);
@@ -102,45 +90,40 @@ export default function BlogManagementPage() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching articles:", error);
-      showToast("Terjadi kesalahan saat memuat artikel", "error");
+      showAlert("error", "Error", "Terjadi kesalahan saat memuat artikel");
       setLoading(false);
     }
   };
 
-  const handleDeleteClick = (article: Article) => {
-    setDeleteModal({
-      isOpen: true,
-      articleId: article.id,
-      articleTitle: article.title,
-    });
-  };
+  const handleDelete = async (article: Article) => {
+    const isConfirmed = await showConfirm(
+      "Hapus Artikel",
+      `Apakah Anda yakin ingin menghapus artikel "${article.title}"? Tindakan ini tidak dapat dibatalkan.`,
+      "error",
+      "Hapus"
+    );
 
-  const confirmDelete = async () => {
-    setDeleting(true);
+    if (!isConfirmed) return;
+
     try {
       const { error } = await supabase
         .from("articles")
         .delete()
-        .eq("id", deleteModal.articleId);
+        .eq("id", article.id);
 
       if (error) {
         console.error("Error deleting article:", error);
-        showToast("Gagal menghapus artikel", "error");
+        showAlert("error", "Gagal", "Gagal menghapus artikel");
       } else {
-        const updatedArticles = articles.filter(
-          (article) => article.id !== deleteModal.articleId
-        );
+        const updatedArticles = articles.filter((a) => a.id !== article.id);
         setArticles(updatedArticles);
         setFilteredArticles(updatedArticles);
         setTotalItems(updatedArticles.length);
-        showToast("Artikel berhasil dihapus", "success");
-        setDeleteModal({ isOpen: false, articleId: 0, articleTitle: "" });
+        showAlert("success", "Berhasil", "Artikel berhasil dihapus");
       }
     } catch (error) {
       console.error("Error deleting article:", error);
-      showToast("Terjadi kesalahan saat menghapus artikel", "error");
-    } finally {
-      setDeleting(false);
+      showAlert("error", "Error", "Terjadi kesalahan saat menghapus artikel");
     }
   };
 
@@ -249,32 +232,29 @@ export default function BlogManagementPage() {
         <div className="flex flex-wrap gap-2 mb-6 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "all"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "all"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Semua ({articles.length})
           </button>
           <button
             onClick={() => setFilter("published")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "published"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "published"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Dipublikasikan (
             {articles.filter((a) => a.status === "published").length})
           </button>
           <button
             onClick={() => setFilter("draft")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "draft"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "draft"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Draft ({articles.filter((a) => a.status === "draft").length})
           </button>
@@ -319,11 +299,10 @@ export default function BlogManagementPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        article.status === "published"
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${article.status === "published"
                           ? "bg-green-100 text-green-800"
                           : "bg-slate-100 text-slate-800"
-                      }`}
+                        }`}
                     >
                       {article.status === "published"
                         ? "Dipublikasikan"
@@ -346,7 +325,7 @@ export default function BlogManagementPage() {
                       Edit
                     </Link>
                     <button
-                      onClick={() => handleDeleteClick(article)}
+                      onClick={() => handleDelete(article)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Hapus
@@ -370,11 +349,10 @@ export default function BlogManagementPage() {
                   {article.title}
                 </h3>
                 <span
-                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full flex-shrink-0 ${
-                    article.status === "published"
+                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full flex-shrink-0 ${article.status === "published"
                       ? "bg-green-100 text-green-800"
                       : "bg-slate-100 text-slate-800"
-                  }`}
+                    }`}
                 >
                   {article.status === "published" ? "Dipublikasikan" : "Draft"}
                 </span>
@@ -396,7 +374,7 @@ export default function BlogManagementPage() {
                   Edit
                 </Link>
                 <button
-                  onClick={() => handleDeleteClick(article)}
+                  onClick={() => handleDelete(article)}
                   className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
                 >
                   Hapus
@@ -431,9 +409,8 @@ export default function BlogManagementPage() {
               {searchQuery
                 ? "Coba ubah kata kunci pencarian Anda."
                 : filter === "all"
-                ? "Belum ada artikel yang dibuat."
-                : `Tidak ada artikel dengan status "${
-                    filter === "published" ? "Dipublikasikan" : "Draft"
+                  ? "Belum ada artikel yang dibuat."
+                  : `Tidak ada artikel dengan status "${filter === "published" ? "Dipublikasikan" : "Draft"
                   }".`}
             </p>
             {!searchQuery && (
@@ -489,11 +466,10 @@ export default function BlogManagementPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
+                    className={`px-3 py-2 rounded-md border ${currentPage === page
                         ? "bg-primary text-white border-primary"
                         : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -514,73 +490,7 @@ export default function BlogManagementPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={deleteModal.isOpen}
-        onClose={() =>
-          setDeleteModal({ isOpen: false, articleId: 0, articleTitle: "" })
-        }
-        title="Konfirmasi Hapus Artikel"
-        size="sm"
-      >
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <svg
-              className="h-6 w-6 text-red-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-slate-900 mb-2">
-            Hapus Artikel?
-          </h3>
-          <p className="text-sm text-slate-500 mb-4">
-            Apakah Anda yakin ingin menghapus artikel "
-            <strong>{deleteModal.articleTitle}</strong>"? Tindakan ini tidak
-            dapat dibatalkan.
-          </p>
-          <div className="flex justify-center space-x-3">
-            <button
-              type="button"
-              className="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
-              onClick={() =>
-                setDeleteModal({
-                  isOpen: false,
-                  articleId: 0,
-                  articleTitle: "",
-                })
-              }
-              disabled={deleting}
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-              onClick={confirmDelete}
-              disabled={deleting}
-            >
-              {deleting ? "Menghapus..." : "Hapus"}
-            </button>
-          </div>
-        </div>
-      </Modal>
 
-      {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
     </div>
   );
 }

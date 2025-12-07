@@ -13,6 +13,7 @@ import {
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import WidgetArea from "@/components/WidgetArea";
+import AssetActions from "./AssetActions";
 
 // Import ShareButtons secara dinamis dengan ssr: false
 const ShareButtons = dynamic(() => import("./ShareButtons"), {
@@ -105,8 +106,8 @@ export default async function AssetDetailPage({
               </h1>
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${asset.jenis === "premium"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-green-100 text-green-800"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-green-100 text-green-800"
                   }`}
               >
                 {asset.jenis === "premium" ? (
@@ -163,16 +164,7 @@ export default async function AssetDetailPage({
               <p className="text-sm text-slate-600 italic">{asset.tagline}</p>
             )}
 
-            <div className="pt-6 border-t border-slate-200">
-              <button
-                className={`w-full py-3 px-6 rounded-lg font-medium text-white ${asset.jenis === "premium"
-                    ? "bg-primary hover:bg-primary/90"
-                    : "bg-green-600 hover:bg-green-700"
-                  } transition-colors`}
-              >
-                {asset.jenis === "premium" ? "Beli Sekarang" : "Unduh Gratis"}
-              </button>
-            </div>
+            <AssetActions asset={asset} />
 
             {/* --- PERUBAHAN KRUSIAL ADA DI SINI --- */}
             <ShareButtons title={asset.nama_aset} url={url} />

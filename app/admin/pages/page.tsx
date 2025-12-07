@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import { Page } from "@/types/page";
 import LogoLoading from "@/components/LogoLoading";
 import {
@@ -33,7 +32,7 @@ export default function PagesManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -71,7 +70,8 @@ export default function PagesManagementPage() {
 
     if (error) {
       console.error("Error fetching pages:", error);
-      showToast("Gagal memuat data halaman.", "error");
+      console.error("Error fetching pages:", error);
+      showAlert("error", "Error", "Gagal memuat data halaman.");
     } else {
       setPages(data || []);
       setFilteredPages(data || []);
@@ -81,8 +81,11 @@ export default function PagesManagementPage() {
   };
 
   const handleDelete = async (id: number) => {
-    const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin menghapus halaman ini?"
+    const isConfirmed = await showConfirm(
+      "Hapus Halaman",
+      "Apakah Anda yakin ingin menghapus halaman ini?",
+      "error",
+      "Ya, Hapus"
     );
     if (!isConfirmed) return;
 
@@ -91,7 +94,7 @@ export default function PagesManagementPage() {
 
     if (error) {
       console.error("Error deleting page:", error);
-      showToast("Gagal menghapus halaman.", "error");
+      showAlert("error", "Gagal", "Gagal menghapus halaman.");
     } else {
       const updatedPages = pages.filter((page) => page.id !== id);
       setPages(updatedPages);
@@ -110,7 +113,7 @@ export default function PagesManagementPage() {
         setFilteredPages(filtered);
       }
 
-      showToast("Halaman berhasil dihapus.", "success");
+      showAlert("success", "Berhasil", "Halaman berhasil dihapus.");
     }
     setSaving(false);
   };
@@ -244,11 +247,10 @@ export default function PagesManagementPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        page.is_published
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${page.is_published
                           ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                           : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                      }`}
+                        }`}
                     >
                       {page.is_published ? (
                         <>
@@ -319,11 +321,10 @@ export default function PagesManagementPage() {
                   </div>
                 </div>
                 <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    page.is_published
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${page.is_published
                       ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                       : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                  }`}
+                    }`}
                 >
                   {page.is_published ? (
                     <>
@@ -428,11 +429,10 @@ export default function PagesManagementPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
+                    className={`px-3 py-2 rounded-md border ${currentPage === page
                         ? "bg-primary text-white border-primary"
                         : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -454,12 +454,7 @@ export default function PagesManagementPage() {
       </div>
 
       {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

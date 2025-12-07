@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 
 interface Category {
@@ -20,7 +19,7 @@ export default function EditCategoryPage({
   params: { id: string };
 }) {
   const router = useRouter();
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [category, setCategory] = useState<Category | null>(null);
@@ -44,7 +43,7 @@ export default function EditCategoryPage({
 
       if (error) {
         console.error("Error fetching category:", error);
-        showToast("Gagal memuat kategori", "error");
+        showAlert("error", "Error", "Gagal memuat kategori");
         router.push("/admin/categories");
       } else {
         setCategory(data);
@@ -56,7 +55,7 @@ export default function EditCategoryPage({
       }
     } catch (error) {
       console.error("Error fetching category:", error);
-      showToast("Terjadi kesalahan saat memuat kategori", "error");
+      showAlert("error", "Error", "Terjadi kesalahan saat memuat kategori");
     } finally {
       setFetching(false);
     }
@@ -84,7 +83,7 @@ export default function EditCategoryPage({
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      showToast("Nama kategori harus diisi", "warning");
+      showAlert("warning", "Validasi", "Nama kategori harus diisi");
       return;
     }
 
@@ -97,22 +96,23 @@ export default function EditCategoryPage({
 
       if (error) {
         if (error.code === "23505") {
-          showToast(
-            "Kategori dengan nama atau slug yang sama sudah ada",
-            "error"
+          showAlert(
+            "error",
+            "Gagal",
+            "Kategori dengan nama atau slug yang sama sudah ada"
           );
         } else {
           throw error;
         }
       } else {
-        showToast("Kategori berhasil diperbarui!", "success");
+        showAlert("success", "Berhasil", "Kategori berhasil diperbarui!");
         setTimeout(() => {
           router.push("/admin/categories");
         }, 1000);
       }
     } catch (error) {
       console.error("Error updating category:", error);
-      showToast("Gagal memperbarui kategori", "error");
+      showAlert("error", "Gagal", "Gagal memperbarui kategori");
     } finally {
       setLoading(false);
     }
@@ -209,12 +209,7 @@ export default function EditCategoryPage({
         </form>
       </div>
 
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

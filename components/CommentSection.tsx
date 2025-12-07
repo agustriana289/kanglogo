@@ -256,7 +256,7 @@ export default function CommentSection({ articleId }: CommentSectionProps) {
               />
             </div>
             <div className="mb-4">
-              <ReCAPTCHA onChange={setRecaptchaToken} />
+              <ReCAPTCHA onChange={setRecaptchaToken} containerId="recaptcha-main" />
             </div>
             {replyingTo && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -359,7 +359,7 @@ export default function CommentSection({ articleId }: CommentSectionProps) {
                           />
                         </div>
                         <div className="mb-4">
-                          <ReCAPTCHA onChange={setRecaptchaToken} />
+                          <ReCAPTCHA onChange={setRecaptchaToken} containerId={`recaptcha-reply-${comment.id}`} />
                         </div>
                         <div className="flex space-x-2">
                           <button

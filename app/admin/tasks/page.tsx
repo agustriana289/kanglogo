@@ -2,29 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 import {
-  CheckSquare,
-  Square,
-  Calendar,
-  LayoutGrid,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  User,
-  FileText,
-  DollarSign,
-  Search,
-} from "lucide-react";
+  MagnifyingGlassIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  ClockIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 
-// Tipe untuk data order yang sudah di-join dengan tabel services
+// Type definition matching the query structure
 type OrderWithService = {
   id: number;
   invoice_number: string;
   customer_name: string;
-  final_price: number;
   status: string;
   work_deadline: string | null;
   created_at: string;
@@ -36,29 +28,18 @@ type OrderWithService = {
   } | null;
 };
 
-// Items per page
-const ITEMS_PER_PAGE = 20;
+// Status Constants
+const STATUS_TODO = "accepted";
+const STATUS_IN_PROGRESS = "in_progress";
+const STATUS_COMPLETED = "completed";
 
 export default function TaskManagementPage() {
   const [tasks, setTasks] = useState<OrderWithService[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<OrderWithService[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"proses" | "selesai">("proses");
-  const [activeView, setActiveView] = useState<"table" | "calendar">("table");
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+  const [selectedTaskGroup, setSelectedTaskGroup] = useState<"All" | "Todo" | "InProgress" | "Completed">("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const { toast, showToast, hideToast } = useToast();
-
-  // Calculate total pages
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-
-  // Calculate the range of items to display
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentItems = filteredTasks.slice(indexOfFirstItem, indexOfLastItem);
 
   useEffect(() => {
     fetchTasks();
@@ -66,624 +47,348 @@ export default function TaskManagementPage() {
 
   useEffect(() => {
     filterTasks();
-  }, [tasks, activeTab, searchQuery]);
+  }, [tasks, selectedTaskGroup, searchQuery]);
 
   const fetchTasks = async () => {
     setLoading(true);
-    // Mengambil data orders dan menggabungkannya dengan tabel services untuk mendapatkan judul layanan
-    const { data, error } = await supabase
-      .from("orders")
-      .select(
-        `
-                *,
-                services ( title )
-            `
-      )
-      .in("status", ["in_progress", "completed"]) // Hanya mengambil status yang relevan untuk task
-      .order("work_deadline", { ascending: true });
+    try {
+      // Fetch orders with relevant statuses
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          services ( title )
+        `)
+        .in("status", [STATUS_TODO, STATUS_IN_PROGRESS, STATUS_COMPLETED])
+        .order("work_deadline", { ascending: true });
 
-    if (error) {
+      if (error) throw error;
+      setTasks((data as any) || []);
+    } catch (error) {
       console.error("Error fetching tasks:", error);
-      showToast("Gagal memuat task", "error");
-    } else {
-      setTasks((data as OrderWithService[]) || []);
-      setTotalItems((data as OrderWithService[])?.length || 0);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const filterTasks = () => {
-    let filtered = tasks.filter((task) => {
-      if (activeTab === "proses") {
-        return task.status === "in_progress";
-      }
-      return task.status === "completed";
-    });
+    let filtered = tasks;
 
-    // Apply search filter
-    if (searchQuery.trim() !== "") {
-      const searchLower = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (task) =>
-          task.invoice_number.toLowerCase().includes(searchLower) ||
-          task.customer_name.toLowerCase().includes(searchLower) ||
-          task.package_details.name.toLowerCase().includes(searchLower) ||
-          (task.services?.title &&
-            task.services.title.toLowerCase().includes(searchLower))
+    // Filter by Tab
+    if (selectedTaskGroup === "Todo") {
+      filtered = filtered.filter(t => t.status === STATUS_TODO);
+    } else if (selectedTaskGroup === "InProgress") {
+      filtered = filtered.filter(t => t.status === STATUS_IN_PROGRESS);
+    } else if (selectedTaskGroup === "Completed") {
+      filtered = filtered.filter(t => t.status === STATUS_COMPLETED);
+    }
+
+    // Filter by Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t =>
+        t.customer_name.toLowerCase().includes(query) ||
+        (t.services?.title || t.package_details?.name || "Refinancing").toLowerCase().includes(query)
       );
     }
 
     setFilteredTasks(filtered);
-    // Reset to first page when search changes
-    setCurrentPage(1);
   };
 
-  const handleStatusChange = async (taskId: number, newStatus: string) => {
-    setUpdatingTaskId(taskId);
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("id", taskId);
-
-    if (error) {
-      console.error("Error updating task status:", error);
-      showToast("Gagal memperbarui status task.", "error");
-    } else {
-      showToast(
-        `Task berhasil dipindahkan ke ${
-          newStatus === "in_progress" ? "proses" : "selesai"
-        }!`,
-        "success"
-      );
-      // Refresh data untuk memindahkan task ke tab yang benar
-      fetchTasks();
-    }
-    setUpdatingTaskId(null);
+  // Helper to count tasks
+  const getCount = (group: string) => {
+    if (group === 'All') return tasks.length;
+    if (group === 'Todo') return tasks.filter(t => t.status === STATUS_TODO).length;
+    if (group === 'InProgress') return tasks.filter(t => t.status === STATUS_IN_PROGRESS).length;
+    if (group === 'Completed') return tasks.filter(t => t.status === STATUS_COMPLETED).length;
+    return 0;
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString?: string | null) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "2-digit",
+      day: "numeric",
       month: "short",
-      year: "numeric",
+      year: "numeric"
     });
   };
 
-  // Fungsi untuk Kalender
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDayOfMonth);
-    startDate.setDate(startDate.getDate() - firstDayOfMonth.getDay());
-
-    const days = [];
-    let current = new Date(startDate);
-
-    while (current <= lastDayOfMonth || current.getDay() !== 0) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case STATUS_TODO: return "Diterima";
+      case STATUS_IN_PROGRESS: return "Dikerjakan";
+      case STATUS_COMPLETED: return "Selesai";
+      default: return status;
     }
-    return days;
   };
 
-  const renderCalendar = () => {
-    const days = getDaysInMonth(currentMonth);
-    const today = new Date();
-
-    const tasksForCalendar = filteredTasks.reduce((acc, task) => {
-      if (task.work_deadline) {
-        const date = new Date(task.work_deadline).toDateString();
-        if (!acc[date]) {
-          acc[date] = [];
-        }
-        acc[date].push(task);
-      }
-      return acc;
-    }, {} as Record<string, OrderWithService[]>);
-
-    return (
-      <div className="bg-white dark:bg-slate-700 rounded-xl shadow-lg p-4 md:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {currentMonth.toLocaleDateString("id-ID", {
-              month: "long",
-              year: "numeric",
-            })}
-          </h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                setCurrentMonth(
-                  new Date(
-                    currentMonth.getFullYear(),
-                    currentMonth.getMonth() - 1
-                  )
-                )
-              }
-              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
-            >
-              <ChevronLeft
-                size={20}
-                className="text-slate-500 dark:text-slate-400"
-              />
-            </button>
-            <button
-              onClick={() =>
-                setCurrentMonth(
-                  new Date(
-                    currentMonth.getFullYear(),
-                    currentMonth.getMonth() + 1
-                  )
-                )
-              }
-              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
-            >
-              <ChevronRight
-                size={20}
-                className="text-slate-500 dark:text-slate-400"
-              />
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
-          {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((day) => (
-            <div key={day} className="p-2">
-              {day}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {days.map((day, index) => {
-            const dateKey = day.toDateString();
-            const dayTasks = tasksForCalendar[dateKey] || [];
-            const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-            const isToday = day.toDateString() === today.toDateString();
-
-            return (
-              <div
-                key={index}
-                className={`min-h-[80px] p-1 border rounded ${
-                  !isCurrentMonth
-                    ? "bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
-                    : ""
-                } ${
-                  isToday
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-400"
-                    : "border-slate-200 dark:border-slate-600"
-                }`}
-              >
-                <div
-                  className={`text-sm font-medium ${
-                    isToday ? "text-blue-600 dark:text-blue-400" : ""
-                  }`}
-                >
-                  {day.getDate()}
-                </div>
-                <div className="space-y-1 mt-1">
-                  {dayTasks.slice(0, 2).map((task) => (
-                    <a
-                      key={task.id}
-                      href={`/order/${task.invoice_number}`}
-                      target="_blank"
-                      className={`block text-xs p-1 rounded truncate ${
-                        task.status === "completed"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                          : "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                      } hover:opacity-80`}
-                      title={task.package_details.name}
-                    >
-                      {task.package_details.name}
-                    </a>
-                  ))}
-                  {dayTasks.length > 2 && (
-                    <div className="text-xs text-slate-500 dark:text-slate-400 p-1">
-                      +{dayTasks.length - 2} lagi
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Generate page numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const startPage = Math.max(1, currentPage - 2);
-      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (startPage > 1) {
-        pages.push(1);
-        if (startPage > 2) {
-          pages.push("...");
-        }
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push("...");
-        }
-        pages.push(totalPages);
-      }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case STATUS_TODO: return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      case STATUS_IN_PROGRESS: return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+      case STATUS_COMPLETED: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
     }
-
-    return pages;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <LogoLoading />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki dengan Search */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              {/* View Switcher - Diperbaiki */}
-              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                <button
-                  onClick={() => setActiveView("table")}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    activeView === "table"
-                      ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <LayoutGrid size={18} className="inline mr-1" /> Tabel
-                </button>
-                <button
-                  onClick={() => setActiveView("calendar")}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    activeView === "calendar"
-                      ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Calendar size={18} className="inline mr-1" /> Kalender
-                </button>
-              </div>
-            </div>
+  // Grouped tasks for List View (when All is selected)
+  const todoTasks = tasks.filter(t => t.status === STATUS_TODO);
+  const inProgressTasks = tasks.filter(t => t.status === STATUS_IN_PROGRESS);
+  const completedTasks = tasks.filter(t => t.status === STATUS_COMPLETED);
 
-            <div className="relative w-full sm:w-auto">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-slate-400" />
-              </div>
-              <input
-                type="text"
-                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Cari task..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+  return (
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+
+      {/* Header Section (White Card - Matches Store Page) */}
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
+              Daftar Tugas
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Kelola tugas yang sedang berjalan
+            </p>
+          </div>
+
+          {/* Tabs inside the Header Card */}
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-2 rounded-lg bg-gray-50 p-1 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+            {['All', 'Todo', 'InProgress', 'Completed'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setSelectedTaskGroup(tab as any)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedTaskGroup === tab
+                  ? "bg-white text-gray-900 dark:bg-gray-800 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-gray-700"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  }`}
+              >
+                {tab === 'All' ? 'Semua' : tab === 'Todo' ? 'Diterima' : tab === 'InProgress' ? 'Dikerjakan' : 'Selesai'}
+                <span
+                  className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-normal ${selectedTaskGroup === tab
+                    ? "bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white"
+                    : "bg-gray-200/50 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                    }`}
+                >
+                  {getCount(tab)}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Tabs - Diperbaiki */}
-        <div className="flex space-x-1 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          <button
-            onClick={() => setActiveTab("proses")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "proses"
-                ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Proses ({tasks.filter((t) => t.status === "in_progress").length})
-          </button>
-          <button
-            onClick={() => setActiveTab("selesai")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "selesai"
-                ? "bg-white dark:bg-slate-700 text-green-600 dark:text-green-400 shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Selesai ({tasks.filter((t) => t.status === "completed").length})
-          </button>
+        {/* Filters & View Toggle Row */}
+        <div className="mt-6 flex flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cari tugas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-auto">
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg ml-auto sm:ml-0">
+              <button
+                onClick={() => setViewMode("kanban")}
+                className={`p-2 rounded-md transition ${viewMode === "kanban" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+                title="Kanban View"
+              >
+                <Squares2X2Icon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-md transition ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+                title="List View"
+              >
+                <ListBulletIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Items Count */}
-        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          Menampilkan {indexOfFirstItem + 1}-
-          {Math.min(indexOfLastItem, filteredTasks.length)} dari{" "}
-          {filteredTasks.length} task
-        </div>
-
-        {/* Content based on activeView */}
-        {activeView === "table" ? (
-          <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-600">
-              <thead className="bg-slate-50 dark:bg-slate-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    <span className="sr-only">Check</span>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    Tanggal
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    Nama Proyek
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    Klien
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    Budget
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    Layanan
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-                {currentItems.map((task) => (
-                  <tr
-                    key={task.id}
-                    className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                      task.status === "completed" ? "opacity-60" : ""
-                    }`}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() =>
-                          handleStatusChange(
-                            task.id,
-                            task.status === "in_progress"
-                              ? "completed"
-                              : "in_progress"
-                          )
-                        }
-                        disabled={updatingTaskId === task.id}
-                        className="text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 disabled:opacity-50"
-                      >
-                        {task.status === "completed" ? (
-                          <CheckSquare
-                            size={20}
-                            className="text-green-600 dark:text-green-400"
-                          />
-                        ) : (
-                          <Square
-                            size={20}
-                            className="text-slate-400 dark:text-slate-500"
-                          />
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      {formatDate(task.work_deadline)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
-                      <div className="flex items-center">
-                        <FileText size={16} className="text-slate-400 mr-3" />
-                        {task.package_details.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      <div className="flex items-center">
-                        <User size={16} className="text-slate-400 mr-1" />
-                        {task.customer_name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      <div className="flex items-center">
-                        <DollarSign size={16} className="text-slate-400 mr-1" />
-                        Rp {task.final_price.toLocaleString("id-ID")}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      {task.services?.title || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <a
-                        href={`/order/${task.invoice_number}`}
-                        target="_blank"
-                        className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
-                      >
-                        <ExternalLink size={16} /> Detail
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {currentItems.length === 0 && (
-              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                Tidak ada task ditemukan pada tab ini.
-              </div>
+      {/* Content Wrapper */}
+      <div className="space-y-6">
+        {viewMode === "list" ? (
+          /* LIST VIEW */
+          <div className="flex flex-col gap-6">
+            {selectedTaskGroup === 'All' ? (
+              <>
+                <TaskListSection
+                  title="Diterima"
+                  tasks={todoTasks}
+                  badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  formatDate={formatDate}
+                  getStatusLabel={getStatusLabel}
+                  getStatusColor={getStatusColor}
+                />
+                <TaskListSection
+                  title="Dikerjakan"
+                  tasks={inProgressTasks}
+                  badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                  formatDate={formatDate}
+                  getStatusLabel={getStatusLabel}
+                  getStatusColor={getStatusColor}
+                />
+                <TaskListSection
+                  title="Selesai"
+                  tasks={completedTasks}
+                  badgeColor="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  formatDate={formatDate}
+                  getStatusLabel={getStatusLabel}
+                  getStatusColor={getStatusColor}
+                />
+              </>
+            ) : (
+              <TaskListSection
+                title={selectedTaskGroup === 'All' ? 'Semua' : selectedTaskGroup === 'Todo' ? 'Diterima' : selectedTaskGroup === 'InProgress' ? 'Dikerjakan' : 'Selesai'}
+                tasks={filteredTasks}
+                badgeColor="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                formatDate={formatDate}
+                getStatusLabel={getStatusLabel}
+                getStatusColor={getStatusColor}
+              />
             )}
           </div>
         ) : (
-          renderCalendar()
-        )}
-
-        {/* Mobile Card View */}
-        <div className="md:hidden space-y-4">
-          {currentItems.map((task) => (
-            <div
-              key={task.id}
-              className={`bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600 ${
-                task.status === "completed" ? "opacity-60" : ""
-              }`}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-start">
-                  <FileText size={20} className="text-slate-400 mr-3 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-white">
-                      {task.package_details.name}
-                    </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      <span className="font-medium">Klien:</span>{" "}
-                      {task.customer_name}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() =>
-                    handleStatusChange(
-                      task.id,
-                      task.status === "in_progress"
-                        ? "completed"
-                        : "in_progress"
-                    )
-                  }
-                  disabled={updatingTaskId === task.id}
-                  className="text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 disabled:opacity-50"
-                >
-                  {task.status === "completed" ? (
-                    <CheckSquare
-                      size={20}
-                      className="text-green-600 dark:text-green-400"
-                    />
-                  ) : (
-                    <Square
-                      size={20}
-                      className="text-slate-400 dark:text-slate-500"
-                    />
-                  )}
-                </button>
-              </div>
-              <div className="ml-8">
-                <div className="space-y-2 text-sm text-slate-500 dark:text-slate-400 mb-3">
-                  <p>
-                    <span className="font-medium">Deadline:</span>{" "}
-                    {formatDate(task.work_deadline)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Budget:</span> Rp{" "}
-                    {task.final_price.toLocaleString("id-ID")}
-                  </p>
-                  <p>
-                    <span className="font-medium">Layanan:</span>{" "}
-                    {task.services?.title || "-"}
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <a
-                    href={`/order/${task.invoice_number}`}
-                    target="_blank"
-                    className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
-                  >
-                    <ExternalLink size={16} className="mr-1" />
-                    Detail
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {currentItems.length === 0 && (
-          <div className="text-center py-12">
-            <CheckSquare className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              {searchQuery ? "Tidak ada task yang ditemukan" : "Tidak ada task"}
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {searchQuery
-                ? "Coba ubah kata kunci pencarian Anda."
-                : activeTab === "proses"
-                ? "Belum ada task yang sedang dikerjakan."
-                : "Belum ada task yang telah selesai."}
-            </p>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-slate-700 dark:text-slate-300">
-              Halaman {currentPage} dari {totalPages}
-            </div>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
-                        ? "bg-primary text-white border-primary"
-                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
+          /* KANBAN VIEW */
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <KanbanColumn
+              title="Diterima"
+              count={getCount('Todo')}
+              tasks={todoTasks}
+              badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+              formatDate={formatDate}
+              getStatusLabel={getStatusLabel}
+              getStatusColor={getStatusColor}
+            />
+            <KanbanColumn
+              title="Dikerjakan"
+              count={getCount('InProgress')}
+              tasks={inProgressTasks}
+              badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+              formatDate={formatDate}
+              getStatusLabel={getStatusLabel}
+              getStatusColor={getStatusColor}
+            />
+            <KanbanColumn
+              title="Selesai"
+              count={getCount('Completed')}
+              tasks={completedTasks}
+              badgeColor="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+              formatDate={formatDate}
+              getStatusLabel={getStatusLabel}
+              getStatusColor={getStatusColor}
+            />
           </div>
         )}
       </div>
+    </div>
+  );
+}
 
-      {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+// Reuseable Components
+
+function KanbanColumn({ title, count, tasks, badgeColor, formatDate, getStatusLabel, getStatusColor }: any) {
+  return (
+    <div className="flex flex-col gap-5 h-full">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="flex items-center gap-3 text-base font-semibold text-gray-700 dark:text-white/90">
+          {title}
+          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${badgeColor}`}>
+            {count}
+          </span>
+        </h3>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {tasks.map((task: OrderWithService) => (
+          <TaskCard key={task.id} task={task} formatDate={formatDate} getStatusLabel={getStatusLabel} getStatusColor={getStatusColor} />
+        ))}
+        {tasks.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-32 rounded-xl bg-white/40 border border-dashed border-gray-200 dark:bg-white/5 dark:border-gray-700 text-sm text-gray-400">
+            <p>Tidak ada tugas</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskListSection({ title, tasks, badgeColor, formatDate, getStatusLabel, getStatusColor }: any) {
+  if (tasks.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Title only for grouped view, can be hidden if 'All' not used, but good for separation */}
+      <h3 className="flex items-center gap-3 text-base font-semibold text-gray-700 dark:text-white/90 px-1">
+        {title}
+        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${badgeColor}`}>
+          {tasks.length}
+        </span>
+      </h3>
+      <div className="space-y-3">
+        {tasks.map((task: OrderWithService) => (
+          <TaskCard key={task.id} task={task} isList={true} formatDate={formatDate} getStatusLabel={getStatusLabel} getStatusColor={getStatusColor} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TaskCard({ task, isList, formatDate, getStatusLabel, getStatusColor }: any) {
+  const displayTitle = task.services?.title || task.package_details?.name || "Pesanan Kustom";
+
+  return (
+    <div className={`group relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 dark:bg-slate-800 dark:border-gray-700 dark:hover:border-gray-600 transition p-4 ${isList ? 'flex flex-col sm:flex-row sm:items-center justify-between gap-4' : ''}`}>
+      <div className="flex items-start justify-between gap-4 w-full">
+        <div className="flex items-start gap-4">
+          {/* Checkbox Placeholder */}
+          <div className="pt-1">
+            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.status === STATUS_COMPLETED ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-blue-400 bg-white dark:bg-slate-900 dark:border-gray-600'}`}>
+              {task.status === STATUS_COMPLETED && <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />}
+            </div>
+          </div>
+
+          <div>
+            <h4 className={`text-sm font-semibold mb-1 ${task.status === STATUS_COMPLETED ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'} group-hover:text-primary transition-colors`}>
+              {displayTitle}
+            </h4>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <UserIcon className="w-3.5 h-3.5" />
+                <span>{task.customer_name}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`flex items-center gap-3 ${isList ? 'w-full sm:w-auto mt-3 sm:mt-0 justify-between sm:justify-end' : 'mt-4 justify-between border-t border-gray-50 dark:border-gray-700/50 pt-3'}`}>
+        {/* Status Badge */}
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getStatusColor(task.status)}`}>
+          {getStatusLabel(task.status)}
+        </span>
+
+        <div className="flex items-center gap-3">
+          {/* Date */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400" title="Deadline">
+            <ClockIcon className="w-3.5 h-3.5" />
+            <span>{formatDate(task.work_deadline)}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

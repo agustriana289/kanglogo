@@ -268,8 +268,7 @@ export default function SettingsPage() {
     } catch (error) {
       console.error("Kesalahan saat mengunggah file:", error);
       showNotification(
-        `Gagal mengunggah ${type === "logo" ? "logo" : "favicon"}! Kesalahan: ${
-          (error as any).message || error
+        `Gagal mengunggah ${type === "logo" ? "logo" : "favicon"}! Kesalahan: ${(error as any).message || error
         }`,
         "error"
       );
@@ -325,8 +324,7 @@ export default function SettingsPage() {
     } catch (error) {
       console.error("Kesalahan saat mengunggah file:", error);
       showNotification(
-        `Gagal mengunggah ${type === "logo" ? "logo" : "favicon"}! Kesalahan: ${
-          (error as any).message || error
+        `Gagal mengunggah ${type === "logo" ? "logo" : "favicon"}! Kesalahan: ${(error as any).message || error
         }`,
         "error"
       );
@@ -548,6 +546,9 @@ export default function SettingsPage() {
     setExpandedCategory(expandedCategory === categoryId ? null : categoryId);
   };
 
+  const inputStyle =
+    "bg-white dark:bg-slate-900 shadow-sm focus:border-primary focus:ring-primary/10 dark:focus:border-primary w-full rounded-lg border border-gray-300 py-2.5 px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30";
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
@@ -564,36 +565,34 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-2">
-      <div className="bg-white dark:bg-slate-700 rounded-2xl shadow-lg p-6">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-6 border-b border-slate-200 dark:border-slate-600">
+        <div className="flex space-x-1 mb-6 border-b border-gray-200 px-5 pt-4 dark:border-gray-800">
+
           <button
-            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${
-              activeTab === "general"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${activeTab === "general"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("general")}
           >
             Pengaturan Umum
           </button>
           <button
-            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${
-              activeTab === "meta"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${activeTab === "meta"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("meta")}
           >
             Meta Tags
           </button>
           <button
-            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${
-              activeTab === "links"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${activeTab === "links"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("links")}
           >
             Tautan
@@ -615,7 +614,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="misal: description"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                    className={inputStyle}
                     value={newMetaTag.name}
                     onChange={(e) =>
                       setNewMetaTag({ ...newMetaTag, name: e.target.value })
@@ -629,7 +628,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="Konten meta tag"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                    className={inputStyle}
                     value={newMetaTag.content}
                     onChange={(e) =>
                       setNewMetaTag({ ...newMetaTag, content: e.target.value })
@@ -643,7 +642,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="misal: og:title"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                    className={inputStyle}
                     value={newMetaTag.property}
                     onChange={(e) =>
                       setNewMetaTag({ ...newMetaTag, property: e.target.value })
@@ -677,8 +676,8 @@ export default function SettingsPage() {
                       ? "Menyimpan..."
                       : "Menambahkan..."
                     : newMetaTag.id
-                    ? "Simpan"
-                    : "Tambah"}
+                      ? "Simpan"
+                      : "Tambah"}
                 </button>
               </div>
             </div>
@@ -702,7 +701,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="misal: google-site-verification"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                    className={inputStyle}
                     value={newMetaTag.name}
                     onChange={(e) =>
                       setNewMetaTag({
@@ -720,7 +719,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="Masukkan kode verifikasi"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                    className={inputStyle}
                     value={newMetaTag.content}
                     onChange={(e) =>
                       setNewMetaTag({
@@ -758,8 +757,8 @@ export default function SettingsPage() {
                       ? "Menyimpan..."
                       : "Menambahkan..."
                     : newMetaTag.id
-                    ? "Simpan"
-                    : "Tambah"}
+                      ? "Simpan"
+                      : "Tambah"}
                 </button>
               </div>
             </div>
@@ -769,11 +768,10 @@ export default function SettingsPage() {
         {/* Notification */}
         {notification.show && (
           <div
-            className={`mb-4 p-4 rounded-lg ${
-              notification.type === "success"
-                ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
-                : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
-            }`}
+            className={`mb-4 p-4 rounded-lg ${notification.type === "success"
+              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
+              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
+              }`}
           >
             {notification.message}
           </div>
@@ -781,7 +779,7 @@ export default function SettingsPage() {
 
         {/* General Settings Tab */}
         {activeTab === "general" && (
-          <div className="space-y-6">
+          <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Logo Upload */}
               <div>
@@ -791,9 +789,8 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-center w-full">
                   <label
                     htmlFor="logo-dropzone-file"
-                    className={`flex flex-col items-center justify-center w-full h-64 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-2xl cursor-pointer hover:bg-neutral-tertiary-medium ${
-                      isDraggingLogo ? "bg-blue-50 border-blue-500" : ""
-                    }`}
+                    className={`flex flex-col items-center justify-center w-full h-64 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-2xl cursor-pointer hover:bg-neutral-tertiary-medium ${isDraggingLogo ? "bg-slate-200 border-primary" : ""
+                      }`}
                     onDragOver={(e) => handleDragOver(e, "logo")}
                     onDragLeave={(e) => handleDragLeave(e, "logo")}
                     onDrop={(e) => handleDrop(e, "logo")}
@@ -858,9 +855,8 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-center w-full">
                   <label
                     htmlFor="favicon-dropzone-file"
-                    className={`flex flex-col items-center justify-center w-full h-64 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-2xl cursor-pointer hover:bg-neutral-tertiary-medium ${
-                      isDraggingFavicon ? "bg-blue-50 border-blue-500" : ""
-                    }`}
+                    className={`flex flex-col items-center justify-center w-full h-64 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-2xl cursor-pointer hover:bg-neutral-tertiary-medium ${isDraggingFavicon ? "bg-slate-200 border-primary" : ""
+                      }`}
                     onDragOver={(e) => handleDragOver(e, "favicon")}
                     onDragLeave={(e) => handleDragLeave(e, "favicon")}
                     onDrop={(e) => handleDrop(e, "favicon")}
@@ -924,7 +920,7 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                  className={inputStyle}
                   value={generalSettings.website_name}
                   onChange={(e) =>
                     setGeneralSettings({
@@ -942,7 +938,7 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="email"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                  className={inputStyle}
                   value={generalSettings.website_email}
                   onChange={(e) =>
                     setGeneralSettings({
@@ -960,7 +956,7 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="tel"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                  className={inputStyle}
                   value={generalSettings.website_phone}
                   onChange={(e) =>
                     setGeneralSettings({
@@ -978,7 +974,7 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                  className={inputStyle}
                   value={generalSettings.website_author}
                   onChange={(e) =>
                     setGeneralSettings({
@@ -996,7 +992,7 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                  className={inputStyle}
                   value={generalSettings.website_country}
                   onChange={(e) =>
                     setGeneralSettings({
@@ -1013,7 +1009,7 @@ export default function SettingsPage() {
                   Bahasa
                 </label>
                 <select
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                  className={inputStyle}
                   value={generalSettings.website_language}
                   onChange={(e) =>
                     setGeneralSettings({
@@ -1035,7 +1031,7 @@ export default function SettingsPage() {
               </label>
               <textarea
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                className={inputStyle}
                 value={generalSettings.website_description}
                 onChange={(e) =>
                   setGeneralSettings({
@@ -1050,7 +1046,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSaveGeneralSettings}
                 disabled={saving}
-                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
               >
                 {saving ? "Menyimpan..." : "Simpan Pengaturan"}
               </button>
@@ -1060,7 +1056,7 @@ export default function SettingsPage() {
 
         {/* Meta Tags Tab */}
         {activeTab === "meta" && (
-          <div className="grid lg:grid-cols-2 gap-4 items-start">
+          <div className="grid lg:grid-cols-2 gap-4 items-start px-6 pb-6">
             {/* Meta Tags Section */}
             <div>
               <div className="mt-4 flex lg:justify-start mb-4">
@@ -1111,7 +1107,7 @@ export default function SettingsPage() {
                               });
                               setShowMetaTagModal(true);
                             }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                            className="text-primary hover:text-primary/80 dark:text-primary/80 dark:hover:text-primary mr-3"
                           >
                             Sunting
                           </button>
@@ -1179,7 +1175,7 @@ export default function SettingsPage() {
                               });
                               setShowVerificationModal(true);
                             }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                            className="text-primary hover:text-primary/80 dark:text-primary/80 dark:hover:text-primary mr-3"
                           >
                             Sunting
                           </button>
@@ -1201,7 +1197,7 @@ export default function SettingsPage() {
 
         {/* Links Tab dengan Grid Layout */}
         {activeTab === "links" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 pb-6">
             {/* Header Links - 2 columns */}
             <div className="lg:col-span-2 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden">
               <div>
@@ -1243,7 +1239,7 @@ export default function SettingsPage() {
                                   setModalLinkType("header");
                                   setShowLinkModal(true);
                                 }}
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                                className="text-primary hover:text-primary/80 dark:text-primary/80 dark:hover:text-primary mr-3"
                               >
                                 Sunting
                               </button>
@@ -1274,7 +1270,7 @@ export default function SettingsPage() {
                       setModalLinkType("header");
                       setShowLinkModal(true);
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80"
                   >
                     + Navigasi
                   </button>
@@ -1310,7 +1306,7 @@ export default function SettingsPage() {
                                 setModalLinkType("social");
                                 setShowLinkModal(true);
                               }}
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                              className="text-primary hover:text-primary/80 dark:text-primary/80 dark:hover:text-primary mr-3"
                             >
                               Sunting
                             </button>
@@ -1338,7 +1334,7 @@ export default function SettingsPage() {
                       setModalLinkType("social");
                       setShowLinkModal(true);
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80"
                   >
                     + Social Media
                   </button>
@@ -1391,7 +1387,7 @@ export default function SettingsPage() {
                                         setModalLinkType("footer");
                                         setShowLinkModal(true);
                                       }}
-                                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                                      className="text-primary hover:text-primary/80 dark:text-primary/80 dark:hover:text-primary mr-3"
                                     >
                                       Sunting
                                     </button>
@@ -1419,7 +1415,7 @@ export default function SettingsPage() {
                             setModalLinkType("footer");
                             setShowLinkModal(true);
                           }}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80"
                         >
                           + {category.name}
                         </button>
@@ -1452,7 +1448,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="Nama (misal: Instagram)"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                      className={inputStyle}
                       value={newSocialMedia.name}
                       onChange={(e) =>
                         setNewSocialMedia({
@@ -1464,7 +1460,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="URL (misal: https://instagram.com/username)"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                      className={inputStyle}
                       value={newSocialMedia.url}
                       onChange={(e) =>
                         setNewSocialMedia({
@@ -1476,7 +1472,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="Icon SVG"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                      className={inputStyle}
                       value={newSocialMedia.icon_svg}
                       onChange={(e) =>
                         setNewSocialMedia({
@@ -1491,7 +1487,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="Label (e.g., Home)"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                      className={inputStyle}
                       value={newLink.label}
                       onChange={(e) =>
                         setNewLink({ ...newLink, label: e.target.value })
@@ -1500,7 +1496,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="URL (e.g., /)"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                      className={inputStyle}
                       value={newLink.url}
                       onChange={(e) =>
                         setNewLink({ ...newLink, url: e.target.value })
@@ -1543,15 +1539,15 @@ export default function SettingsPage() {
                         ? "Menyimpan..."
                         : "Menambahkan..."
                       : newSocialMedia.id
-                      ? "Simpan"
-                      : "Tambah"
+                        ? "Simpan"
+                        : "Tambah"
                     : saving
-                    ? newLink.id
-                      ? "Menyimpan..."
-                      : "Menambahkan..."
-                    : newLink.id
-                    ? "Simpan"
-                    : "Tambah"}
+                      ? newLink.id
+                        ? "Menyimpan..."
+                        : "Menambahkan..."
+                      : newLink.id
+                        ? "Simpan"
+                        : "Tambah"}
                 </button>
               </div>
             </div>

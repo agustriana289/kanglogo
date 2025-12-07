@@ -52,7 +52,7 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
 
   return (
     <section className="pt-12 sm:pt-24" id="faq">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8">
         {/* Header */}
         <div className="pb-4">
           <h1 className="text-center max-w-2xl mx-auto font-manrope font-bold text-3xl text-gray-900 sm:mb-5 md:text-5xl leading-[50px]">
@@ -66,7 +66,7 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
 
         {/* FAQ Items - Static Display sesuai original Anda */}
         <div className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 md:gap-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 md:gap-x-8 md:gap-y-12">
             {faqs.map((item) => (
               <dl key={item.id}>
                 <dt className="font-medium leading-6 text-gray-700 text-lg mt-4">

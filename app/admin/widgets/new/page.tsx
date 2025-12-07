@@ -5,12 +5,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import Toast from "@/components/Toast";
-import { useToast } from "@/hooks/useToast";
+import { useAlert } from "@/components/providers/AlertProvider";
 
 export default function NewWidgetPage() {
   const router = useRouter();
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert } = useAlert();
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -30,7 +29,7 @@ export default function NewWidgetPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.content) {
-      showToast("Judul dan konten widget harus diisi.", "error");
+      showAlert("error", "Validasi", "Judul dan konten widget harus diisi.");
       return;
     }
 
@@ -40,14 +39,14 @@ export default function NewWidgetPage() {
 
       if (error) {
         console.error("Error creating widget:", error);
-        showToast("Gagal membuat widget. Silakan coba lagi.", "error");
+        showAlert("error", "Gagal", "Gagal membuat widget. Silakan coba lagi.");
       } else {
-        showToast("Widget berhasil dibuat!", "success");
+        showAlert("success", "Berhasil", "Widget berhasil dibuat!");
         router.push("/admin/widgets"); // Arahkan kembali ke halaman kelola widget
       }
     } catch (error) {
       console.error("Error creating widget:", error);
-      showToast("Terjadi kesalahan tak terduga.", "error");
+      showAlert("error", "Error", "Terjadi kesalahan tak terduga.");
     } finally {
       setSubmitting(false);
     }
@@ -149,12 +148,7 @@ export default function NewWidgetPage() {
         </form>
       </div>
 
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

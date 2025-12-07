@@ -17,6 +17,7 @@ import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
 import html2pdf from "html2pdf.js";
 import LogoLoading from "@/components/LogoLoading";
+import InvoiceGate from "@/components/InvoiceGate";
 
 export default function InvoiceDetailPage({
   params,
@@ -212,17 +213,17 @@ export default function InvoiceDetailPage({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending_payment":
-        return "Pending Payment";
+        return "Menunggu Pembayaran";
       case "paid":
-        return "Paid";
+        return "Dibayar";
       case "accepted":
-        return "Accepted";
+        return "Diterima";
       case "in_progress":
-        return "In Progress";
+        return "Dikerjakan";
       case "completed":
-        return "Completed";
+        return "Selesai";
       case "cancelled":
-        return "Cancelled";
+        return "Dibatalkan";
       default:
         return status;
     }
@@ -242,287 +243,289 @@ export default function InvoiceDetailPage({
   const tax = 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="mb-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-primary">
-              Invoice #{order.invoice_number}
-            </h1>
-            <div className="flex gap-3">
-              <button
-                onClick={downloadFile}
-                disabled={isDownloading}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2 border disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Download size={18} /> {getDownloadButtonText()}
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Cetak
-              </button>
+    <InvoiceGate customerEmail={order.customer_email} invoiceNumber={order.invoice_number}>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="mb-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-primary">
+                Invoice #{order.invoice_number}
+              </h1>
+              <div className="flex gap-3">
+                <button
+                  onClick={downloadFile}
+                  disabled={isDownloading}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2 border disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download size={18} /> {getDownloadButtonText()}
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Cetak
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div ref={invoiceRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6 bg-white rounded-lg shadow p-4">
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-500 mb-2">
-                    Bayar ke:
-                  </h3>
-                  <div className="text-gray-900 font-semibold mb-1">
-                    KangLogo.com
+          <div ref={invoiceRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6 bg-white rounded-lg shadow p-4">
+              <div className="p-6">
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                      Bayar ke:
+                    </h3>
+                    <div className="text-gray-900 font-semibold mb-1">
+                      KangLogo.com
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Majalengka, Indonesia
+                      <br />
+                      halo@kanglogo.com
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Majalengka, Indonesia
-                    <br />
-                    halo@kanglogo.com
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-500 mb-2">
-                    Invoice untuk:
-                  </h3>
-                  <div className="text-gray-900 font-semibold mb-1">
-                    {order.customer_name}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {order.customer_email}
-                    <br />
-                    {order.customer_whatsapp}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                      Invoice untuk:
+                    </h3>
+                    <div className="text-gray-900 font-semibold mb-1">
+                      {order.customer_name}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {order.customer_email}
+                      <br />
+                      {order.customer_whatsapp}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <div className="overflow-hidden">
+                <table className="w-full">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
+                        PAKET
+                      </th>
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                        ESTIMASI
+                      </th>
+                      <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
+                        HARGA
+                      </th>
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                        DISKON
+                      </th>
+                      <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
+                        TOTAL HARGA
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-4 px-6">
+                        <div className="font-medium text-gray-900">
+                          {order.package_details?.name || "Service Package"}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center text-gray-700">
+                        {order.package_details?.duration || "-"}
+                      </td>
+                      <td className="py-4 px-4 text-right text-gray-700">
+                        Rp {priceBeforeDiscount.toLocaleString("id-ID")}
+                      </td>
+                      <td className="py-4 px-4 text-center text-gray-700">
+                        Rp {order.discount_amount.toLocaleString("id-ID")}
+                      </td>
+                      <td className="py-4 px-6 text-right font-medium text-gray-900">
+                        Rp {order.final_price.toLocaleString("id-ID")}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="p-6">
+                  <div className="max-w-xs ml-auto space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="font-medium">
+                        Rp {subtotal.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    {order.discount_amount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">
+                          Diskon{" "}
+                          {order.discount_code ? `(${order.discount_code})` : ""}
+                        </span>
+                        <span className="font-medium text-green-600">
+                          - Rp {order.discount_amount.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Pajak</span>
+                      <span className="font-medium">
+                        Rp {tax.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between text-base font-bold">
+                        <span>Total</span>
+                        <span>
+                          Rp {order.final_price.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {order.status === "pending_payment" && order.payment_deadline && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <Clock className="text-yellow-600" size={24} />
+                    <div className="flex-1">
+                      <div className="font-semibold text-gray-900">
+                        Batas Waktu Pembayaran
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Selesaikan pembayaran sebelum waktu habis
+                      </div>
+                    </div>
+                    <div className="flex gap-2 text-2xl font-bold text-yellow-600">
+                      <div className="bg-white px-3 py-2 rounded">
+                        {String(timeLeft.hours).padStart(2, "0")}
+                      </div>
+                      <span className="py-2">:</span>
+                      <div className="bg-white px-3 py-2 rounded">
+                        {String(timeLeft.minutes).padStart(2, "0")}
+                      </div>
+                      <span className="py-2">:</span>
+                      <div className="bg-white px-3 py-2 rounded">
+                        {String(timeLeft.seconds).padStart(2, "0")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-4">
+                <button
+                  onClick={downloadFile}
+                  disabled={isDownloading}
+                  className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download size={18} /> {getDownloadButtonTextLong()}
+                </button>
+                <button
+                  onClick={copyLink}
+                  className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium"
+                >
+                  <Copy size={18} /> {copied ? "Disalin!" : "Salin Tautan"}
+                </button>
+                {order.status === "pending_payment" && (
+                  <button
+                    onClick={() =>
+                      router.push(`/order/${order.invoice_number}/confirm`)
+                    }
+                    className="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-medium"
+                  >
+                    Konfirmasi Pembayaran
+                  </button>
+                )}
+                {(order.status === "paid" ||
+                  order.status === "accepted" ||
+                  order.status === "in_progress" ||
+                  order.status === "completed") && (
+                    <button
+                      disabled
+                      className="bg-green-100 text-green-800 py-3 px-4 rounded-lg font-medium cursor-not-allowed"
+                    >
+                      Dibayar
+                    </button>
+                  )}
+              </div>
             </div>
 
-            <div className="overflow-hidden">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
-                      PAKET
-                    </th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                      ESTIMASI
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
-                      HARGA
-                    </th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                      DISKON
-                    </th>
-                    <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
-                      TOTAL HARGA
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="py-4 px-6">
-                      <div className="font-medium text-gray-900">
-                        {order.package_details?.name || "Service Package"}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-center text-gray-700">
-                      {order.package_details?.duration || "-"}
-                    </td>
-                    <td className="py-4 px-4 text-right text-gray-700">
-                      Rp {priceBeforeDiscount.toLocaleString("id-ID")}
-                    </td>
-                    <td className="py-4 px-4 text-center text-gray-700">
-                      Rp {order.discount_amount.toLocaleString("id-ID")}
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-gray-900">
-                      Rp {order.final_price.toLocaleString("id-ID")}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className="p-6">
-                <div className="max-w-xs ml-auto space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium">
-                      Rp {subtotal.toLocaleString("id-ID")}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-sm text-gray-600">Total Invoice:</span>
+                  <span className="text-2xl font-bold">
+                    Rp {order.final_price.toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <button
+                  className={`w-full py-2 px-4 rounded-lg border font-medium mb-4 ${getStatusColor(
+                    order.status
+                  )}`}
+                >
+                  {getStatusLabel(order.status)}
+                </button>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-gray-400" />
+                    <span className="text-gray-600">Dibuat:</span>
+                    <span className="font-medium ml-auto">
+                      {formatDate(order.created_at)}
                     </span>
                   </div>
-                  {order.discount_amount > 0 && (
-                    <div className="flex justify-between text-sm">
+                  {order.payment_deadline && (
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className="text-gray-400" />
                       <span className="text-gray-600">
-                        Diskon{" "}
-                        {order.discount_code ? `(${order.discount_code})` : ""}
+                        Batas Waktu:
                       </span>
-                      <span className="font-medium text-green-600">
-                        - Rp {order.discount_amount.toLocaleString("id-ID")}
+                      <span className="font-medium ml-auto">
+                        {formatDate(order.payment_deadline)}
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tax</span>
-                    <span className="font-medium">
-                      Rp {tax.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between text-base font-bold">
-                      <span>Total</span>
-                      <span>
-                        Rp {order.final_price.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
-            </div>
 
-            {order.status === "pending_payment" && order.payment_deadline && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <Clock className="text-yellow-600" size={24} />
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">
-                      Batas Waktu Pembayaran
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Selesaikan pembayaran sebelum waktu habis
-                    </div>
-                  </div>
-                  <div className="flex gap-2 text-2xl font-bold text-yellow-600">
-                    <div className="bg-white px-3 py-2 rounded">
-                      {String(timeLeft.hours).padStart(2, "0")}
-                    </div>
-                    <span className="py-2">:</span>
-                    <div className="bg-white px-3 py-2 rounded">
-                      {String(timeLeft.minutes).padStart(2, "0")}
-                    </div>
-                    <span className="py-2">:</span>
-                    <div className="bg-white px-3 py-2 rounded">
-                      {String(timeLeft.seconds).padStart(2, "0")}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-4">
-              <button
-                onClick={downloadFile}
-                disabled={isDownloading}
-                className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Download size={18} /> {getDownloadButtonTextLong()}
-              </button>
-              <button
-                onClick={copyLink}
-                className="bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 font-medium"
-              >
-                <Copy size={18} /> {copied ? "Disalin!" : "Salin Tautan"}
-              </button>
-              {order.status === "pending_payment" && (
-                <button
-                  onClick={() =>
-                    router.push(`/order/${order.invoice_number}/confirm`)
-                  }
-                  className="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-medium"
-                >
-                  Confirm Payment
-                </button>
-              )}
-              {(order.status === "paid" ||
-                order.status === "accepted" ||
-                order.status === "in_progress" ||
-                order.status === "completed") && (
-                <button
-                  disabled
-                  className="bg-green-100 text-green-800 py-3 px-4 rounded-lg font-medium cursor-not-allowed"
-                >
-                  Dibayar
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-sm text-gray-600">Total Invoice:</span>
-                <span className="text-2xl font-bold">
-                  Rp {order.final_price.toLocaleString("id-ID")}
-                </span>
-              </div>
-              <button
-                className={`w-full py-2 px-4 rounded-lg border font-medium mb-4 ${getStatusColor(
-                  order.status
-                )}`}
-              >
-                {getStatusLabel(order.status)}
-              </button>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Created:</span>
-                  <span className="font-medium ml-auto">
-                    {formatDate(order.created_at)}
-                  </span>
-                </div>
-                {order.payment_deadline && (
+              {paymentMethod && (
+                <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-4">
                   <div className="flex items-center gap-2">
-                    <Clock size={16} className="text-gray-400" />
-                    <span className="text-gray-600">
-                      Batas Waktu Pembayaran:
-                    </span>
+                    <CreditCard size={16} className="text-gray-400" />
+                    <span className="text-gray-600">Metode Pembayaran:</span>
                     <span className="font-medium ml-auto">
-                      {formatDate(order.payment_deadline)}
+                      {paymentMethod.type}
                     </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="flex items-center gap-2">
+                    <CreditCard size={16} className="text-gray-400" />
+                    <span className="text-gray-600">Bank/E-wallet:</span>
+                    <span className="font-medium ml-auto">
+                      {paymentMethod.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Hash size={16} className="text-gray-400" />
+                    <span className="text-gray-600">No Akun/Rekening:</span>
+                    <span className="font-medium ml-auto">
+                      {paymentMethod.account_number}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <User size={16} className="text-gray-400" />
+                    <span className="text-gray-600">Atas Nama:</span>
+                    <span className="font-medium ml-auto">
+                      {paymentMethod.holder_name}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {paymentMethod && (
-              <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <CreditCard size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Metode Pembayaran:</span>
-                  <span className="font-medium ml-auto">
-                    {paymentMethod.type}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <CreditCard size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Bank/E-wallet:</span>
-                  <span className="font-medium ml-auto">
-                    {paymentMethod.name}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Hash size={16} className="text-gray-400" />
-                  <span className="text-gray-600">No Akun/Rekening:</span>
-                  <span className="font-medium ml-auto">
-                    {paymentMethod.account_number}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <User size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Atas Nama:</span>
-                  <span className="font-medium ml-auto">
-                    {paymentMethod.holder_name}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
-    </div>
+    </InvoiceGate>
   );
 }

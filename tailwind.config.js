@@ -202,6 +202,10 @@ module.exports = {
       colors: {
         primary: "#4559F2",
         secondary: "#fcd34d",
+        success: require("tailwindcss/colors").green,
+        warning: require("tailwindcss/colors").yellow,
+        error: require("tailwindcss/colors").red,
+        "blue-light": require("tailwindcss/colors").blue,
       },
       animation: {
         "spin-slow": "spin 3s linear infinite",

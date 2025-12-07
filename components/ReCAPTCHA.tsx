@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react';
 
 interface ReCAPTCHAProps {
     onChange: (token: string | null) => void;
+    containerId?: string;
 }
 
-export default function ReCAPTCHA({ onChange }: ReCAPTCHAProps) {
+export default function ReCAPTCHA({ onChange, containerId = "recaptcha-container" }: ReCAPTCHAProps) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
@@ -25,7 +26,7 @@ export default function ReCAPTCHA({ onChange }: ReCAPTCHAProps) {
     useEffect(() => {
         if (isLoaded) {
             // Render reCAPTCHA widget
-            const recaptchaElement = document.getElementById('recaptcha-container');
+            const recaptchaElement = document.getElementById(containerId);
             if (recaptchaElement) {
                 // Clear any existing reCAPTCHA
                 recaptchaElement.innerHTML = '';
@@ -37,7 +38,7 @@ export default function ReCAPTCHA({ onChange }: ReCAPTCHAProps) {
                 });
             }
         }
-    }, [isLoaded, onChange]);
+    }, [isLoaded, onChange, containerId]);
 
-    return <div id="recaptcha-container"></div>;
+    return <div id={containerId}></div>;
 }

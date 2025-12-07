@@ -4,8 +4,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import Toast from "@/components/Toast";
-import { useToast } from "@/hooks/useToast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 import {
   PlusIcon,
@@ -28,7 +27,7 @@ export default function WidgetsManagementPage() {
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
     fetchWidgets();
@@ -44,21 +43,27 @@ export default function WidgetsManagementPage() {
 
       if (error) {
         console.error("Error fetching widgets:", error);
-        showToast("Gagal memuat widget", "error");
+        showAlert("error", "Error", "Gagal memuat widget");
       } else {
         setWidgets(data || []);
       }
     } catch (error) {
       console.error("Error fetching widgets:", error);
-      showToast("Terjadi kesalahan saat memuat widget", "error");
+      showAlert("error", "Error", "Terjadi kesalahan saat memuat widget");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteWidget = async (id: number, title: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus widget "${title}"?`))
-      return;
+    const confirmed = await showConfirm(
+      "Hapus Widget",
+      `Apakah Anda yakin ingin menghapus widget "${title}"?`,
+      "error",
+      "Ya, Hapus"
+    );
+
+    if (!confirmed) return;
 
     setDeleting(true);
     try {
@@ -69,10 +74,10 @@ export default function WidgetsManagementPage() {
       }
 
       setWidgets(widgets.filter((widget) => widget.id !== id));
-      showToast("Widget berhasil dihapus!", "success");
+      showAlert("success", "Berhasil", "Widget berhasil dihapus!");
     } catch (error) {
       console.error("Error deleting widget:", error);
-      showToast("Gagal menghapus widget!", "error");
+      showAlert("error", "Gagal", "Gagal menghapus widget!");
     } finally {
       setDeleting(false);
     }
@@ -267,12 +272,7 @@ export default function WidgetsManagementPage() {
       </div>
 
       {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

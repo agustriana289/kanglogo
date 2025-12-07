@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 import { uploadToImgBB } from "@/lib/imgbb";
 import {
@@ -47,7 +46,7 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -120,7 +119,8 @@ export default function ServicesPage() {
       setServices(data || []);
     } catch (error) {
       console.error("Error fetching services:", error);
-      showToast("Gagal memuat layanan!", "error");
+      console.error("Error fetching services:", error);
+      showAlert("error", "Error", "Gagal memuat layanan!");
     } finally {
       setLoading(false);
     }
@@ -180,7 +180,13 @@ export default function ServicesPage() {
   };
 
   const handleDeleteService = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus layanan ini?")) return;
+    const confirmed = await showConfirm(
+      "Hapus Layanan",
+      "Apakah Anda yakin ingin menghapus layanan ini?",
+      "error",
+      "Ya, Hapus"
+    );
+    if (!confirmed) return;
 
     setSaving(true);
     try {
@@ -188,10 +194,10 @@ export default function ServicesPage() {
       if (error) throw error;
 
       setServices(services.filter((s) => s.id !== id));
-      showToast("Layanan berhasil dihapus!", "success");
+      showAlert("success", "Berhasil", "Layanan berhasil dihapus!");
     } catch (error) {
       console.error("Error deleting service:", error);
-      showToast("Gagal menghapus layanan!", "error");
+      showAlert("error", "Gagal", "Gagal menghapus layanan!");
     } finally {
       setSaving(false);
     }
@@ -199,7 +205,7 @@ export default function ServicesPage() {
 
   const handleSaveService = async () => {
     if (!formData.title.trim() || !formData.slug.trim()) {
-      showToast("Judul dan Slug tidak boleh kosong!", "error");
+      showAlert("warning", "Validasi", "Judul dan Slug tidak boleh kosong!");
       return;
     }
 
@@ -227,7 +233,12 @@ export default function ServicesPage() {
             s.id === editingService.id ? { ...s, ...serviceData } : s
           )
         );
-        showToast("Layanan berhasil diperbarui!", "success");
+        setServices(
+          services.map((s) =>
+            s.id === editingService.id ? { ...s, ...serviceData } : s
+          )
+        );
+        showAlert("success", "Berhasil", "Layanan berhasil diperbarui!");
       } else {
         const { data, error } = await supabase
           .from("services")
@@ -236,13 +247,13 @@ export default function ServicesPage() {
 
         if (error) throw error;
         setServices([...services, ...(data || [])]);
-        showToast("Layanan berhasil ditambahkan!", "success");
+        showAlert("success", "Berhasil", "Layanan berhasil ditambahkan!");
       }
 
       setShowServiceModal(false);
     } catch (error) {
       console.error("Error saving service:", error);
-      showToast("Gagal menyimpan layanan!", "error");
+      showAlert("error", "Gagal", "Gagal menyimpan layanan!");
     } finally {
       setSaving(false);
     }
@@ -257,7 +268,7 @@ export default function ServicesPage() {
 
   const handleSavePackage = () => {
     if (!packageFormData.name.trim()) {
-      showToast("Nama paket tidak boleh kosong!", "error");
+      showAlert("warning", "Validasi", "Nama paket tidak boleh kosong!");
       return;
     }
 
@@ -315,11 +326,11 @@ export default function ServicesPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        showToast("Silakan pilih file gambar!", "error");
+        showAlert("warning", "Peringatan", "Silakan pilih file gambar!");
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        showToast("Ukuran file terlalu besar! Maksimal 5MB", "error");
+        showAlert("warning", "Peringatan", "Ukuran file terlalu besar! Maksimal 5MB");
         return;
       }
 
@@ -871,12 +882,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

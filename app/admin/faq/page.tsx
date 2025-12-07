@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 // --- PERBAIKAN IMPORT IKON ---
 import {
@@ -52,7 +51,8 @@ export default function FAQManagementPage() {
     category: "Umum",
     featured: false,
   });
-  const { toast, showToast, hideToast } = useToast();
+
+  const { showAlert, showConfirm } = useAlert();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -93,7 +93,7 @@ export default function FAQManagementPage() {
 
       if (error) {
         console.error("Error fetching FAQs:", error);
-        showToast("Gagal memuat FAQ", "error");
+        showAlert("error", "Error", "Gagal memuat FAQ");
       } else {
         setFaqs(data || []);
         setFilteredFaqs(data || []);
@@ -103,7 +103,7 @@ export default function FAQManagementPage() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching FAQs:", error);
-      showToast("Terjadi kesalahan saat memuat FAQ", "error");
+      showAlert("error", "Error", "Terjadi kesalahan saat memuat FAQ");
       setLoading(false);
     }
   };
@@ -131,7 +131,13 @@ export default function FAQManagementPage() {
   };
 
   const handleDeleteFAQ = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus FAQ ini?")) return;
+    const confirmed = await showConfirm(
+      "Hapus FAQ",
+      "Apakah Anda yakin ingin menghapus FAQ ini?",
+      "error",
+      "Ya, Hapus"
+    );
+    if (!confirmed) return;
 
     setSaving(true);
     try {
@@ -159,10 +165,10 @@ export default function FAQManagementPage() {
         setFilteredFaqs(filtered);
       }
 
-      showToast("FAQ berhasil dihapus!", "success");
+      showAlert("success", "Berhasil", "FAQ berhasil dihapus!");
     } catch (error) {
       console.error("Error deleting FAQ:", error);
-      showToast("Gagal menghapus FAQ!", "error");
+      showAlert("error", "Gagal", "Gagal menghapus FAQ!");
     } finally {
       setSaving(false);
     }
@@ -170,7 +176,7 @@ export default function FAQManagementPage() {
 
   const handleSaveFAQ = async () => {
     if (!formData.question.trim() || !formData.answer.trim()) {
-      showToast("Pertanyaan dan jawaban tidak boleh kosong!", "error");
+      showAlert("warning", "Validasi", "Pertanyaan dan jawaban tidak boleh kosong!");
       return;
     }
 
@@ -210,7 +216,7 @@ export default function FAQManagementPage() {
           setFilteredFaqs(filtered);
         }
 
-        showToast("FAQ berhasil diperbarui!", "success");
+        showAlert("success", "Berhasil", "FAQ berhasil diperbarui!");
       } else {
         const { data, error } = await supabase
           .from("faqs")
@@ -239,13 +245,13 @@ export default function FAQManagementPage() {
         }
 
         setTotalItems(newFaqs.length);
-        showToast("FAQ berhasil ditambahkan!", "success");
+        showAlert("success", "Berhasil", "FAQ berhasil ditambahkan!");
       }
 
       setShowModal(false);
     } catch (error) {
       console.error("Error saving FAQ:", error);
-      showToast("Gagal menyimpan FAQ!", "error");
+      showAlert("error", "Gagal", "Gagal menyimpan FAQ!");
     } finally {
       setSaving(false);
     }
@@ -538,11 +544,10 @@ export default function FAQManagementPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
-                        ? "bg-primary text-white border-primary"
-                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
+                    className={`px-3 py-2 rounded-md border ${currentPage === page
+                      ? "bg-primary text-white border-primary"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                      }`}
                   >
                     {page}
                   </button>
@@ -657,12 +662,7 @@ export default function FAQManagementPage() {
         )}
       </div>
 
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

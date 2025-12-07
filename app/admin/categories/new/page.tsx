@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 
 export default function NewCategoryPage() {
   const router = useRouter();
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -39,7 +38,7 @@ export default function NewCategoryPage() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      showToast("Nama kategori harus diisi", "warning");
+      showAlert("warning", "Validasi", "Nama kategori harus diisi");
       return;
     }
 
@@ -49,22 +48,23 @@ export default function NewCategoryPage() {
 
       if (error) {
         if (error.code === "23505") {
-          showToast(
-            "Kategori dengan nama atau slug yang sama sudah ada",
-            "error"
+          showAlert(
+            "error",
+            "Gagal",
+            "Kategori dengan nama atau slug yang sama sudah ada"
           );
         } else {
           throw error;
         }
       } else {
-        showToast("Kategori berhasil ditambahkan!", "success");
+        showAlert("success", "Berhasil", "Kategori berhasil ditambahkan!");
         setTimeout(() => {
           router.push("/admin/categories");
         }, 1000);
       }
     } catch (error) {
       console.error("Error creating category:", error);
-      showToast("Gagal menambahkan kategori", "error");
+      showAlert("error", "Gagal", "Gagal menambahkan kategori");
     } finally {
       setLoading(false);
     }
@@ -161,12 +161,7 @@ export default function NewCategoryPage() {
         </form>
       </div>
 
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

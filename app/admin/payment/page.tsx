@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 import { PaymentMethod, PaymentMethodType } from "@/types/payment-method";
 import {
@@ -26,7 +25,7 @@ export default function PaymentMethodManagementPage() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   const [showModal, setShowModal] = useState(false);
   const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(
@@ -55,7 +54,8 @@ export default function PaymentMethodManagementPage() {
       setMethods(data || []);
     } catch (error) {
       console.error("Error fetching payment methods:", error);
-      showToast("Gagal memuat metode pembayaran", "error");
+      console.error("Error fetching payment methods:", error);
+      showAlert("error", "Error", "Gagal memuat metode pembayaran");
     } finally {
       setLoading(false);
     }
@@ -84,8 +84,14 @@ export default function PaymentMethodManagementPage() {
   };
 
   const handleDeleteMethod = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus metode pembayaran ini?"))
-      return;
+    const confirmed = await showConfirm(
+      "Hapus Metode Pembayaran",
+      "Apakah Anda yakin ingin menghapus metode pembayaran ini?",
+      "error",
+      "Ya, Hapus"
+    );
+    if (!confirmed) return;
+
     setSaving(true);
     try {
       const { error } = await supabase
@@ -94,10 +100,10 @@ export default function PaymentMethodManagementPage() {
         .eq("id", id);
       if (error) throw error;
       setMethods(methods.filter((m) => m.id !== id));
-      showToast("Metode pembayaran berhasil dihapus!", "success");
+      showAlert("success", "Berhasil", "Metode pembayaran berhasil dihapus!");
     } catch (error) {
       console.error("Error deleting payment method:", error);
-      showToast("Gagal menghapus metode pembayaran!", "error");
+      showAlert("error", "Gagal", "Gagal menghapus metode pembayaran!");
     } finally {
       setSaving(false);
     }
@@ -105,7 +111,7 @@ export default function PaymentMethodManagementPage() {
 
   const handleSaveMethod = async () => {
     if (!formData.name || !formData.account_number || !formData.holder_name) {
-      showToast("Nama, Nomor, dan Atas Nama tidak boleh kosong!", "error");
+      showAlert("warning", "Validasi", "Nama, Nomor, dan Atas Nama tidak boleh kosong!");
       return;
     }
     setSaving(true);
@@ -121,7 +127,8 @@ export default function PaymentMethodManagementPage() {
             m.id === editingMethod.id ? { ...m, ...formData } : m
           )
         );
-        showToast("Metode pembayaran berhasil diperbarui!", "success");
+        setShowModal(false);
+        showAlert("success", "Berhasil", "Metode pembayaran berhasil diperbarui!");
       } else {
         const { data, error } = await supabase
           .from("payment_methods")
@@ -129,12 +136,12 @@ export default function PaymentMethodManagementPage() {
           .select();
         if (error) throw error;
         setMethods([...(data || []), ...methods]);
-        showToast("Metode pembayaran berhasil ditambahkan!", "success");
+        showAlert("success", "Berhasil", "Metode pembayaran berhasil ditambahkan!");
+        setShowModal(false);
       }
-      setShowModal(false);
     } catch (error) {
       console.error("Error saving payment method:", error);
-      showToast("Gagal menyimpan metode pembayaran!", "error");
+      showAlert("error", "Gagal", "Gagal menyimpan metode pembayaran!");
     } finally {
       setSaving(false);
     }
@@ -490,12 +497,7 @@ export default function PaymentMethodManagementPage() {
       </div>
 
       {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

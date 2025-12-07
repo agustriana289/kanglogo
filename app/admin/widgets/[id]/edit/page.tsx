@@ -5,8 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import Toast from "@/components/Toast";
-import { useToast } from "@/hooks/useToast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 
 interface Widget {
@@ -19,7 +18,7 @@ interface Widget {
 export default function EditWidgetPage() {
   const router = useRouter();
   const params = useParams();
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert } = useAlert();
   const [widget, setWidget] = useState<Widget | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +46,7 @@ export default function EditWidgetPage() {
 
       if (error) {
         console.error("Error fetching widget:", error);
-        showToast("Gagal memuat data widget.", "error");
+        showAlert("error", "Gagal", "Gagal memuat data widget.");
         router.push("/admin/widgets");
       } else {
         setWidget(data);
@@ -59,7 +58,7 @@ export default function EditWidgetPage() {
       }
     } catch (error) {
       console.error("Error fetching widget:", error);
-      showToast("Terjadi kesalahan tak terduga.", "error");
+      showAlert("error", "Error", "Terjadi kesalahan tak terduga.");
       router.push("/admin/widgets");
     } finally {
       setLoading(false);
@@ -78,7 +77,7 @@ export default function EditWidgetPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.content) {
-      showToast("Judul dan konten widget harus diisi.", "error");
+      showAlert("error", "Validasi", "Judul dan konten widget harus diisi.");
       return;
     }
 
@@ -91,14 +90,14 @@ export default function EditWidgetPage() {
 
       if (error) {
         console.error("Error updating widget:", error);
-        showToast("Gagal memperbarui widget. Silakan coba lagi.", "error");
+        showAlert("error", "Gagal", "Gagal memperbarui widget. Silakan coba lagi.");
       } else {
-        showToast("Widget berhasil diperbarui!", "success");
+        showAlert("success", "Berhasil", "Widget berhasil diperbarui!");
         router.push("/admin/widgets");
       }
     } catch (error) {
       console.error("Error updating widget:", error);
-      showToast("Terjadi kesalahan tak terduga.", "error");
+      showAlert("error", "Error", "Terjadi kesalahan tak terduga.");
     } finally {
       setSubmitting(false);
     }
@@ -219,12 +218,7 @@ export default function EditWidgetPage() {
         </form>
       </div>
 
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

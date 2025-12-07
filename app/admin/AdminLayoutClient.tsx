@@ -1,5 +1,7 @@
 "use client";
 
+import { AlertProvider } from "@/components/providers/AlertProvider";
+
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -21,11 +23,17 @@ import {
   ClipboardIcon,
   ViewColumnsIcon,
   BellIcon,
-  PowerIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
   ClockIcon,
   NewspaperIcon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+  ChevronDownIcon,
+  ShoppingCartIcon,
+  TagIcon,
+  StarIcon,
+  ListBulletIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 
@@ -54,8 +62,12 @@ export default function AdminLayoutClient({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
+  const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const [openGroups, setOpenGroups] = useState<string[]>(["Layanan"]); // Default open
   const notificationRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
 
   // NO AUTH CHECK HERE - Let the page.tsx handle it
   // Fetch settings dari Supabase
@@ -78,6 +90,15 @@ export default function AdminLayoutClient({
     };
 
     fetchSettings();
+
+    // Fetch admin user info
+    const fetchAdminUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setAdminEmail(user.email || null);
+      }
+    };
+    fetchAdminUser();
   }, []);
 
   // Fetch notifications dari Supabase
@@ -131,7 +152,7 @@ export default function AdminLayoutClient({
     };
   }, []);
 
-  // Tutup dropdown notifikasi saat klik di luar
+  // Tutup dropdown notifikasi dan avatar saat klik di luar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -139,6 +160,12 @@ export default function AdminLayoutClient({
         !notificationRef.current.contains(event.target as Node)
       ) {
         setIsNotificationDropdownOpen(false);
+      }
+      if (
+        avatarRef.current &&
+        !avatarRef.current.contains(event.target as Node)
+      ) {
+        setIsAvatarDropdownOpen(false);
       }
     };
 
@@ -212,48 +239,70 @@ export default function AdminLayoutClient({
 
   const logoUrl = settings?.logo_url;
 
-  const navItems = [
-    { href: "/admin", label: "Dashboard", icon: HomeIcon },
-    { href: "/admin/orders", label: "Pesanan", icon: FolderIcon },
-    { href: "/admin/store", label: "Toko", icon: BuildingStorefrontIcon },
+  // Navigation structure with groups
+  const navGroups = [
+    {
+      label: "Layanan",
+      icon: CurrencyDollarIcon,
+      children: [
+        { href: "/admin/orders", label: "Pesanan", icon: FolderIcon },
+        { href: "/admin/tasks", label: "Tugas", icon: CheckCircleIcon },
+        { href: "/admin/services", label: "Jasa", icon: CurrencyDollarIcon },
+      ],
+    },
+    {
+      label: "Toko",
+      icon: BuildingStorefrontIcon,
+      children: [
+        { href: "/admin/store", label: "Produk", icon: TagIcon },
+        { href: "/admin/store/purchases", label: "Pembelian", icon: ShoppingCartIcon },
+      ],
+    },
     { href: "/admin/discounts", label: "Diskon", icon: ReceiptPercentIcon },
-    { href: "/admin/payment", label: "Pembayaran", icon: CreditCardIcon },
-    { href: "/admin/tasks", label: "Tugas", icon: CheckCircleIcon },
-    { href: "/admin/projects", label: "Proyek", icon: PhotoIcon },
+    { href: "/admin/payment", label: "Metode Pembayaran", icon: CreditCardIcon },
+    { href: "/admin/projects", label: "Portofolio Proyek", icon: PhotoIcon },
+    { href: "/admin/testimonials", label: "Testimoni Pelanggan", icon: StarIcon },
     {
-      href: "/admin/testimonials",
-      label: "Testimoni Pelanggan",
-      icon: ChatBubbleLeftIcon,
-    },
-    { href: "/admin/services", label: "Layanan", icon: CurrencyDollarIcon },
-    { href: "/admin/blog", label: "Blog", icon: DocumentTextIcon },
-    { href: "/admin/faq", label: "Pertanyaan", icon: QuestionMarkCircleIcon },
-    {
-      href: "/admin/landing-content",
-      label: "Kelola Landingpage",
-      icon: NewspaperIcon,
+      label: "Blog",
+      icon: DocumentTextIcon,
+      children: [
+        { href: "/admin/blog", label: "Artikel", icon: DocumentTextIcon },
+        { href: "/admin/blog/categories", label: "Kategori", icon: ListBulletIcon },
+        { href: "/admin/comments", label: "Komentar", icon: ChatBubbleLeftIcon },
+      ],
     },
     {
-      href: "/admin/pages",
-      label: "Kelola Halaman",
-      icon: ClipboardIcon,
-    },
-    {
-      href: "/admin/widgets",
-      label: "Widget Dashboard",
-      icon: ViewColumnsIcon,
-    },
-    {
-      href: "/admin/settings",
-      label: "Pengaturan Website",
+      label: "Kelola",
       icon: Cog6ToothIcon,
+      children: [
+        { href: "/admin/pages", label: "Halaman", icon: ClipboardIcon },
+        { href: "/admin/faq", label: "Pertanyaan", icon: QuestionMarkCircleIcon },
+        { href: "/admin/widgets", label: "Widget", icon: ViewColumnsIcon },
+        { href: "/admin/landing-content", label: "Landingpage", icon: NewspaperIcon },
+      ],
     },
   ];
 
+  const toggleGroup = (groupLabel: string) => {
+    setOpenGroups(prev =>
+      prev.includes(groupLabel)
+        ? prev.filter(g => g !== groupLabel)
+        : [...prev, groupLabel]
+    );
+  };
+
   // Fungsi untuk mendapatkan nama halaman saat ini
   const getCurrentPageTitle = () => {
-    const currentItem = navItems.find((item) => item.href === pathname);
-    return currentItem ? currentItem.label : "Dashboard";
+    for (const group of navGroups) {
+      if ('children' in group && group.children) {
+        const child = group.children.find(item => item.href === pathname);
+        if (child) return child.label;
+      } else if (group.href === pathname) {
+        return group.label;
+      }
+    }
+    if (pathname === "/admin") return "Dashboard";
+    return "Dashboard";
   };
 
   const currentPageTitle = getCurrentPageTitle();
@@ -276,190 +325,297 @@ export default function AdminLayoutClient({
   };
 
   return (
-    <div className="flex h-screen bg-slate-100 dark:bg-slate-800">
-      {/* Overlay untuk mobile */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
+    <AlertProvider>
+      <div className="flex h-screen bg-slate-100 dark:bg-slate-800">
+        {/* Overlay untuk mobile */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          ></div>
+        )}
 
-      {/* Sidebar */}
-      <aside
-        className={`${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } fixed lg:relative lg:translate-x-0 z-50 w-80 bg-white dark:bg-slate-700 shadow-lg transition-transform duration-300 h-full overflow-hidden bg-no-repeat bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]`}
-      >
-        <div className="h-full flex flex-col">
-          {/* Logo & Close Button */}
-          <div className="flex items-center justify-between pt-6 pb-8 px-6">
-            <img
-              alt={settings?.website_name}
-              src={logoUrl}
-              title={settings?.website_name}
-              loading="lazy"
-              className="lazyload h-10 brightness-0 invert opacity-90"
-            />
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden text-white"
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-4">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              const IconComponent = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors duration-200 ${isActive
-                    ? "bg-primary text-white"
-                    : "text-white hover:bg-white/90 hover:text-primary"
-                    }`}
-                >
-                  <IconComponent className="w-5 h-5 mr-3" />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Custom Admin Header */}
-        <header className="bg-white dark:bg-slate-700 shadow-md h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-600">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-slate-600 dark:text-white md:none"
-          >
-            <Bars3Icon className="w-6 h-6" />
-          </button>
-          <div className="flex-1 flex items-center justify-between ml-4">
-            <div className="flex items-center space-x-3">
-              <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-                {currentPageTitle}
-              </h1>
+        {/* Sidebar */}
+        <aside
+          className={`${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } fixed lg:relative lg:translate-x-0 z-50 w-80 bg-white dark:bg-slate-700 shadow-lg transition-transform duration-300 h-full overflow-hidden bg-no-repeat bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]`}
+        >
+          <div className="h-full flex flex-col">
+            {/* Logo & Close Button */}
+            <div className="flex items-center justify-between pt-6 pb-8 px-6">
+              <img
+                alt={settings?.website_name}
+                src={logoUrl}
+                title={settings?.website_name}
+                loading="lazy"
+                className="lazyload h-10 brightness-0 invert opacity-90"
+              />
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="lg:hidden text-white"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
             </div>
-            <div className="flex items-center space-x-4">
-              {/* Notification Dropdown */}
-              <div className="relative flex gap-3" ref={notificationRef}>
-                <button
-                  onClick={() =>
-                    setIsNotificationDropdownOpen(!isNotificationDropdownOpen)
-                  }
-                  className="relative text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <BellIcon className="w-6 h-6" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
 
-                {/* Notification Dropdown */}
-                {isNotificationDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 max-h-96 overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-800 dark:text-white">
-                        Notifikasi
-                      </h3>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={markAllAsRead}
-                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          Tandai semua dibaca
-                        </button>
-                      )}
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto px-4 pb-4">
+              {/* Dashboard - always at top */}
+              <Link
+                href="/admin"
+                onClick={() => setIsSidebarOpen(false)}
+                className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors duration-200 ${pathname === "/admin"
+                  ? "bg-white/10 text-white"
+                  : "text-white hover:bg-white/10"
+                  }`}
+              >
+                <HomeIcon className="w-5 h-5 mr-3" />
+                <span className="text-sm font-medium">Dashboard</span>
+              </Link>
+
+              {/* Navigation Groups */}
+              {navGroups.map((group) => {
+                if ('children' in group && group.children) {
+                  // Group with children (accordion)
+                  const isOpen = openGroups.includes(group.label);
+                  const hasActiveChild = group.children.some(child => pathname === child.href);
+                  const GroupIcon = group.icon;
+
+                  return (
+                    <div key={group.label} className="mb-1">
+                      <button
+                        onClick={() => toggleGroup(group.label)}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors duration-200 ${hasActiveChild
+                          ? "bg-white/10 text-white"
+                          : "text-white hover:bg-white/10"
+                          }`}
+                      >
+                        <div className="flex items-center">
+                          <GroupIcon className="w-5 h-5 mr-3" />
+                          <span className="text-sm font-medium">{group.label}</span>
+                        </div>
+                        <ChevronDownIcon
+                          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      {/* Children */}
+                      <div className={`overflow-hidden transition-all duration-200 ${isOpen ? "max-h-96" : "max-h-0"}`}>
+                        {group.children.map((child) => {
+                          const isActive = pathname === child.href;
+                          const ChildIcon = child.icon;
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setIsSidebarOpen(false)}
+                              className={`flex items-center px-4 py-2.5 ml-4 rounded-lg transition-colors duration-200 ${isActive
+                                ? "rounded-none text-white"
+                                : "rounded-none text-white/70 hover:bg-white/10 hover:text-white"
+                                }`}
+                            >
+                              <ChildIcon className="w-4 h-4 mr-3" />
+                              <span className="text-sm">{child.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
                     </div>
+                  );
+                } else {
+                  // Standalone link
+                  const isActive = pathname === group.href;
+                  const ItemIcon = group.icon;
+                  return (
+                    <Link
+                      key={group.href}
+                      href={group.href!}
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={`flex items-center px-4 py-3 mb-1 rounded-lg transition-colors duration-200 ${isActive
+                        ? "bg-primary text-white"
+                        : "text-white hover:bg-white/10"
+                        }`}
+                    >
+                      <ItemIcon className="w-5 h-5 mr-3" />
+                      <span className="text-sm font-medium">{group.label}</span>
+                    </Link>
+                  );
+                }
+              })}
+            </nav>
+          </div>
+        </aside>
 
-                    <div className="overflow-y-auto flex-1">
-                      {notifications.length > 0 ? (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${!notification.is_read
-                              ? "bg-blue-50 dark:bg-blue-900/20"
-                              : ""
-                              }`}
-                            onClick={() => {
-                              markAsRead(notification.id);
-                              window.location.href = notification.link;
-                            }}
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Custom Admin Header */}
+          <header className="bg-white dark:bg-slate-700 shadow-md h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-600">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="text-slate-600 dark:text-white lg:hidden"
+            >
+              <Bars3Icon className="w-6 h-6" />
+            </button>
+            <div className="flex-1 flex items-center justify-between ml-4">
+              <div className="flex items-center space-x-3">
+                <h1 className="text-xl font-bold text-slate-800 dark:text-white">
+                  {currentPageTitle}
+                </h1>
+              </div>
+              <div className="flex items-center space-x-4">
+                {/* Notification Dropdown */}
+                <div className="relative flex gap-3" ref={notificationRef}>
+                  <button
+                    onClick={() =>
+                      setIsNotificationDropdownOpen(!isNotificationDropdownOpen)
+                    }
+                    className="relative text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    <BellIcon className="w-6 h-6" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Notification Dropdown */}
+                  {isNotificationDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 max-h-96 overflow-hidden flex flex-col">
+                      <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <h3 className="font-semibold text-slate-800 dark:text-white">
+                          Notifikasi
+                        </h3>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                           >
-                            <div className="flex items-start">
-                              <div className="flex-shrink-0 mr-3 mt-0.5">
-                                {getNotificationIcon(notification.type)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-800 dark:text-white">
-                                  {notification.title}
-                                </p>
-                                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center">
-                                  <ClockIcon className="w-3 h-3 mr-1" />
-                                  {formatRelativeTime(notification.created_at)}
-                                </p>
-                              </div>
-                              {!notification.is_read && (
-                                <div className="ml-2 flex-shrink-0">
-                                  <span className="inline-block h-2 w-2 rounded-full bg-blue-600"></span>
+                            Tandai semua dibaca
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="overflow-y-auto flex-1">
+                        {notifications.length > 0 ? (
+                          notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              className={`p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${!notification.is_read
+                                ? "bg-blue-50 dark:bg-blue-900/20"
+                                : ""
+                                }`}
+                              onClick={() => {
+                                markAsRead(notification.id);
+                                window.location.href = notification.link;
+                              }}
+                            >
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0 mr-3 mt-0.5">
+                                  {getNotificationIcon(notification.type)}
                                 </div>
-                              )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-800 dark:text-white">
+                                    {notification.title}
+                                  </p>
+                                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center">
+                                    <ClockIcon className="w-3 h-3 mr-1" />
+                                    {formatRelativeTime(notification.created_at)}
+                                  </p>
+                                </div>
+                                {!notification.is_read && (
+                                  <div className="ml-2 flex-shrink-0">
+                                    <span className="inline-block h-2 w-2 rounded-full bg-blue-600"></span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                          ))
+                        ) : (
+                          <div className="p-8 text-center">
+                            <BellIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                            <p className="text-slate-500 dark:text-slate-400">
+                              Tidak ada notifikasi
+                            </p>
                           </div>
-                        ))
-                      ) : (
-                        <div className="p-8 text-center">
-                          <BellIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                          <p className="text-slate-500 dark:text-slate-400">
-                            Tidak ada notifikasi
-                          </p>
+                        )}
+                      </div>
+
+                      {notifications.length > 0 && (
+                        <div className="p-2 border-t border-slate-200 dark:border-slate-700">
+                          <Link
+                            href="/admin/notifications"
+                            className="block w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                          >
+                            Lihat Semua Notifikasi
+                          </Link>
                         </div>
                       )}
                     </div>
+                  )}
 
-                    {notifications.length > 0 && (
-                      <div className="p-2 border-t border-slate-200 dark:border-slate-700">
-                        <Link
-                          href="/admin/notifications"
-                          className="block w-full text-center py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                        >
-                          Lihat Semua Notifikasi
-                        </Link>
+                  {/* Avatar Dropdown */}
+                  <div className="relative" ref={avatarRef}>
+                    <button
+                      onClick={() => setIsAvatarDropdownOpen(!isAvatarDropdownOpen)}
+                      className="relative text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
+                    >
+                      <UserCircleIcon className="w-7 h-7" />
+                    </button>
+
+                    {isAvatarDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                          <p className="text-sm font-medium text-slate-800 dark:text-white truncate">
+                            {adminEmail || "Admin"}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Administrator</p>
+                        </div>
+                        <div className="py-2">
+                          <Link
+                            href="/admin/profile"
+                            onClick={() => setIsAvatarDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          >
+                            <UserCircleIcon className="w-5 h-5" />
+                            Profile
+                          </Link>
+                          <Link
+                            href="/admin/settings"
+                            onClick={() => setIsAvatarDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          >
+                            <Cog6ToothIcon className="w-5 h-5" />
+                            Pengaturan
+                          </Link>
+                        </div>
+                        <div className="border-t border-slate-200 dark:border-slate-700 py-2">
+                          <button
+                            onClick={async () => {
+                              await supabase.auth.signOut();
+                              router.push("/login");
+                            }}
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                            Keluar
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
-
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    router.push("/login"); // Router sekarang sudah terdefinisi
-                  }}
-                  className="relative text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <PowerIcon className="w-6 h-6" />
-                </button>
+                </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-auto sm:p-6">{children}</main>
+          {/* Content */}
+          <main className="flex-1 overflow-auto sm:p-6">{children}</main>
+        </div >
       </div >
-    </div >
+    </AlertProvider>
   );
 }

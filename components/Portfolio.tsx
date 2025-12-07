@@ -34,7 +34,7 @@ export default function Portfolio() {
 
   return (
     <section className="py-12 sm:py-24 bg-slate-100" id="porto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 overflow-hidden">
         <div className="pb-16">
           <div className="text-center">
             <h1 className="max-w-2xl mx-auto font-manrope font-bold text-4xl text-slate-700 mb-5 md:text-6xl leading-[50px]">

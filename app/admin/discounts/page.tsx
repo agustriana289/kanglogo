@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Discount, DiscountType } from "@/types/discount";
 import LogoLoading from "@/components/LogoLoading";
+import { useAlert } from "@/components/providers/AlertProvider";
 import {
   PlusIcon,
   EditIcon,
@@ -31,17 +32,17 @@ const discountTypeOptions: {
   label: string;
   icon: React.ReactNode;
 }[] = [
-  {
-    value: "percentage",
-    label: "Persentase (%)",
-    icon: <PercentIcon size={16} />,
-  },
-  {
-    value: "fixed_amount",
-    label: "Nominal Tetap (Rp)",
-    icon: <DollarSignIcon size={16} />,
-  },
-];
+    {
+      value: "percentage",
+      label: "Persentase (%)",
+      icon: <PercentIcon size={16} />,
+    },
+    {
+      value: "fixed_amount",
+      label: "Nominal Tetap (Rp)",
+      icon: <DollarSignIcon size={16} />,
+    },
+  ];
 
 // Items per page
 const ITEMS_PER_PAGE = 20;
@@ -57,6 +58,7 @@ export default function DiscountManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const { showAlert, showConfirm } = useAlert();
   const [formData, setFormData] = useState<Partial<Discount>>({
     code: "",
     description: "",
@@ -193,19 +195,27 @@ export default function DiscountManagementPage() {
 
       if (error) throw error;
 
-      alert("Diskon berhasil disimpan!");
+      if (error) throw error;
+
+      showAlert("success", "Berhasil", "Diskon berhasil disimpan!");
       fetchDiscounts();
       closeModal();
     } catch (error: any) {
       console.error("Error saving discount:", error);
-      alert(`Gagal menyimpan diskon: ${error.message}`);
+      showAlert("error", "Gagal", `Gagal menyimpan diskon: ${error.message}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menonaktifkan diskon ini?")) return;
+    const isConfirmed = await showConfirm(
+      "Nonaktifkan Diskon",
+      "Apakah Anda yakin ingin menonaktifkan diskon ini?",
+      "warning",
+      "Ya, Nonaktifkan"
+    );
+    if (!isConfirmed) return;
 
     const { error } = await supabase
       .from("discounts")
@@ -213,9 +223,9 @@ export default function DiscountManagementPage() {
       .eq("id", id);
     if (error) {
       console.error("Error deleting discount:", error);
-      alert("Gagal menonaktifkan diskon.");
+      showAlert("error", "Gagal", "Gagal menonaktifkan diskon.");
     } else {
-      alert("Diskon berhasil dinonaktifkan.");
+      showAlert("success", "Berhasil", "Diskon berhasil dinonaktifkan.");
 
       const updatedDiscounts = discounts.map((d) =>
         d.id === id ? { ...d, is_active: false } : d
@@ -419,7 +429,7 @@ export default function DiscountManagementPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
                       {discount.service_id
                         ? services.find((s) => s.id === discount.service_id)
-                            ?.title
+                          ?.title
                         : "Semua Layanan"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -496,7 +506,7 @@ export default function DiscountManagementPage() {
                     <span className="font-medium">Berlaku Untuk:</span>{" "}
                     {discount.service_id
                       ? services.find((s) => s.id === discount.service_id)
-                          ?.title
+                        ?.title
                       : "Semua Layanan"}
                   </p>
                 </div>
@@ -576,11 +586,10 @@ export default function DiscountManagementPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
+                    className={`px-3 py-2 rounded-md border ${currentPage === page
                         ? "bg-primary text-white border-primary"
                         : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>

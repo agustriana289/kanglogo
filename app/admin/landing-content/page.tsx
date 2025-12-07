@@ -258,17 +258,29 @@ export default function LandingContentPage() {
     keyName: string,
     displayName: string
   ) => {
-    const item = content[section]?.[keyName];
-    if (item) {
-      setEditingItem({
-        section,
-        keyName,
-        displayName,
-        value: item.value,
-        content_type: item.content_type,
-      });
-      setShowEditModal(true);
+    let item = content[section]?.[keyName];
+
+    // Jika item belum ada (misal untuk field baru seperti icon), buat struktur default
+    if (!item) {
+      let contentType = "text";
+      if (keyName.includes("icon")) contentType = "icon";
+      else if (keyName.includes("image")) contentType = "image";
+      else if (keyName.includes("url") || keyName.includes("link")) contentType = "link";
+
+      item = {
+        value: "",
+        content_type: contentType
+      };
     }
+
+    setEditingItem({
+      section,
+      keyName,
+      displayName,
+      value: item.value || "",
+      content_type: item.content_type || "text",
+    });
+    setShowEditModal(true);
   };
 
   const handleSaveFromModal = async () => {
@@ -322,6 +334,9 @@ export default function LandingContentPage() {
     }, 3000);
   };
 
+  const inputStyle =
+    "bg-white dark:bg-slate-900 shadow-sm focus:border-blue-300 focus:ring-blue-500/10 dark:focus:border-blue-800 w-full rounded-lg border border-gray-300 py-2.5 px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30";
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
@@ -338,66 +353,60 @@ export default function LandingContentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
         {/* Tab Navigation - Responsive */}
-        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 border-b border-slate-200 dark:border-slate-600 overflow-x-auto">
+        <div className="flex gap-1 sm:gap-2 mb-6 border-b border-gray-200 px-5 pt-4 dark:border-gray-800 overflow-x-auto">
           <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
-              activeTab === "hero"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "hero"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("hero")}
           >
             Hero
           </button>
           <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
-              activeTab === "featured"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "featured"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("featured")}
           >
             Featured
           </button>
           <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
-              activeTab === "reasons"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "reasons"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("reasons")}
           >
             Reasons
           </button>
           <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
-              activeTab === "steps"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "steps"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("steps")}
           >
             Steps
           </button>
           <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
-              activeTab === "video"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "video"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("video")}
           >
             Video
           </button>
           <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${
-              activeTab === "call_to_action"
-                ? "text-primary border-b-2 border-primary"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
+            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "call_to_action"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
             onClick={() => setActiveTab("call_to_action")}
           >
             CTA
@@ -407,11 +416,10 @@ export default function LandingContentPage() {
         {/* Notification */}
         {notification.show && (
           <div
-            className={`mb-4 p-4 rounded-lg ${
-              notification.type === "success"
-                ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
-                : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
-            }`}
+            className={`mb-4 p-4 rounded-lg ${notification.type === "success"
+              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
+              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
+              }`}
           >
             {notification.message}
           </div>
@@ -419,7 +427,7 @@ export default function LandingContentPage() {
 
         {/* Hero Section Tab */}
         {activeTab === "hero" && (
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             {/* Hero Background Image */}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -428,9 +436,8 @@ export default function LandingContentPage() {
               <div className="flex items-center justify-center w-full">
                 <label
                   htmlFor="hero-bg-upload"
-                  className={`flex flex-col items-center justify-center w-full h-40 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-base cursor-pointer hover:bg-neutral-tertiary-medium ${
-                    isDragging ? "bg-blue-50 border-blue-500" : ""
-                  }`}
+                  className={`flex flex-col items-center justify-center w-full h-40 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-2xl cursor-pointer hover:bg-neutral-tertiary-medium ${isDragging ? "bg-blue-50 border-blue-500" : ""
+                    }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, "hero", "hero_background")}
@@ -502,7 +509,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_title", "Hero Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -522,7 +529,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_subtitle", "Hero Subtitle")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -546,7 +553,7 @@ export default function LandingContentPage() {
                       "Hero Description"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -566,7 +573,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button1_text", "Button Text 1")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -586,7 +593,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button1_url", "Button URL 1")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -606,7 +613,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button2_text", "Button Text 2")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -626,7 +633,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button2_url", "Button URL 2")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -644,7 +651,7 @@ export default function LandingContentPage() {
                 </div>
                 <button
                   onClick={() => openEditModal("hero", "hero_rating", "Rating")}
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -664,7 +671,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_rating_count", "Rating Count")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -684,7 +691,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_rating_text", "Rating Text")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -726,7 +733,7 @@ export default function LandingContentPage() {
 
         {/* Featured Section Tab */}
         {activeTab === "featured" && (
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {/* Featured Title */}
               <div className="flex items-stretch justify-between p-4 bg-slate-50 dark:bg-slate-600 rounded-lg gap-3">
@@ -746,7 +753,7 @@ export default function LandingContentPage() {
                       "Featured Title"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -771,7 +778,7 @@ export default function LandingContentPage() {
                       "Subtitle Featured"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -797,7 +804,7 @@ export default function LandingContentPage() {
                     "Featured Description"
                   )
                 }
-                className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
               >
                 <PencilIcon className="h-4 w-4 mr-1" />
                 Edit
@@ -833,7 +840,7 @@ export default function LandingContentPage() {
                             `Icon ${num}`
                           )
                         }
-                        className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                        className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                       >
                         <PencilIcon className="h-4 w-4 mr-1" />
                         Edit
@@ -858,7 +865,7 @@ export default function LandingContentPage() {
                           `Judul ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
@@ -882,7 +889,7 @@ export default function LandingContentPage() {
                           `Description ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
@@ -896,7 +903,7 @@ export default function LandingContentPage() {
 
         {/* Reasons Section Tab */}
         {activeTab === "reasons" && (
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {/* Reasons Title */}
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-600 rounded-lg">
@@ -912,7 +919,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("reasons", "reasons_title", "Reasons Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -937,7 +944,7 @@ export default function LandingContentPage() {
                       "Subtitle Reasons"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -967,7 +974,7 @@ export default function LandingContentPage() {
                           `Reason Title ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
@@ -991,7 +998,7 @@ export default function LandingContentPage() {
                           `Reason Description ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
@@ -1005,10 +1012,41 @@ export default function LandingContentPage() {
 
         {/* Steps Section Tab */}
         {activeTab === "steps" && (
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((num) => (
                 <div key={num} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Icon {num}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {content.steps?.[`step${num}_icon`]?.value && (
+                        <div
+                          className="w-8 h-8 text-primary"
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              content.steps?.[`step${num}_icon`]?.value,
+                          }}
+                        />
+                      )}
+                      <button
+                        onClick={() =>
+                          openEditModal(
+                            "steps",
+                            `step${num}_icon`,
+                            `Icon Step ${num}`
+                          )
+                        }
+                        className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -1027,7 +1065,7 @@ export default function LandingContentPage() {
                           `Step Title ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
@@ -1050,7 +1088,7 @@ export default function LandingContentPage() {
                           `Step Description ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                     >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
@@ -1064,7 +1102,7 @@ export default function LandingContentPage() {
 
         {/* Video Section Tab */}
         {activeTab === "video" && (
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {/* Video Title */}
               <div className="flex items-stretch justify-between p-4 bg-slate-50 dark:bg-slate-600 rounded-lg gap-3">
@@ -1080,7 +1118,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("video", "video_title", "Video Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1101,7 +1139,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("video", "video_url", "YouTube Video URL")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1126,7 +1164,7 @@ export default function LandingContentPage() {
                       "Video Description"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1138,7 +1176,7 @@ export default function LandingContentPage() {
 
         {/* Call to Action Section Tab */}
         {activeTab === "call_to_action" && (
-          <div className="space-y-6">
+          <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {/* CTA Title */}
               <div className="flex items-stretch justify-between p-4 bg-slate-50 dark:bg-slate-600 rounded-lg gap-3">
@@ -1154,7 +1192,7 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("call_to_action", "cta_title", "CTA Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1180,7 +1218,7 @@ export default function LandingContentPage() {
                       "CTA Description"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1206,7 +1244,7 @@ export default function LandingContentPage() {
                       "CTA Button 1 Text"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1232,7 +1270,7 @@ export default function LandingContentPage() {
                       "CTA Button 1 URL"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1258,7 +1296,7 @@ export default function LandingContentPage() {
                       "CTA Button 2 Text"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1284,7 +1322,7 @@ export default function LandingContentPage() {
                       "CTA Button 2 URL"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
@@ -1311,7 +1349,7 @@ export default function LandingContentPage() {
                   </label>
                   <textarea
                     rows={8}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white font-mono text-sm"
+                    className={`${inputStyle} font-mono`}
                     value={editingItem.value || ""}
                     onChange={(e) =>
                       setEditingItem({ ...editingItem, value: e.target.value })
@@ -1327,7 +1365,7 @@ export default function LandingContentPage() {
                   </label>
                   <textarea
                     rows={6}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-600 dark:border-slate-500 dark:text-white"
+                    className={inputStyle}
                     value={editingItem.value || ""}
                     onChange={(e) =>
                       setEditingItem({ ...editingItem, value: e.target.value })

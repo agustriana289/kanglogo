@@ -60,7 +60,7 @@ export default function Pricing() {
 
   return (
     <section className="py-24 bg-slate-100" id="service">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8">
         <div className="text-center mb-16">
           <h1 className="max-w-2xl mx-auto text-center font-manrope font-bold text-4xl text-slate-700 sm:mb-5 md:text-6xl leading-[50px]">
             <span className="text-primary">Jasa </span>{" "}
@@ -72,7 +72,7 @@ export default function Pricing() {
         </div>
 
         {/* --- Bagian 1: Daftar Harga Layanan Featured --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-6 place-items-center mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 place-items-center mb-10">
           {featuredService.packages.map((plan, index) => (
             <div
               key={index}
@@ -130,7 +130,7 @@ export default function Pricing() {
                   </span>
                 </p>
                 <p
-                  className={`text-md font-semibold md:mb-8 md:mt-2 uppercase text-slate-400 leading-4`}
+                  className={`text-md font-semibold mb-6 md:mb-8 md:mt-2 uppercase text-slate-400 leading-4`}
                 >
                   {plan.beforeoriginalPrice}{" "}
                   {plan.originalPrice && (
@@ -159,11 +159,10 @@ export default function Pricing() {
                   Pilih Paket
                 </a>
                 <p
-                  className={`mt-4 text-sm ${
-                    plan.titleColor === "text-white"
-                      ? "text-white"
-                      : "text-slate-600"
-                  }`}
+                  className={`mt-4 text-sm ${plan.titleColor === "text-white"
+                    ? "text-white"
+                    : "text-slate-600"
+                    }`}
                 >
                   {plan.description}
                 </p>

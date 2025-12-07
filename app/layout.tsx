@@ -1,5 +1,5 @@
 // app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "react-quill/dist/quill.snow.css";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -8,11 +8,17 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import RootLayoutClient from "./RootLayoutClient";
+import PublicNotificationPopup from "@/components/PublicNotificationPopup";
+import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
+
+export const viewport: Viewport = {
+  themeColor: "#4559f2",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   // Ambil metadata dinamis dari Supabase UNTUK KEPERLUAN SEO SAJA
@@ -37,9 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
 
     // --- Metadata PWA yang STATIS ---
-    // Ini adalah bagian terpenting. Kita mendefinisikannya secara langsung.
     manifest: "/manifest.json",
-    themeColor: "#4559f2",
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",
@@ -76,6 +80,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return metadata;
 }
 
+import Script from "next/script";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -90,6 +96,12 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        <PublicNotificationPopup />
+        <WhatsAppFloatingButton />
+        <Script
+          src="https://www.google.com/recaptcha/api.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

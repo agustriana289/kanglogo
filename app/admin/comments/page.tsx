@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { useToast } from "@/hooks/useToast";
-import Toast from "@/components/Toast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import { createCommentNotification } from "@/lib/notifications";
 import LogoLoading from "@/components/LogoLoading";
 import {
@@ -45,7 +44,7 @@ export default function CommentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -95,7 +94,7 @@ export default function CommentsPage() {
 
       if (error) {
         console.error("Error fetching comments:", error);
-        showToast("Gagal memuat komentar", "error");
+        showAlert("error", "Error", "Gagal memuat komentar");
       } else {
         setComments(data || []);
         setFilteredComments(data || []);
@@ -103,7 +102,7 @@ export default function CommentsPage() {
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
-      showToast("Terjadi kesalahan saat memuat komentar", "error");
+      showAlert("error", "Error", "Terjadi kesalahan saat memuat komentar");
     } finally {
       setLoading(false);
     }
@@ -118,9 +117,9 @@ export default function CommentsPage() {
 
       if (error) {
         console.error("Error updating comment:", error);
-        showToast("Gagal mengupdate status komentar", "error");
+        showAlert("error", "Gagal", "Gagal mengupdate status komentar");
       } else {
-        showToast("Status komentar berhasil diupdate", "success");
+        showAlert("success", "Berhasil", "Status komentar berhasil diupdate");
 
         const updatedComments = comments.map((c) =>
           c.id === commentId ? { ...c, status } : c
@@ -163,12 +162,18 @@ export default function CommentsPage() {
       }
     } catch (error) {
       console.error("Error updating comment:", error);
-      showToast("Terjadi kesalahan", "error");
+      showAlert("error", "Gagal", "Terjadi kesalahan");
     }
   };
 
   const deleteComment = async (commentId: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus komentar ini?")) {
+    const isConfirmed = await showConfirm(
+      "Hapus Komentar",
+      "Apakah Anda yakin ingin menghapus komentar ini?",
+      "error",
+      "Ya, Hapus"
+    );
+    if (!isConfirmed) {
       return;
     }
 
@@ -180,9 +185,9 @@ export default function CommentsPage() {
 
       if (error) {
         console.error("Error deleting comment:", error);
-        showToast("Gagal menghapus komentar", "error");
+        showAlert("error", "Gagal", "Gagal menghapus komentar");
       } else {
-        showToast("Komentar berhasil dihapus", "success");
+        showAlert("success", "Berhasil", "Komentar berhasil dihapus");
 
         const updatedComments = comments.filter((c) => c.id !== commentId);
         setComments(updatedComments);
@@ -219,7 +224,7 @@ export default function CommentsPage() {
       }
     } catch (error) {
       console.error("Error deleting comment:", error);
-      showToast("Terjadi kesalahan", "error");
+      showAlert("error", "Gagal", "Terjadi kesalahan");
     }
   };
 
@@ -352,41 +357,37 @@ export default function CommentsPage() {
         <div className="flex flex-wrap gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "all"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "all"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Semua ({comments.length})
           </button>
           <button
             onClick={() => setFilter("approved")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "approved"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "approved"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Disetujui ({comments.filter((c) => c.status === "approved").length})
           </button>
           <button
             onClick={() => setFilter("pending")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "pending"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "pending"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Menunggu ({comments.filter((c) => c.status === "pending").length})
           </button>
           <button
             onClick={() => setFilter("rejected")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === "rejected"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "rejected"
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Ditolak ({comments.filter((c) => c.status === "rejected").length})
           </button>
@@ -411,11 +412,10 @@ export default function CommentsPage() {
               {searchQuery
                 ? "Coba ubah kata kunci pencarian Anda."
                 : filter === "all"
-                ? "Belum ada komentar yang dibuat."
-                : `Tidak ada komentar dengan status "${
-                    filter === "approved"
-                      ? "Disetujui"
-                      : filter === "pending"
+                  ? "Belum ada komentar yang dibuat."
+                  : `Tidak ada komentar dengan status "${filter === "approved"
+                    ? "Disetujui"
+                    : filter === "pending"
                       ? "Menunggu"
                       : "Ditolak"
                   }".`}
@@ -468,8 +468,8 @@ export default function CommentsPage() {
                       {comment.status === "approved"
                         ? "Disetujui"
                         : comment.status === "rejected"
-                        ? "Ditolak"
-                        : "Menunggu"}
+                          ? "Ditolak"
+                          : "Menunggu"}
                     </span>
                   </div>
                 </div>
@@ -558,11 +558,10 @@ export default function CommentsPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
+                    className={`px-3 py-2 rounded-md border ${currentPage === page
                         ? "bg-primary text-white border-primary"
                         : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -582,12 +581,7 @@ export default function CommentsPage() {
           </div>
         )}
       </div>
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
+
     </div>
   );
 }

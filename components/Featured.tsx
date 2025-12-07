@@ -37,7 +37,7 @@ export default function Featured() {
 
   return (
     <section
-      className="pt-12 px-4 py-8 sm:px-6 sm:py-12 lg:px-8 relative"
+      className="pt-12 px-6 py-8 sm:py-12 lg:px-8 relative"
       id="featured"
     >
       {/* Pembatas Bergelombang (Divider) */}

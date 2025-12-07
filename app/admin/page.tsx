@@ -5,13 +5,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LogoLoading from "@/components/LogoLoading";
+import dynamic from "next/dynamic";
+
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import {
   format,
   startOfMonth,
   endOfMonth,
   subMonths,
   subDays,
+  subHours,
   eachDayOfInterval,
+  eachHourOfInterval,
+  eachMonthOfInterval,
 } from "date-fns";
 import { id } from "date-fns/locale";
 import {
@@ -23,6 +29,8 @@ import {
   ListTodo,
   CheckSquare,
   Square,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 
 // Tipe untuk data order yang sudah di-join dengan tabel services
@@ -46,7 +54,32 @@ interface Project {
   id: number;
   title: string;
   created_at: string;
+  image_url: string | null;
+  slug: string;
 }
+
+// Type for store orders
+interface StoreOrderWithAsset {
+  id: number;
+  order_number: string;
+  customer_name: string;
+  price: number;
+  status: string;
+  created_at: string;
+  marketplace_assets: {
+    nama_aset: string;
+  } | null;
+}
+
+// Status Mapping
+const STATUS_MAPPING: Record<string, string> = {
+  pending_payment: "Belum Dibayar",
+  paid: "Dibayar",
+  accepted: "Diterima",
+  in_progress: "Dikerjakan",
+  completed: "Selesai",
+  cancelled: "Dibatalkan",
+};
 
 // --- Komponen Utama Dashboard ---
 export default function AdminDashboard() {
@@ -74,10 +107,13 @@ export default function AdminDashboard() {
   >([]);
   const [tasks, setTasks] = useState<OrderWithService[]>([]);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
+  const [recentStorePurchases, setRecentStorePurchases] = useState<StoreOrderWithAsset[]>([]);
   const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
-  const [serviceStats, setServiceStats] = useState<
-    { service_name: string; count: number; percentage: number }[]
-  >([]);
+
+  const [showMobileStats, setShowMobileStats] = useState(false);
+  const [incomeTimeRange, setIncomeTimeRange] = useState("12 Bulan"); // 12 Bulan, 30 Hari, 7 Hari, 24 Jam
+  const [recentOrders, setRecentOrders] = useState<OrderWithService[]>([]);
+  const [selectedTaskGroup, setSelectedTaskGroup] = useState("All");
 
   useEffect(() => {
     // Check authentication
@@ -208,12 +244,13 @@ export default function AdminDashboard() {
           ]);
 
           // --- Data untuk Grafik dan Daftar ---
-          const [chartDataRes, tasksRes, recentProjectsRes, serviceStatsRes] =
+          const [chartDataRes, tasksRes, recentProjectsRes, serviceStatsRes, storePurchasesRes] =
             await Promise.all([
               supabase
                 .from("orders")
                 .select("created_at, final_price, status")
-                .gte("created_at", fourteenDaysAgo.toISOString()),
+                .gte("created_at", fourteenDaysAgo.toISOString())
+                .limit(1), // Dummy fetch or remove chartDataRes usage entirely from here, since we fetch it in separate useEffect
               // Mengambil data orders dan menggabungkannya dengan tabel services
               supabase
                 .from("orders")
@@ -227,11 +264,21 @@ export default function AdminDashboard() {
                 .order("work_deadline", { ascending: true }),
               supabase
                 .from("projects")
-                .select("id, title, created_at")
+                .select("id, title, created_at, image_url, slug")
+                .order("created_at", { ascending: false })
+                .limit(4), // Limit 4 for 2x2 grid
+              // Recent Orders instead of Service Stats
+              supabase
+                .from("orders")
+                .select(`*, services ( title ), package_details`)
                 .order("created_at", { ascending: false })
                 .limit(5),
-              // Service statistics
-              supabase.from("orders").select("service_id, services(title)"),
+              // Recent Store Purchases
+              supabase
+                .from("store_orders")
+                .select(`*, marketplace_assets ( nama_aset )`)
+                .order("created_at", { ascending: false })
+                .limit(5),
             ]);
 
           // --- Proses Data Statistik ---
@@ -268,59 +315,23 @@ export default function AdminDashboard() {
             completedTasks: completedTasksRes.count || 0,
           });
 
-          // --- Proses Data Grafik ---
-          const ordersByDay =
-            chartDataRes.data?.reduce((acc: any, order: any) => {
-              const day = format(new Date(order.created_at), "dd MMM", {
-                locale: id,
-              });
-              if (!acc[day]) {
-                acc[day] = { orders: 0, income: 0 };
-              }
-              acc[day].orders += 1;
-              // Hitung income untuk semua status, bukan hanya completed
-              acc[day].income += order.final_price || 0;
-              return acc;
-            }, {}) || {};
 
-          const chart = eachDayOfInterval({
-            start: fourteenDaysAgo,
-            end: now,
-          }).map((day) => {
-            const dayString = format(day, "dd MMM", { locale: id });
-            return {
-              date: dayString,
-              orders: ordersByDay[dayString]?.orders || 0,
-              income: ordersByDay[dayString]?.income || 0,
-            };
-          });
-          setChartData(chart);
+          // --- Chart Data Initial Load (Default 12 Bulan or logic below handles it) ---
+          // Removing initial chart logic here as it will be handled by the useEffect dependent on incomeTimeRange
+          // But to prevent empty chart on first render if specific logic is preferred:
 
-          // --- Proses Service Statistics ---
-          const serviceCounts: Record<string, number> = {};
-          serviceStatsRes.data?.forEach((order: any) => {
-            const serviceName = order.services?.title || "Unknown";
-            serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
-          });
+          // Initial fetch handles statistics mostly. Chart data is better handled separately or we call fetchChartData here.
+          // For simplicity, we trigger the effect by setting authChecked, but let's just leave the fetchChartData to handle it.
 
-          const totalServices = Object.values(serviceCounts).reduce(
-            (a: number, b: number) => a + b,
-            0
-          );
-          const serviceStatsArray = Object.entries(serviceCounts)
-            .map(([name, count]) => ({
-              service_name: name,
-              count: count as number,
-              percentage: ((count as number) / totalServices) * 100,
-            }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 3);
 
-          setServiceStats(serviceStatsArray);
+
+
 
           // --- Set Data Lainnya ---
           setTasks((tasksRes.data as OrderWithService[]) || []);
           setRecentProjects(recentProjectsRes.data || []);
+          setRecentOrders((serviceStatsRes.data as any) || []);
+          setRecentStorePurchases((storePurchasesRes.data as StoreOrderWithAsset[]) || []);
         } catch (error) {
           console.error("Error fetching dashboard data:", error);
           setError(
@@ -334,6 +345,88 @@ export default function AdminDashboard() {
       fetchDashboardData();
     }
   }, [authChecked]);
+
+  // --- Effect for Income Chart Filter ---
+  useEffect(() => {
+    if (authChecked) {
+      const fetchChartData = async () => {
+        const now = new Date();
+        let startDate: Date;
+        let intervalType: "hour" | "day" | "month";
+        let dateFormat: string;
+
+        switch (incomeTimeRange) {
+          case "24 Jam":
+            startDate = subHours(now, 24);
+            intervalType = "hour";
+            dateFormat = "HH:00";
+            break;
+          case "7 Hari":
+            startDate = subDays(now, 7);
+            intervalType = "day";
+            dateFormat = "dd MMM";
+            break;
+          case "30 Hari":
+            startDate = subDays(now, 30);
+            intervalType = "day";
+            dateFormat = "dd MMM";
+            break;
+          case "12 Bulan":
+          default:
+            startDate = subMonths(now, 12);
+            intervalType = "month";
+            dateFormat = "MMM yyyy";
+            break;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from("orders")
+            .select("created_at, final_price")
+            .gte("created_at", startDate.toISOString())
+            .order("created_at", { ascending: true });
+
+          if (error) throw error;
+
+          const ordersByDate = (data || []).reduce((acc: any, order: any) => {
+            const dateStr = format(new Date(order.created_at), dateFormat, {
+              locale: id,
+            });
+            if (!acc[dateStr]) {
+              acc[dateStr] = 0;
+            }
+            acc[dateStr] += order.final_price || 0;
+            return acc;
+          }, {});
+
+          let chartIntervals;
+          if (intervalType === "hour") {
+            chartIntervals = eachHourOfInterval({ start: startDate, end: now });
+          } else if (intervalType === "day") {
+            chartIntervals = eachDayOfInterval({ start: startDate, end: now });
+          } else {
+            chartIntervals = eachMonthOfInterval({ start: startDate, end: now });
+          }
+
+          const chart = chartIntervals.map((date) => {
+            const dateStr = format(date, dateFormat, { locale: id });
+            return {
+              date: dateStr,
+              orders: 0, // Not used in current chart view, but kept for type structure
+              income: ordersByDate[dateStr] || 0,
+            };
+          });
+
+          setChartData(chart);
+        } catch (err) {
+          console.error("Error fetching chart data:", err);
+          // Optional: handle silent error for chart
+        }
+      };
+
+      fetchChartData();
+    }
+  }, [incomeTimeRange, authChecked]);
 
   // --- Helper Functions ---
   const formatCurrency = (amount: number) => {
@@ -429,65 +522,124 @@ export default function AdminDashboard() {
     0
   );
 
-  // Helper function untuk menghitung tinggi bar dalam PX - FIXED VALUES
-  // Mapping FIXED: 50k=40px, 100k=80px, 250k=110px, 500k=150px, 1jt=180px, 2.5jt=215px
-  const getBarHeight = (income: number) => {
-    if (income >= 2500000) return 215;
-    if (income >= 1000000) {
-      // Interpolasi antara 1jt (180px) dan 2.5jt (215px)
-      return 180 + ((income - 1000000) / 1500000) * 35;
-    }
-    if (income >= 500000) {
-      // Interpolasi antara 500k (150px) dan 1jt (180px)
-      return 170 + ((income - 500000) / 500000) * 30;
-    }
-    if (income >= 250000) {
-      // Interpolasi antara 250k (110px) dan 500k (150px)
-      return 120 + ((income - 250000) / 250000) * 40;
-    }
-    if (income >= 100000) {
-      // Interpolasi antara 100k (80px) dan 250k (110px)
-      return 80 + ((income - 100000) / 150000) * 30;
-    }
-    if (income >= 50000) {
-      // Interpolasi antara 50k (40px) dan 100k (80px)
-      return 40 + ((income - 50000) / 50000) * 40;
-    }
-    // Di bawah 50k, proporsional dari 0 ke 40px
-    return (income / 50000) * 40;
+  // Chart Options for Income (Bar Chart)
+  const incomeChartOptions = {
+    chart: {
+      type: "bar" as const,
+      toolbar: { show: false },
+      fontFamily: "inherit",
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        columnWidth: "60%",
+        dataLabels: { position: "top" },
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    xaxis: {
+      categories: chartData.map((d) => d.date),
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        style: {
+          colors: "#64748b",
+          fontSize: "12px",
+        },
+      },
+    },
+    yaxis: {
+      labels: {
+        style: {
+          colors: "#64748b",
+          fontSize: "12px",
+        },
+        formatter: (value: number) => {
+          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}jt`;
+          if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+          return value.toString();
+        },
+      },
+    },
+    grid: {
+      borderColor: "#e2e8f0",
+      strokeDashArray: 4,
+      yaxis: { lines: { show: true } },
+    },
+    colors: ["#3b82f6"], // Blue-500
+    tooltip: {
+      y: {
+        formatter: (value: number) => formatCurrency(value),
+      },
+    },
+    theme: {
+      mode: "light" as const, // Can be dynamic if needed, simplistic for now
+    },
   };
 
+  const incomeChartSeries = [
+    {
+      name: "Pendapatan",
+      data: chartData.map((d) => d.income),
+    },
+  ];
+
+
+
   // Filter tasks by status
-  const pendingTasks = tasks
-    .filter((task) => task.status === "in_progress")
-    .slice(0, 5);
-  const completedTasks = tasks
-    .filter((task) => task.status === "completed")
-    .slice(0, 5);
+
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <div className="px-4 sm:px-6 lg:px-8 py-4">
         {/* Statistik Cards */}
-        <div className="grid rounded-2xl border border-gray-200 bg-white sm:grid-cols-2 xl:grid-cols-4 dark:border-gray-800 dark:bg-gray-900 mb-8 shadow-md">
-          {/* Pesanan Minggu Ini */}
-          <div className="border-b border-gray-200 px-6 py-5 sm:border-r xl:border-b-0 dark:border-gray-800">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Pesanan Minggu Ini
-            </span>
-            <div className="mt-2 flex items-end gap-3">
-              <h4 className="text-title-xs sm:text-title-sm font-bold text-gray-800 dark:text-white/90">
-                {stats.ordersThisWeek} /{" "}
-                {formatCurrency(stats.ordersThisWeekIncome)}
-              </h4>
-              <div>
+        {/* Statistik Cards */}
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-800 dark:text-white/90">
+              Ringkasan
+            </h2>
+            <button
+              onClick={() => setShowMobileStats(!showMobileStats)}
+              className="sm:hidden p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {showMobileStats ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+
+          <div
+            className={`${showMobileStats ? "grid" : "hidden"
+              } grid-cols-1 rounded-xl border border-gray-200 sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-y-0 dark:divide-gray-800 dark:border-gray-800`}
+          >
+            {/* Pesanan Minggu Ini */}
+            <div className="p-5">
+              <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
+                Pesanan Minggu Ini
+              </span>
+              <div className="mt-2 flex items-end gap-3">
+                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                  {stats.ordersThisWeek} /{" "}
+                  {formatCurrency(stats.ordersThisWeekIncome)}
+                </h4>
+              </div>
+              <div className="mt-2">
                 <span
-                  className={`flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium ${stats.ordersThisWeek >= stats.ordersLastWeek
+                  className={`inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-medium ${stats.ordersThisWeek >= stats.ordersLastWeek
                     ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
                     : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
                     }`}
                 >
-                  {stats.ordersThisWeek >= stats.ordersLastWeek ? "+" : ""}
+                  {stats.ordersThisWeek >= stats.ordersLastWeek ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
                   {calculatePercentageChange(
                     stats.ordersThisWeek,
                     stats.ordersLastWeek
@@ -496,26 +648,30 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Pesanan Bulan Ini */}
-          <div className="border-b border-gray-200 px-6 py-5 xl:border-r xl:border-b-0 dark:border-gray-800">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Pesanan Bulan Ini
-            </span>
-            <div className="mt-2 flex items-end gap-3">
-              <h4 className="text-title-xs sm:text-title-sm font-bold text-gray-800 dark:text-white/90">
-                {stats.ordersThisMonth} /{" "}
-                {formatCurrency(stats.ordersThisMonthIncome)}
-              </h4>
-              <div>
+            {/* Pesanan Bulan Ini */}
+            <div className="p-5">
+              <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
+                Pesanan Bulan Ini
+              </span>
+              <div className="mt-2 flex items-end gap-3">
+                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                  {stats.ordersThisMonth} /{" "}
+                  {formatCurrency(stats.ordersThisMonthIncome)}
+                </h4>
+              </div>
+              <div className="mt-2">
                 <span
-                  className={`flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium ${stats.ordersThisMonth >= stats.ordersLastMonth
+                  className={`inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-medium ${stats.ordersThisMonth >= stats.ordersLastMonth
                     ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
                     : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
                     }`}
                 >
-                  {stats.ordersThisMonth >= stats.ordersLastMonth ? "+" : ""}
+                  {stats.ordersThisMonth >= stats.ordersLastMonth ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
                   {calculatePercentageChange(
                     stats.ordersThisMonth,
                     stats.ordersLastMonth
@@ -524,26 +680,30 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Pesanan Tahun Ini */}
-          <div className="border-b border-gray-200 px-6 py-5 sm:border-r sm:border-b-0 dark:border-gray-800">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Pesanan Tahun Ini
-            </span>
-            <div className="mt-2 flex items-end gap-3">
-              <h4 className="text-title-xs sm:text-title-sm font-bold text-gray-800 dark:text-white/90">
-                {stats.ordersThisYear} /{" "}
-                {formatCurrency(stats.ordersThisYearIncome)}
-              </h4>
-              <div>
+            {/* Pesanan Tahun Ini */}
+            <div className="p-5">
+              <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
+                Pesanan Tahun Ini
+              </span>
+              <div className="mt-2 flex items-end gap-3">
+                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                  {stats.ordersThisYear} /{" "}
+                  {formatCurrency(stats.ordersThisYearIncome)}
+                </h4>
+              </div>
+              <div className="mt-2">
                 <span
-                  className={`flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium ${stats.ordersThisYear >= stats.ordersLastYear
+                  className={`inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-medium ${stats.ordersThisYear >= stats.ordersLastYear
                     ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
                     : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
                     }`}
                 >
-                  {stats.ordersThisYear >= stats.ordersLastYear ? "+" : ""}
+                  {stats.ordersThisYear >= stats.ordersLastYear ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
                   {calculatePercentageChange(
                     stats.ordersThisYear,
                     stats.ordersLastYear
@@ -552,17 +712,18 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Total Semua Pesanan */}
-          <div className="px-6 py-5">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Total Semua Pesanan
-            </span>
-            <div className="mt-2 flex items-end gap-3">
-              <h4 className="text-title-xs sm:text-title-sm font-bold text-gray-800 dark:text-white/90">
-                {stats.ordersTotal} / {formatCurrency(stats.ordersTotalIncome)}
-              </h4>
+            {/* Total Semua Pesanan */}
+            <div className="p-5">
+              <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
+                Total Semua Pesanan
+              </span>
+              <div className="mt-2 flex items-end gap-3">
+                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                  {stats.ordersTotal} /{" "}
+                  {formatCurrency(stats.ordersTotalIncome)}
+                </h4>
+              </div>
             </div>
           </div>
         </div>
@@ -573,89 +734,38 @@ export default function AdminDashboard() {
             <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                  Penghasilan 14 Hari Terakhir
+                  Penghasilan
                 </h3>
+                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg">
+                  {["12 Bulan", "30 Hari", "7 Hari", "24 Jam"].map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setIncomeTimeRange(range)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${incomeTimeRange === range
+                        ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" // Fixed closing quote
+                        }`}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 sm:px-6 sm:pt-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                <div className="max-w-full overflow-x-auto custom-scrollbar">
-                  <div className="relative w-full" style={{ height: "280px" }}>
-                    {/* Y-axis labels */}
-                    <div className="absolute left-0 top-0 h-full w-12 flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 pb-8">
-                      <span>2.5jt</span>
-                      <span>1jt</span>
-                      <span>500k</span>
-                      <span>250k</span>
-                      <span>100k</span>
-                      <span>50k</span>
-                      <span>0</span>
-                    </div>
-
-                    {/* Grid lines */}
-                    <div className="absolute left-14 right-0 top-0 h-full flex flex-col justify-between pb-8">
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                      <div className="w-full border-t-2 border-gray-400 dark:border-gray-600"></div>
-                    </div>
-
-                    {/* Bars */}
-                    <div
-                      className="absolute left-14 right-0 bottom-8 flex items-end justify-between gap-2"
-                      style={{ height: "215px" }}
-                    >
-                      {chartData.map((item, index) => (
-                        <div
-                          key={index}
-                          className="flex-1 flex flex-col items-center justify-end"
-                        >
-                          {/* Income value */}
-                          {item.income > 0 && (
-                            <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 whitespace-nowrap">
-                              {formatCurrency(item.income)}
-                            </div>
-                          )}
-
-                          {/* Bar */}
-                          <div
-                            className="w-full bg-blue-600 dark:bg-blue-500 rounded-t relative"
-                            style={{
-                              height: `${getBarHeight(item.income)}px`,
-                              minHeight: item.income > 0 ? "8px" : "0",
-                            }}
-                          >
-                            {/* Order count */}
-                            {item.orders > 0 && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-white text-xs font-semibold">
-                                  {item.orders}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* X-axis labels */}
-                    <div className="absolute left-14 right-0 bottom-0 h-8 flex items-start justify-between gap-2">
-                      {chartData.map((item, index) => (
-                        <div
-                          key={index}
-                          className="flex-1 text-center text-xs text-gray-500 dark:text-gray-400"
-                        >
-                          {item.date}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                <div className="w-full" style={{ minHeight: "350px" }}>
+                  {typeof window !== "undefined" && (
+                    <Chart
+                      options={incomeChartOptions}
+                      series={incomeChartSeries}
+                      type="bar"
+                      height={320}
+                    />
+                  )}
                 </div>
 
-                {/* Total income */}
-                <div className="mt-4 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                {/* Total income footer is optional now as it can be in the chart, but keeping it for consistency if needed */}
+                <div className="mt-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Penghasilan 14 Hari Terakhir:
                   </span>
@@ -666,218 +776,252 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Statistik Layanan */}
+            {/* Pesanan Terbaru (Previously Service Stats) */}
             <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                  Statistik Layanan
+                  Pesanan Terbaru
                 </h3>
               </div>
 
-              <div className="flex flex-col items-center gap-8 xl:flex-row">
-                {/* Pie chart */}
-                <div
-                  className="relative flex items-center justify-center"
-                  style={{ width: "240px", height: "240px" }}
-                >
-                  <svg
-                    viewBox="0 0 240 240"
-                    className="w-full h-full -rotate-90"
-                  >
-                    {serviceStats.length > 0 ? (
-                      serviceStats.map((service, index) => {
-                        const colors = ["#3641F5", "#7592FF", "#DDE9FF"];
-                        const radius = 70;
-                        const circumference = 2 * Math.PI * radius;
-                        const prevPercentages = serviceStats
-                          .slice(0, index)
-                          .reduce((sum, s) => sum + s.percentage, 0);
-                        const offset = (prevPercentages / 100) * circumference;
-                        const strokeLength =
-                          (service.percentage / 100) * circumference;
-
-                        return (
-                          <circle
-                            key={index}
-                            cx="120"
-                            cy="120"
-                            r={radius}
-                            fill="transparent"
-                            stroke={colors[index]}
-                            strokeWidth="42"
-                            strokeDasharray={`${strokeLength} ${circumference}`}
-                            strokeDashoffset={-offset}
-                            className="transition-all duration-300"
-                          />
-                        );
-                      })
-                    ) : (
-                      <circle
-                        cx="120"
-                        cy="120"
-                        r="70"
-                        fill="transparent"
-                        stroke="#E5E7EB"
-                        strokeWidth="42"
-                      />
-                    )}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-gray-800 dark:text-white">
-                      Total
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {serviceStats.reduce((sum, s) => sum + s.count, 0)}{" "}
-                      Pesanan
-                    </span>
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-col items-start gap-6 sm:flex-row xl:flex-col">
-                  {serviceStats.map((service, index) => {
-                    const colors = [
-                      "bg-blue-600",
-                      "bg-blue-400",
-                      "bg-blue-200",
-                    ];
-                    return (
-                      <div key={index} className="flex items-start gap-2.5">
-                        <div
-                          className={`${colors[index]} mt-1.5 h-2 w-2 rounded-full`}
-                        ></div>
-                        <div>
-                          <h5 className="mb-1 font-medium text-gray-800 text-sm dark:text-white/90">
-                            {service.service_name}
-                          </h5>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-700 text-sm dark:text-gray-400">
-                              {service.percentage.toFixed(1)}%
-                            </p>
-                            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                            <p className="text-gray-500 text-sm dark:text-gray-400">
-                              {service.count} Pesanan
-                            </p>
+              <div className="overflow-x-auto hidden md:block">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-gray-700">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-0">
+                        Pelanggan
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Paket
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Harga
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {recentOrders.map((order) => (
+                      <tr key={order.id}>
+                        <td className="px-6 py-4 whitespace-nowrap pl-0">
+                          <div className="flex items-center">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {order.customer_name}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {order.invoice_number}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {order.package_details?.name || "-"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {formatCurrency(order.final_price)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === "completed"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                              : order.status === "pending_payment"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                              }`}
+                          >
+                            {STATUS_MAPPING[order.status] || order.status.replace("_", " ")}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {recentOrders.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          Belum ada pesanan terbaru.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View (For Small Screens) */}
+              <div className="md:hidden space-y-4">
+                {recentOrders.map((order) => (
+                  <div key={order.id} className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {order.customer_name}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {order.invoice_number}
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
+                      <span
+                        className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${order.status === "completed"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                          : order.status === "pending_payment"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                          }`}
+                      >
+                        {STATUS_MAPPING[order.status] || order.status.replace("_", " ")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {order.package_details?.name || "-"}
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {formatCurrency(order.final_price)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {recentOrders.length === 0 && (
+                  <p className="text-center text-sm text-slate-500 py-4">Belum ada pesanan terbaru.</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Task List dan Proyek Terbaru */}
           <div className="space-y-6 w-full lg:w-4/12">
-            {/* Task List */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  Task List
-                </h2>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-blue-600 font-medium">
-                    {stats.pendingTasks} Aktif
-                  </span>
-                  <span className="text-green-600 font-medium">
-                    {stats.completedTasks} Selesai
-                  </span>
+            {/* Task List (Kanban Style) */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden">
+              {/* Header */}
+              <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex flex-wrap gap-2">
+                  {["All", "Todo", "In Progress", "Completed"].map((group) => (
+                    <button
+                      key={group}
+                      onClick={() => setSelectedTaskGroup(group)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${selectedTaskGroup === group
+                        ? "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white"
+                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                        }`}
+                    >
+                      {group}
+                      <span className="ml-2 bg-white dark:bg-slate-600 px-1.5 py-0.5 rounded-full text-[10px] text-slate-600 dark:text-slate-300 shadow-sm">
+                        {group === "All"
+                          ? tasks.length
+                          : tasks.filter((t) => {
+                            if (group === "Todo") return t.status === "pending_payment" || t.status === "accepted";
+                            if (group === "In Progress") return t.status === "in_progress";
+                            if (group === "Completed") return t.status === "completed";
+                            return false;
+                          }).length}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Tugas Aktif */}
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                  Tugas Aktif
-                </h3>
-                <ul className="space-y-2">
-                  {pendingTasks.map((task) => (
-                    <li
+              {/* List */}
+              <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+                {tasks
+                  .filter((t) => {
+                    if (selectedTaskGroup === "All") return true;
+                    if (selectedTaskGroup === "Todo") return t.status === "pending_payment" || t.status === "accepted";
+                    if (selectedTaskGroup === "In Progress") return t.status === "in_progress";
+                    if (selectedTaskGroup === "Completed") return t.status === "completed";
+                    return false;
+                  })
+                  .map((task) => (
+                    <div
                       key={task.id}
-                      className="flex items-start gap-2 p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700 rounded-lg group"
                     >
-                      <button
-                        onClick={() => handleStatusChange(task.id, "completed")}
-                        disabled={updatingTaskId === task.id}
-                        className="mt-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-50"
-                      >
-                        <Square size={18} />
-                      </button>
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">
-                          {task.package_details.name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {task.customer_name} •{" "}
-                          {formatCurrency(task.final_price)}
-                        </p>
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => {
+                            const nextStatus = task.status === "completed" ? "in_progress" : "completed";
+                            handleStatusChange(task.id, nextStatus);
+                          }}
+                          disabled={updatingTaskId === task.id}
+                          className={`mt-0.5 flex-shrink-0 ${task.status === "completed"
+                            ? "text-green-500"
+                            : "text-slate-400 hover:text-blue-500"
+                            } disabled:opacity-50`}
+                        >
+                          {task.status === "completed" ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${task.status === "completed" ? "text-slate-500 line-through" : "text-slate-800 dark:text-slate-200"}`}>
+                            {task.package_details.name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {task.customer_name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${task.status === "in_progress" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                              task.status === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                                "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              }`}>
+                              {STATUS_MAPPING[task.status] || task.status.replace("_", " ")}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {formatDate(task.created_at)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </li>
+                    </div>
                   ))}
-                  {pendingTasks.length === 0 && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 italic">
-                      Tidak ada tugas aktif
-                    </p>
-                  )}
-                </ul>
-              </div>
-
-              {/* Tugas Selesai */}
-              <div>
-                <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                  Selesai
-                </h3>
-                <ul className="space-y-2">
-                  {completedTasks.map((task) => (
-                    <li
-                      key={task.id}
-                      className="flex items-start gap-2 p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700 opacity-75"
-                    >
-                      <button
-                        onClick={() =>
-                          handleStatusChange(task.id, "in_progress")
-                        }
-                        disabled={updatingTaskId === task.id}
-                        className="mt-0.5 text-green-600 hover:text-green-700 disabled:opacity-50"
-                      >
-                        <CheckSquare size={18} />
-                      </button>
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-700 dark:text-slate-300 font-medium line-through">
-                          {task.package_details.name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {task.customer_name} •{" "}
-                          {formatCurrency(task.final_price)}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                  {completedTasks.length === 0 && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 italic">
-                      Tidak ada tugas yang selesai
-                    </p>
-                  )}
-                </ul>
+                {tasks.length === 0 && (
+                  <p className="text-center text-sm text-slate-500 py-4">Tidak ada tugas.</p>
+                )}
               </div>
             </div>
 
-            {/* Proyek Terbaru */}
+            {/* Pembelian Terbaru (List Style) */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                Proyek Terbaru
+                Pembelian Terbaru
               </h2>
-              <ul className="space-y-3">
-                {recentProjects.map((project) => (
-                  <li
-                    key={project.id}
-                    className="text-sm text-slate-700 dark:text-slate-300 truncate"
+              <div className="space-y-3">
+                {recentStorePurchases.map((purchase) => (
+                  <div
+                    key={purchase.id}
+                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-700"
                   >
-                    - {project.title}
-                  </li>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                        {purchase.marketplace_assets?.nama_aset || `Produk #${purchase.id}`}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {purchase.customer_name}
+                      </p>
+                    </div>
+                    <div className="text-right ml-3">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {formatCurrency(purchase.price)}
+                      </p>
+                      <span
+                        className={`inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium ${purchase.status === "completed"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : purchase.status === "pending_payment"
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          }`}
+                      >
+                        {STATUS_MAPPING[purchase.status] || purchase.status}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+                {recentStorePurchases.length === 0 && (
+                  <p className="text-sm text-slate-500 text-center py-4">Belum ada pembelian.</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

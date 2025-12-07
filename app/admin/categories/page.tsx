@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import Modal from "@/components/Modal";
-import Toast from "@/components/Toast";
-import { useToast } from "@/hooks/useToast";
+import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
 import {
   ArrowLeftIcon,
@@ -37,17 +35,7 @@ export default function CategoriesManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    categoryId: number;
-    categoryName: string;
-  }>({
-    isOpen: false,
-    categoryId: 0,
-    categoryName: "",
-  });
-  const [deleting, setDeleting] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
+  const { showAlert, showConfirm } = useAlert();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -94,7 +82,7 @@ export default function CategoriesManagementPage() {
 
       if (error) {
         console.error("Error fetching categories:", error);
-        showToast("Gagal memuat kategori", "error");
+        showAlert("error", "Error", "Gagal memuat kategori");
       } else {
         setCategories(data || []);
         setFilteredCategories(data || []);
@@ -104,33 +92,33 @@ export default function CategoriesManagementPage() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      showToast("Terjadi kesalahan saat memuat kategori", "error");
+      showAlert("error", "Error", "Terjadi kesalahan saat memuat kategori");
       setLoading(false);
     }
   };
 
-  const handleDeleteClick = (category: Category) => {
-    setDeleteModal({
-      isOpen: true,
-      categoryId: category.id,
-      categoryName: category.name,
-    });
-  };
+  const handleDelete = async (category: Category) => {
+    const isConfirmed = await showConfirm(
+      "Hapus Kategori",
+      `Apakah Anda yakin ingin menghapus kategori "${category.name}"? Tindakan ini tidak dapat dibatalkan.`,
+      "error",
+      "Hapus"
+    );
 
-  const confirmDelete = async () => {
-    setDeleting(true);
+    if (!isConfirmed) return;
+
     try {
       const { error } = await supabase
         .from("categories")
         .delete()
-        .eq("id", deleteModal.categoryId);
+        .eq("id", category.id);
 
       if (error) {
         console.error("Error deleting category:", error);
-        showToast("Gagal menghapus kategori", "error");
+        showAlert("error", "Gagal", "Gagal menghapus kategori");
       } else {
         const updatedCategories = categories.filter(
-          (category) => category.id !== deleteModal.categoryId
+          (c) => c.id !== category.id
         );
         setCategories(updatedCategories);
         setTotalItems(updatedCategories.length);
@@ -141,25 +129,22 @@ export default function CategoriesManagementPage() {
         } else {
           // Reapply filters
           const filtered = updatedCategories.filter(
-            (category) =>
-              category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              category.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              (category.description &&
-                category.description
+            (c) =>
+              c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              c.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (c.description &&
+                c.description
                   .toLowerCase()
                   .includes(searchQuery.toLowerCase()))
           );
           setFilteredCategories(filtered);
         }
 
-        showToast("Kategori berhasil dihapus", "success");
-        setDeleteModal({ isOpen: false, categoryId: 0, categoryName: "" });
+        showAlert("success", "Berhasil", "Kategori berhasil dihapus");
       }
     } catch (error) {
       console.error("Error deleting category:", error);
-      showToast("Terjadi kesalahan saat menghapus kategori", "error");
-    } finally {
-      setDeleting(false);
+      showAlert("error", "Error", "Terjadi kesalahan saat menghapus kategori");
     }
   };
 
@@ -323,7 +308,7 @@ export default function CategoriesManagementPage() {
                         Edit
                       </Link>
                       <button
-                        onClick={() => handleDeleteClick(category)}
+                        onClick={() => handleDelete(category)}
                         className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                       >
                         <TrashIcon className="h-4 w-4 mr-1" />
@@ -374,7 +359,7 @@ export default function CategoriesManagementPage() {
                   Edit
                 </Link>
                 <button
-                  onClick={() => handleDeleteClick(category)}
+                  onClick={() => handleDelete(category)}
                   className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                 >
                   <TrashIcon className="h-4 w-4 mr-1" />
@@ -440,11 +425,10 @@ export default function CategoriesManagementPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${
-                      currentPage === page
+                    className={`px-3 py-2 rounded-md border ${currentPage === page
                         ? "bg-primary text-white border-primary"
                         : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -465,61 +449,7 @@ export default function CategoriesManagementPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={deleteModal.isOpen}
-        onClose={() =>
-          setDeleteModal({ isOpen: false, categoryId: 0, categoryName: "" })
-        }
-        title="Konfirmasi Hapus Kategori"
-        size="sm"
-      >
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
-            <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-          </div>
-          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-            Hapus Kategori?
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Apakah Anda yakin ingin menghapus kategori "
-            <strong>{deleteModal.categoryName}</strong>"? Tindakan ini tidak
-            dapat dibatalkan.
-          </p>
-          <div className="flex justify-center space-x-3">
-            <button
-              type="button"
-              className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
-              onClick={() =>
-                setDeleteModal({
-                  isOpen: false,
-                  categoryId: 0,
-                  categoryName: "",
-                })
-              }
-              disabled={deleting}
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-              onClick={confirmDelete}
-              disabled={deleting}
-            >
-              {deleting ? "Menghapus..." : "Hapus"}
-            </button>
-          </div>
-        </div>
-      </Modal>
 
-      {/* Toast Notification */}
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
     </div>
   );
 }
