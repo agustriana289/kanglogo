@@ -198,10 +198,10 @@ export default function PublicNotificationPopup() {
         <div
             className={`fixed z-50 transition-all duration-500 ease-in-out 
                 /* Mobile: Top centered, full width with padding */
-                top-6 left-4 right-4 sm:left-auto sm:right-auto sm:top-auto 
+                top-6 left-4 right-4 sm:right-auto sm:top-auto 
                 
                 /* Desktop: Bottom left with proper spacing */
-                sm:bottom-10 sm:left-8 
+                sm:bottom-10 sm:left-16 
                 
                 ${isVisible
                     ? "opacity-100 translate-y-0"

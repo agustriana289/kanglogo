@@ -120,8 +120,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className={`relative w-full max-w-md bg-white dark:bg-slate-800 rounded-xl shadow-lg border p-1 ${currentStyle.border}`}>
-                <div className={`rounded-xl border ${currentStyle.border} ${currentStyle.bg} p-6`}>
+            <div className='relative w-full max-w-md'>
+                <div className={`rounded-xl shadow-md ${currentStyle.bg} p-6`}>
                     <div className="flex items-start gap-4">
                         <div className={`flex-shrink-0 ${currentStyle.text}`}>
                             {currentStyle.icon}
@@ -136,7 +136,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
                             </p>
 
                             <div className="flex gap-3 justify-end">
-                                {onConfirm && (
+                                {onConfirm && cancelLabel && (
                                     <button
                                         onClick={onClose}
                                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-slate-700"
