@@ -222,45 +222,47 @@ export default function TaskManagementPage() {
       {/* Content Wrapper */}
       <div className="space-y-6">
         {viewMode === "list" ? (
-          /* LIST VIEW */
-          <div className="flex flex-col gap-6">
-            {selectedTaskGroup === 'All' ? (
-              <>
+          /* LIST VIEW - Wrapped in white card like header */
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="flex flex-col gap-6">
+              {selectedTaskGroup === 'All' ? (
+                <>
+                  <TaskListSection
+                    title="Diterima"
+                    tasks={todoTasks}
+                    badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                    formatDate={formatDate}
+                    getStatusLabel={getStatusLabel}
+                    getStatusColor={getStatusColor}
+                  />
+                  <TaskListSection
+                    title="Dikerjakan"
+                    tasks={inProgressTasks}
+                    badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                    formatDate={formatDate}
+                    getStatusLabel={getStatusLabel}
+                    getStatusColor={getStatusColor}
+                  />
+                  <TaskListSection
+                    title="Selesai"
+                    tasks={completedTasks}
+                    badgeColor="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    formatDate={formatDate}
+                    getStatusLabel={getStatusLabel}
+                    getStatusColor={getStatusColor}
+                  />
+                </>
+              ) : (
                 <TaskListSection
-                  title="Diterima"
-                  tasks={todoTasks}
-                  badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  title={selectedTaskGroup === 'Todo' ? 'Diterima' : selectedTaskGroup === 'InProgress' ? 'Dikerjakan' : 'Selesai'}
+                  tasks={filteredTasks}
+                  badgeColor="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   formatDate={formatDate}
                   getStatusLabel={getStatusLabel}
                   getStatusColor={getStatusColor}
                 />
-                <TaskListSection
-                  title="Dikerjakan"
-                  tasks={inProgressTasks}
-                  badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                  formatDate={formatDate}
-                  getStatusLabel={getStatusLabel}
-                  getStatusColor={getStatusColor}
-                />
-                <TaskListSection
-                  title="Selesai"
-                  tasks={completedTasks}
-                  badgeColor="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  formatDate={formatDate}
-                  getStatusLabel={getStatusLabel}
-                  getStatusColor={getStatusColor}
-                />
-              </>
-            ) : (
-              <TaskListSection
-                title={selectedTaskGroup === 'Todo' ? 'Diterima' : selectedTaskGroup === 'InProgress' ? 'Dikerjakan' : 'Selesai'}
-                tasks={filteredTasks}
-                badgeColor="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                formatDate={formatDate}
-                getStatusLabel={getStatusLabel}
-                getStatusColor={getStatusColor}
-              />
-            )}
+              )}
+            </div>
           </div>
         ) : (
           /* KANBAN VIEW */

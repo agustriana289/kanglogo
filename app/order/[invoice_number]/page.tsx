@@ -303,48 +303,83 @@ export default function InvoiceDetailPage({
               </div>
 
               <div className="overflow-hidden">
-                <table className="w-full">
-                  <thead className="border-b">
-                    <tr>
-                      <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
-                        PAKET
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                        ESTIMASI
-                      </th>
-                      <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
-                        HARGA
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                        DISKON
-                      </th>
-                      <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
-                        TOTAL HARGA
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-4 px-6">
-                        <div className="font-medium text-gray-900">
-                          {order.package_details?.name || "Service Package"}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center text-gray-700">
-                        {order.package_details?.duration || "-"}
-                      </td>
-                      <td className="py-4 px-4 text-right text-gray-700">
-                        Rp {priceBeforeDiscount.toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-4 px-4 text-center text-gray-700">
-                        Rp {order.discount_amount.toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-4 px-6 text-right font-medium text-gray-900">
-                        Rp {order.final_price.toLocaleString("id-ID")}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {/* Mobile Card View */}
+                <div className="block sm:hidden px-4 py-4">
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">Paket</p>
+                      <p className="font-medium text-gray-900">
+                        {order.package_details?.name || "Service Package"}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase mb-1">Estimasi</p>
+                        <p className="text-gray-700">{order.package_details?.duration || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase mb-1">Harga</p>
+                        <p className="text-gray-700">Rp {priceBeforeDiscount.toLocaleString("id-ID")}</p>
+                      </div>
+                    </div>
+                    {order.discount_amount > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase mb-1">Diskon</p>
+                        <p className="text-green-600 font-medium">- Rp {order.discount_amount.toLocaleString("id-ID")}</p>
+                      </div>
+                    )}
+                    <div className="border-t pt-3">
+                      <p className="text-xs text-gray-500 uppercase mb-1">Total Harga</p>
+                      <p className="text-lg font-bold text-primary">Rp {order.final_price.toLocaleString("id-ID")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="border-b">
+                      <tr>
+                        <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
+                          PAKET
+                        </th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                          ESTIMASI
+                        </th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
+                          HARGA
+                        </th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                          DISKON
+                        </th>
+                        <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
+                          TOTAL HARGA
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b">
+                        <td className="py-4 px-6">
+                          <div className="font-medium text-gray-900">
+                            {order.package_details?.name || "Service Package"}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center text-gray-700">
+                          {order.package_details?.duration || "-"}
+                        </td>
+                        <td className="py-4 px-4 text-right text-gray-700">
+                          Rp {priceBeforeDiscount.toLocaleString("id-ID")}
+                        </td>
+                        <td className="py-4 px-4 text-center text-gray-700">
+                          Rp {order.discount_amount.toLocaleString("id-ID")}
+                        </td>
+                        <td className="py-4 px-6 text-right font-medium text-gray-900">
+                          Rp {order.final_price.toLocaleString("id-ID")}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
 
                 <div className="p-6">
                   <div className="max-w-xs ml-auto space-y-2">

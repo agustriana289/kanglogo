@@ -200,8 +200,8 @@ export default function PublicNotificationPopup() {
                 /* Mobile: Top centered, full width with padding */
                 top-6 left-4 right-4 sm:left-auto sm:right-auto sm:top-auto 
                 
-                /* Desktop: Bottom left */
-                sm:bottom-10 sm:left-10 
+                /* Desktop: Bottom left with proper spacing */
+                sm:bottom-28 sm:left-6 
                 
                 ${isVisible
                     ? "opacity-100 translate-y-0"

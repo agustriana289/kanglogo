@@ -26,6 +26,7 @@ export default function NewOrderPageContent() {
     customer_name: "",
     customer_email: "",
     customer_whatsapp: "",
+    country_code: "+62",
     payment_method: "",
     discount_code: "", // State untuk input kode diskon
   });
@@ -191,7 +192,7 @@ export default function NewOrderPageContent() {
         package_details: selectedPackage,
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
-        customer_whatsapp: formData.customer_whatsapp,
+        customer_whatsapp: formData.customer_whatsapp ? `${formData.country_code}${formData.customer_whatsapp}` : "",
         // PERUBAHAN: Simpan kode dan jumlah diskon
         discount_code: appliedDiscount?.code || null,
         discount_amount: discountAmount > 0 ? discountAmount : null,
@@ -413,16 +414,36 @@ export default function NewOrderPageContent() {
                   >
                     Nomor WhatsApp
                   </label>
-                  <input
-                    type="tel"
-                    id="customer_whatsapp"
-                    name="customer_whatsapp"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="08xxxxxxxxxx"
-                    value={formData.customer_whatsapp}
-                    onChange={handleInputChange}
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      className="w-24 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      value={formData.country_code}
+                      onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
+                    >
+                      <option value="+62">🇮🇩 +62</option>
+                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+60">🇲🇾 +60</option>
+                      <option value="+65">🇸🇬 +65</option>
+                      <option value="+61">🇦🇺 +61</option>
+                      <option value="+81">🇯🇵 +81</option>
+                      <option value="+82">🇰🇷 +82</option>
+                      <option value="+86">🇨🇳 +86</option>
+                      <option value="+91">🇮🇳 +91</option>
+                      <option value="+44">🇬🇧 +44</option>
+                      <option value="+49">🇩🇪 +49</option>
+                      <option value="+33">🇫🇷 +33</option>
+                    </select>
+                    <input
+                      type="tel"
+                      id="customer_whatsapp"
+                      name="customer_whatsapp"
+                      required
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="812xxxxxxxx"
+                      value={formData.customer_whatsapp}
+                      onChange={(e) => setFormData({ ...formData, customer_whatsapp: e.target.value.replace(/\D/g, '') })}
+                    />
+                  </div>
                 </div>
 
                 {/* PERUBAHAN: Tambahkan input untuk kode diskon */}

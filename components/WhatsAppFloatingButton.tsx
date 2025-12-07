@@ -58,9 +58,9 @@ export default function WhatsAppFloatingButton() {
                 className={`fixed bottom-10 right-6 z-50 transition-all duration-500 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
                     }`}
             >
-                {/* Text Bubble */}
+                {/* Text Bubble - Hidden on mobile */}
                 <div
-                    className={`absolute right-full top-0 mr-4 w-44 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm text-left py-3 px-4 rounded-2xl shadow-lg transition-all duration-300 ${isOpen ? "translate-y-4 opacity-0 invisible" : "translate-y-0 opacity-100"
+                    className={`hidden sm:block absolute right-full top-0 mr-4 w-44 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm text-left py-3 px-4 rounded-2xl shadow-lg transition-all duration-300 ${isOpen ? "translate-y-4 opacity-0 invisible" : "translate-y-0 opacity-100"
                         }`}
                 >
                     <span className="block text-sm">Butuh bantuan?</span>
