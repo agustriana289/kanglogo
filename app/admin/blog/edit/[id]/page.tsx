@@ -2,15 +2,12 @@
 
 import { notFound } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import LogoLoading from "@/components/LogoLoading";
 
-const ArticleEditor = dynamic(() => import("@/components/ArticleEditor"), {
-  ssr: false,
-  loading: () => <div>Loading editor...</div>,
-});
+import ArticleEditor from "@/components/ArticleEditor";
 
 export default function EditArticlePage() {
   const params = useParams();

@@ -114,9 +114,8 @@ export default function Footer() {
     return links.filter((link) => link.category_id === categoryId);
   };
 
-  const waLink = `https://wa.me/${
-    settings?.website_phone?.replace(/\D/g, "") || ""
-  }`;
+  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
+    }`;
 
   // Perbaikan: Tambahkan tipe eksplisit untuk parameter svgString
   const fixSvg = (svgString: string) => {
@@ -174,9 +173,8 @@ export default function Footer() {
                 <div className="widget-content">
                   <a
                     className="py-2.5 px-5 h-9 block w-fit bg-primary rounded-full shadow-sm text-xs text-white mx-auto transition-all duration-500 hover:bg-primary/90 lg:mx-0"
-                    href={`mailto:${
-                      settings?.website_email || "halo@kanglogo.com"
-                    }`}
+                    href={`mailto:${settings?.website_email || "halo@kanglogo.com"
+                      }`}
                   >
                     {settings?.website_email || "halo@kanglogo.com"}
                   </a>

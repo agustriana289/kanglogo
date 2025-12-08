@@ -45,14 +45,15 @@ const formatMultiLine = (text: string | null | undefined) => {
 export default async function ProjectDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const project = await getProject(params.slug);
+  const { slug } = await params;
+  const project = await getProject(slug);
 
   // --- TAMBAHKAN BAGIAN INI ---
-  const requestHeaders = headers();
+  const requestHeaders = await headers();
   const host = requestHeaders.get("host");
-  const url = `https://${host}/projects/${params.slug}`;
+  const url = `https://${host}/projects/${slug}`;
   // --- AKHIR TAMBAHAN ---
 
   return (

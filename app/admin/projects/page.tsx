@@ -279,17 +279,13 @@ export default function ProjectManagementPage() {
         const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
         const filePath = `projects/${fileName}`;
 
-        const { publicUrl, error: uploadError } = await uploadFile("projects", filePath, file);
+        const { publicUrl, error: uploadError } = await uploadFile("assets", filePath, file);
 
         if (uploadError) {
-          // If bucket 'projects' doesn't exist or other error, fallback to 'marketplace' for now or handle error
-          // Trying 'marketplace' as fallback if 'projects' bucket fails/doesn't exist
-          const { publicUrl: fallbackUrl, error: fallbackError } = await uploadFile("marketplace", `projects/${fileName}`, file);
-          if (fallbackError) throw new Error("Gagal mengupload gambar ke Supabase Storage");
-          imageUrl = fallbackUrl;
-        } else {
-          imageUrl = publicUrl;
+          console.error("Upload error:", uploadError);
+          throw new Error("Gagal mengupload gambar ke Supabase Storage");
         }
+        imageUrl = publicUrl;
         setUploadingImage(false);
       }
 
@@ -348,7 +344,7 @@ export default function ProjectManagementPage() {
 
       {/* Header Section */}
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="hidden sm:flex sm:flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
               Daftar Proyek
@@ -367,9 +363,8 @@ export default function ProjectManagementPage() {
         </div>
 
         {/* Filters & View Toggle */}
-        <div className="sm:mt-6 flex flex-col gap-4">
-          {/* Search Bar - Full Width on Mobile */}
-          <div className="relative w-full">
+        <div className="mt-6 flex flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:max-w-md">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
@@ -380,38 +375,33 @@ export default function ProjectManagementPage() {
             />
           </div>
 
-          {/* Filter & View Toggle - 2 Cols on Mobile, Split on Desktop */}
-          <div className="flex flex-row gap-4 items-center justify-between">
-            {/* Filter - Flexible Width */}
-            <div className="flex-1 sm:max-w-xs">
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition text-gray-600 dark:text-gray-300"
-              >
-                <option value="">Semua Tipe</option>
-                {projectTypes.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
+          <div className="flex items-center gap-2 w-auto">
+            {/* Filter Type */}
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="hidden sm:block px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition text-gray-600 dark:text-gray-300"
+            >
+              <option value="">Semua Tipe</option>
+              {projectTypes.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
 
-            {/* View Toggle - Fixed Width */}
-            <div className="flex-none">
-              <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-md transition ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
-                >
-                  <Squares2X2Icon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-md transition ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
-                >
-                  <ListBulletIcon className="w-5 h-5" />
-                </button>
-              </div>
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg ml-auto sm:ml-0">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-md transition ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+              >
+                <Squares2X2Icon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-md transition ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+              >
+                <ListBulletIcon className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>

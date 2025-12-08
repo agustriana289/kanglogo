@@ -223,7 +223,7 @@ export default function MarketplaceManagementPage() {
         const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
         const filePath = `store/${fileName}`;
 
-        const { publicUrl, error: uploadError } = await uploadFile("marketplace", filePath, file);
+        const { publicUrl, error: uploadError } = await uploadFile("assets", filePath, file);
 
         if (uploadError) {
           throw new Error("Gagal mengupload gambar ke Supabase Storage");
@@ -619,7 +619,7 @@ export default function MarketplaceManagementPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl shadow-xl my-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-4xl shadow-xl my-8">
             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 rounded-t-2xl z-10">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 {editingAsset ? "Edit Produk" : "Tambah Produk Baru"}
@@ -633,140 +633,169 @@ export default function MarketplaceManagementPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Gambar Produk
-                </label>
-                <div
-                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 dark:border-gray-700 hover:border-primary'} cursor-pointer`}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {imagePreview ? (
-                    <div className="relative aspect-video max-h-60 mx-auto rounded-lg overflow-hidden">
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-contain bg-gray-50 dark:bg-slate-900" />
-                      <button
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow hover:bg-red-600"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setImagePreview(null);
-                          setFormData(prev => ({ ...prev, image_url: "" }));
-                          if (fileInputRef.current) fileInputRef.current.value = "";
-                        }}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Image & Basic Info */}
+                <div className="space-y-4">
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Gambar Produk
+                    </label>
+                    <div
+                      className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 dark:border-gray-700 hover:border-primary'} cursor-pointer`}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {imagePreview ? (
+                        <div className="relative aspect-video max-h-48 mx-auto rounded-lg overflow-hidden">
+                          <img src={imagePreview} alt="Preview" className="w-full h-full object-contain bg-gray-50 dark:bg-slate-900" />
+                          <button
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow hover:bg-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setImagePreview(null);
+                              setFormData(prev => ({ ...prev, image_url: "" }));
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                            }}
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto text-gray-400">
+                            <PhotoIcon className="w-6 h-6" />
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Klik untuk upload
+                          </p>
+                          <p className="text-xs text-gray-400">Max 5MB</p>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nama Aset
+                    </label>
+                    <input
+                      type="text"
+                      className={inputStyle}
+                      value={formData.nama_aset}
+                      onChange={(e) => setFormData({ ...formData, nama_aset: e.target.value })}
+                      placeholder="Contoh: Undangan Website Elegant"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Kategori
+                    </label>
+                    <select
+                      className={inputStyle}
+                      value={formData.kategori_aset}
+                      onChange={(e) => setFormData({ ...formData, kategori_aset: e.target.value })}
+                    >
+                      <option value="">Pilih Kategori</option>
+                      <option value="Logo">Logo</option>
+                      <option value="Template">Template</option>
+                      <option value="Icon">Icon</option>
+                      <option value="Illustration">Illustration</option>
+                      <option value="Digital Asset">Digital Asset</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Jenis
+                      </label>
+                      <select
+                        className={inputStyle}
+                        value={formData.jenis}
+                        onChange={(e) => setFormData({ ...formData, jenis: e.target.value as any })}
                       >
-                        <XMarkIcon className="w-4 h-4" />
-                      </button>
+                        <option value="freebies">Freebies</option>
+                        <option value="premium">Premium</option>
+                      </select>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto text-gray-400">
-                        <PhotoIcon className="w-6 h-6" />
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Klik untuk upload atau drag & drop gambar
-                      </p>
-                      <p className="text-xs text-gray-400">JPG, PNG, WEBP (Max 5MB)</p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Slug
+                      </label>
+                      <input
+                        type="text"
+                        className={`${inputStyle} bg-gray-50 dark:bg-slate-800 text-gray-500`}
+                        value={formData.slug}
+                        readOnly
+                      />
                     </div>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Nama Aset
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={formData.nama_aset}
-                    onChange={(e) => setFormData({ ...formData, nama_aset: e.target.value })}
-                    placeholder="Contoh: Undangan Website Elegant"
-                  />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Kategori
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={formData.kategori_aset}
-                    onChange={(e) => setFormData({ ...formData, kategori_aset: e.target.value })}
-                    placeholder="Contoh: Digital Invitation"
-                  />
-                </div>
+                {/* Right Column: Details */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Harga (Rp)
+                      </label>
+                      <input
+                        type="number"
+                        className={inputStyle}
+                        value={formData.harga_aset}
+                        onChange={(e) => setFormData({ ...formData, harga_aset: Number(e.target.value) })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Jenis Lisensi
+                      </label>
+                      <select
+                        className={inputStyle}
+                        value={formData.jenis_lisensi}
+                        onChange={(e) => setFormData({ ...formData, jenis_lisensi: e.target.value })}
+                      >
+                        <option value="">Pilih Lisensi</option>
+                        <option value="Penggunaan Komersial">Penggunaan Komersial</option>
+                        <option value="Keperluan pribadi">Keperluan pribadi</option>
+                      </select>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Jenis
-                  </label>
-                  <select
-                    className={inputStyle}
-                    value={formData.jenis}
-                    onChange={(e) => setFormData({ ...formData, jenis: e.target.value as any })}
-                  >
-                    <option value="freebies">Freebies</option>
-                    <option value="premium">Premium</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tagline
+                    </label>
+                    <input
+                      type="text"
+                      className={inputStyle}
+                      value={formData.tagline}
+                      onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
+                      placeholder="Contoh: Template undangan elegan untuk pernikahan"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Harga (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    className={inputStyle}
-                    value={formData.harga_aset}
-                    onChange={(e) => setFormData({ ...formData, harga_aset: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Jenis Lisensi
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={formData.jenis_lisensi}
-                    onChange={(e) => setFormData({ ...formData, jenis_lisensi: e.target.value })}
-                    placeholder="Contoh: Personal Use"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Slug (Auto-generated)
-                  </label>
-                  <input
-                    type="text"
-                    className={`${inputStyle} bg-gray-50 dark:bg-slate-800 text-gray-500`}
-                    value={formData.slug}
-                    readOnly
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Deskripsi
-                  </label>
-                  <textarea
-                    rows={4}
-                    className={inputStyle}
-                    value={formData.deskripsi}
-                    onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                    placeholder="Deskripsi singkat produk..."
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Deskripsi
+                    </label>
+                    <textarea
+                      rows={6}
+                      className={inputStyle}
+                      value={formData.deskripsi}
+                      onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                      placeholder="Deskripsi singkat produk..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>

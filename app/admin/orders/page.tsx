@@ -92,10 +92,10 @@ export default function OrderManagementPage() {
 
   // Stats
   const [stats, setStats] = useState({
-    overdue: 0,
-    dueIn30Days: 0,
-    avgTimePaid: 0,
-    upcomingPayout: 0,
+    unpaid: 0,
+    incomeThisMonth: 0,
+    incomeThisYear: 0,
+    totalIncome: 0,
   });
 
   // Modal States
@@ -167,30 +167,44 @@ export default function OrderManagementPage() {
 
   const calculateStats = (data: Order[]) => {
     const now = new Date();
-    let overdue = 0;
-    let dueIn30Days = 0;
-    let upcomingPayout = 0;
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let unpaid = 0;
+    let incomeThisMonth = 0;
+    let incomeThisYear = 0;
+    let totalIncome = 0;
 
     data.forEach((order) => {
-      // Assuming 'final_price' is revenue
+      // Hitung Belum Dibayar (status pending_payment)
       if (order.status === "pending_payment") {
-        upcomingPayout += order.final_price;
-        if (order.payment_deadline) {
-          const deadline = new Date(order.payment_deadline);
-          if (isBefore(deadline, now)) {
-            overdue += order.final_price;
-          } else if (isBefore(deadline, addDays(now, 30))) {
-            dueIn30Days += order.final_price;
-          }
+        unpaid += order.final_price;
+      }
+
+      // Hitung Penghasilan (status paid, accepted, completed, in_progress - asumsi uang masuk saat paid)
+      // Kita gunakan status 'paid' dan status lanjutannya ('in_progress', 'completed', 'accepted')
+      if (["paid", "accepted", "in_progress", "completed"].includes(order.status)) {
+        totalIncome += order.final_price;
+
+        const orderDate = new Date(order.created_at);
+
+        // Income This Month
+        if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
+          incomeThisMonth += order.final_price;
+        }
+
+        // Income This Year
+        if (orderDate.getFullYear() === currentYear) {
+          incomeThisYear += order.final_price;
         }
       }
     });
 
     setStats({
-      overdue,
-      dueIn30Days,
-      upcomingPayout,
-      avgTimePaid: 24, // Hardcoded placeholder
+      unpaid,
+      incomeThisMonth,
+      incomeThisYear,
+      totalIncome,
     });
   };
 
@@ -485,34 +499,34 @@ export default function OrderManagementPage() {
         >
           <div className="border-b p-5 sm:border-r lg:border-b-0">
             <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Terlewat Jatuh Tempo
+              Belum Dibayar
             </p>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
-              {formatCurrency(stats.overdue)}
+              {formatCurrency(stats.unpaid)}
             </h3>
           </div>
           <div className="border-b p-5 lg:border-b-0">
             <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Jatuh Tempo 30 Hari
+              Penghasilan Bulan Ini
             </p>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
-              {formatCurrency(stats.dueIn30Days)}
+              {formatCurrency(stats.incomeThisMonth)}
             </h3>
           </div>
           <div className="border-b p-5 sm:border-r sm:border-b-0">
             <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Rata-rata Waktu Bayar
+              Penghasilan Tahun Ini
             </p>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
-              {stats.avgTimePaid} hari
+              {formatCurrency(stats.incomeThisYear)}
             </h3>
           </div>
           <div className="p-5">
             <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Estimasi Pemasukan
+              Total Penghasilan
             </p>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
-              {formatCurrency(stats.upcomingPayout)}
+              {formatCurrency(stats.totalIncome)}
             </h3>
           </div>
         </div>

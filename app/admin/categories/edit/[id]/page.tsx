@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
@@ -16,8 +16,9 @@ interface Category {
 export default function EditCategoryPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = use(params);
   const router = useRouter();
   const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
@@ -31,14 +32,14 @@ export default function EditCategoryPage({
 
   useEffect(() => {
     fetchCategory();
-  }, [params.id]);
+  }, [id]);
 
   const fetchCategory = async () => {
     try {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
-        .eq("id", params.id)
+        .eq("id", id)
         .single();
 
       if (error) {
@@ -92,7 +93,7 @@ export default function EditCategoryPage({
       const { error } = await supabase
         .from("categories")
         .update(formData)
-        .eq("id", params.id);
+        .eq("id", id);
 
       if (error) {
         if (error.code === "23505") {

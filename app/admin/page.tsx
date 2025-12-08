@@ -96,6 +96,10 @@ export default function AdminDashboard() {
     ordersThisYearIncome: 0,
     ordersTotal: 0,
     ordersTotalIncome: 0,
+    purchasesThisMonth: 0,
+    purchasesThisMonthIncome: 0,
+    purchasesTotal: 0,
+    purchasesTotalIncome: 0,
     ordersLastWeek: 0,
     ordersLastMonth: 0,
     ordersLastYear: 0,
@@ -113,7 +117,7 @@ export default function AdminDashboard() {
   const [showMobileStats, setShowMobileStats] = useState(false);
   const [incomeTimeRange, setIncomeTimeRange] = useState("12 Bulan"); // 12 Bulan, 30 Hari, 7 Hari, 24 Jam
   const [recentOrders, setRecentOrders] = useState<OrderWithService[]>([]);
-  const [selectedTaskGroup, setSelectedTaskGroup] = useState("All");
+  const [selectedTaskGroup, setSelectedTaskGroup] = useState("Semua");
 
   useEffect(() => {
     // Check authentication
@@ -185,52 +189,32 @@ export default function AdminDashboard() {
 
           // --- Statistik Utama ---
           const [
-            ordersThisWeekRes,
-            ordersLastWeekRes,
             ordersThisMonthRes,
-            ordersLastMonthRes,
-            ordersThisYearRes,
-            ordersLastYearRes,
             ordersTotalRes,
+            storePurchasesThisMonthRes,
+            storePurchasesTotalRes,
             pendingTasksRes,
             completedTasksRes,
           ] = await Promise.all([
-            // This Week
+            // Orders (Services) This Month
             supabase
               .from("orders")
-              .select("final_price")
-              .gte("created_at", thisWeekStart.toISOString()),
-            // Last Week
-            supabase
-              .from("orders")
-              .select("final_price")
-              .gte("created_at", lastWeekStart.toISOString())
-              .lte("created_at", lastWeekEnd.toISOString()),
-            // This Month
-            supabase
-              .from("orders")
+              .select("id", { count: "exact" }) // Just count is enough for "Pesanan" (Orders count), or did user mean Income? Cards show "1 / Rp 100.000". So Count AND Income.
+              // So I need to fetch data to sum it.
               .select("final_price")
               .gte("created_at", thisMonthStart.toISOString())
               .lte("created_at", thisMonthEnd.toISOString()),
-            // Last Month
-            supabase
-              .from("orders")
-              .select("final_price")
-              .gte("created_at", lastMonthStart.toISOString())
-              .lte("created_at", lastMonthEnd.toISOString()),
-            // This Year
-            supabase
-              .from("orders")
-              .select("final_price")
-              .gte("created_at", thisYearStart.toISOString()),
-            // Last Year
-            supabase
-              .from("orders")
-              .select("final_price")
-              .gte("created_at", lastYearStart.toISOString())
-              .lte("created_at", lastYearEnd.toISOString()),
-            // Total All Time
+            // Orders Total
             supabase.from("orders").select("final_price"),
+            // Store Purchases This Month
+            supabase
+              .from("store_orders")
+              .select("price") // Assuming 'price' is the field
+              .gte("created_at", thisMonthStart.toISOString())
+              .lte("created_at", thisMonthEnd.toISOString()),
+            // Store Purchases Total
+            supabase.from("store_orders").select("price"),
+
             // Pending Tasks
             supabase
               .from("orders")
@@ -244,73 +228,78 @@ export default function AdminDashboard() {
           ]);
 
           // --- Data untuk Grafik dan Daftar ---
-          const [chartDataRes, tasksRes, recentProjectsRes, serviceStatsRes, storePurchasesRes] =
-            await Promise.all([
-              supabase
-                .from("orders")
-                .select("created_at, final_price, status")
-                .gte("created_at", fourteenDaysAgo.toISOString())
-                .limit(1), // Dummy fetch or remove chartDataRes usage entirely from here, since we fetch it in separate useEffect
-              // Mengambil data orders dan menggabungkannya dengan tabel services
-              supabase
-                .from("orders")
-                .select(
-                  `
-                *,
-                services ( title )
-              `
-                )
-                .in("status", ["in_progress", "completed"]) // Hanya mengambil status yang relevan untuk task
-                .order("work_deadline", { ascending: true }),
-              supabase
-                .from("projects")
-                .select("id, title, created_at, image_url, slug")
-                .order("created_at", { ascending: false })
-                .limit(4), // Limit 4 for 2x2 grid
-              // Recent Orders instead of Service Stats
-              supabase
-                .from("orders")
-                .select(`*, services ( title ), package_details`)
-                .order("created_at", { ascending: false })
-                .limit(5),
-              // Recent Store Purchases
-              supabase
-                .from("store_orders")
-                .select(`*, marketplace_assets ( nama_aset )`)
-                .order("created_at", { ascending: false })
-                .limit(5),
-            ]);
+          const [
+            chartDataRes,
+            tasksRes,
+            recentProjectsRes,
+            serviceStatsRes,
+            storePurchasesRes,
+          ] = await Promise.all([
+            // Dummy for chart if needed, or keeping it for structure
+            supabase
+              .from("orders")
+              .select("created_at, final_price, status")
+              .gte("created_at", fourteenDaysAgo.toISOString())
+              .limit(1),
+            // Tasks (Only pending tasks - accepted and in_progress)
+            supabase
+              .from("orders")
+              .select(`*, services ( title )`)
+              .in("status", ["accepted", "in_progress"])
+              .order("work_deadline", { ascending: true }),
+            // Recent Projects
+            supabase
+              .from("projects")
+              .select("id, title, created_at, image_url, slug")
+              .order("created_at", { ascending: false })
+              .limit(4),
+            // Recent Orders
+            supabase
+              .from("orders")
+              .select(`*, services ( title ), package_details`)
+              .order("created_at", { ascending: false })
+              .limit(5),
+            // Recent Store Purchases
+            supabase
+              .from("store_orders")
+              .select(`*, marketplace_assets ( nama_aset )`)
+              .order("created_at", { ascending: false })
+              .limit(5),
+          ]);
 
           // --- Proses Data Statistik ---
           const calculateStats = (res: any) => ({
             count: res.data?.length || 0,
             income:
               res.data?.reduce(
-                (sum: number, order: any) => sum + (order.final_price || 0),
+                (sum: number, item: any) => sum + (item.final_price || item.price || 0),
                 0
               ) || 0,
           });
 
-          const thisWeek = calculateStats(ordersThisWeekRes);
-          const lastWeek = calculateStats(ordersLastWeekRes);
-          const thisMonth = calculateStats(ordersThisMonthRes);
-          const lastMonth = calculateStats(ordersLastMonthRes);
-          const thisYear = calculateStats(ordersThisYearRes);
-          const lastYear = calculateStats(ordersLastYearRes);
-          const total = calculateStats(ordersTotalRes);
+          const ordersThisMonth = calculateStats(ordersThisMonthRes);
+          const ordersTotal = calculateStats(ordersTotalRes);
+          const purchasesThisMonth = calculateStats(storePurchasesThisMonthRes);
+          const purchasesTotal = calculateStats(storePurchasesTotalRes);
 
           setStats({
-            ordersThisWeek: thisWeek.count,
-            ordersThisWeekIncome: thisWeek.income,
-            ordersThisMonth: thisMonth.count,
-            ordersThisMonthIncome: thisMonth.income,
-            ordersThisYear: thisYear.count,
-            ordersThisYearIncome: thisYear.income,
-            ordersTotal: total.count,
-            ordersTotalIncome: total.income,
-            ordersLastWeek: lastWeek.count,
-            ordersLastMonth: lastMonth.count,
-            ordersLastYear: lastYear.count,
+            ordersThisMonth: ordersThisMonth.count,
+            ordersThisMonthIncome: ordersThisMonth.income,
+            ordersTotal: ordersTotal.count,
+            ordersTotalIncome: ordersTotal.income,
+            purchasesThisMonth: purchasesThisMonth.count,
+            purchasesThisMonthIncome: purchasesThisMonth.income,
+            purchasesTotal: purchasesTotal.count,
+            purchasesTotalIncome: purchasesTotal.income,
+
+            // Keep others to avoid type errors for now or update type
+            ordersThisWeek: 0,
+            ordersThisWeekIncome: 0,
+            ordersThisYear: 0,
+            ordersThisYearIncome: 0,
+            ordersLastWeek: 0,
+            ordersLastMonth: 0,
+            ordersLastYear: 0,
             pendingTasks: pendingTasksRes.count || 0,
             completedTasks: completedTasksRes.count || 0,
           });
@@ -597,7 +586,7 @@ export default function AdminDashboard() {
         {/* Statistik Cards */}
         {/* Statistik Cards */}
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="sm:mb-6 flex items-center justify-between">
             <h2 className="font-semibold text-gray-800 dark:text-white/90">
               Ringkasan
             </h2>
@@ -615,412 +604,341 @@ export default function AdminDashboard() {
 
           <div
             className={`${showMobileStats ? "grid" : "hidden"
-              } grid-cols-1 rounded-xl border border-gray-200 sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-y-0 dark:divide-gray-800 dark:border-gray-800`}
+              } mb-6 sm:mb-4 grid-cols-1 rounded-xl border border-gray-200 sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-y-0 dark:divide-gray-800 dark:border-gray-800`}
           >
-            {/* Pesanan Minggu Ini */}
-            <div className="p-5">
-              <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
-                Pesanan Minggu Ini
-              </span>
-              <div className="mt-2 flex items-end gap-3">
-                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
-                  {stats.ordersThisWeek} /{" "}
-                  {formatCurrency(stats.ordersThisWeekIncome)}
-                </h4>
-              </div>
-              <div className="mt-2">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-medium ${stats.ordersThisWeek >= stats.ordersLastWeek
-                    ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
-                    : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
-                    }`}
-                >
-                  {stats.ordersThisWeek >= stats.ordersLastWeek ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  {calculatePercentageChange(
-                    stats.ordersThisWeek,
-                    stats.ordersLastWeek
-                  ).toFixed(1)}
-                  %
-                </span>
-              </div>
-            </div>
-
             {/* Pesanan Bulan Ini */}
-            <div className="p-5">
+            <div className="border-b p-5 sm:border-r lg:border-b-0">
               <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
                 Pesanan Bulan Ini
               </span>
-              <div className="mt-2 flex items-end gap-3">
-                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
-                  {stats.ordersThisMonth} /{" "}
-                  {formatCurrency(stats.ordersThisMonthIncome)}
-                </h4>
-              </div>
-              <div className="mt-2">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-medium ${stats.ordersThisMonth >= stats.ordersLastMonth
-                    ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
-                    : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
-                    }`}
-                >
-                  {stats.ordersThisMonth >= stats.ordersLastMonth ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  {calculatePercentageChange(
-                    stats.ordersThisMonth,
-                    stats.ordersLastMonth
-                  ).toFixed(1)}
-                  %
-                </span>
-              </div>
+              <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                {stats.ordersThisMonth} / {formatCurrency(stats.ordersThisMonthIncome)}
+              </h4>
             </div>
 
-            {/* Pesanan Tahun Ini */}
-            <div className="p-5">
+            {/* Total Pesanan */}
+            <div className="border-b p-5 lg:border-b-0">
               <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
-                Pesanan Tahun Ini
+                Total Pesanan
               </span>
-              <div className="mt-2 flex items-end gap-3">
-                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
-                  {stats.ordersThisYear} /{" "}
-                  {formatCurrency(stats.ordersThisYearIncome)}
-                </h4>
-              </div>
-              <div className="mt-2">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-medium ${stats.ordersThisYear >= stats.ordersLastYear
-                    ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
-                    : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500"
-                    }`}
-                >
-                  {stats.ordersThisYear >= stats.ordersLastYear ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  {calculatePercentageChange(
-                    stats.ordersThisYear,
-                    stats.ordersLastYear
-                  ).toFixed(1)}
-                  %
-                </span>
-              </div>
+              <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                {stats.ordersTotal} / {formatCurrency(stats.ordersTotalIncome)}
+              </h4>
             </div>
 
-            {/* Total Semua Pesanan */}
+            {/* Pembelian Bulan Ini */}
+            <div className="border-b p-5 sm:border-r sm:border-b-0">
+              <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
+                Pembelian Bulan Ini
+              </span>
+              <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                {stats.purchasesThisMonth} / {formatCurrency(stats.purchasesThisMonthIncome)}
+              </h4>
+            </div>
+
+            {/* Total Pembelian */}
             <div className="p-5">
               <span className="mb-1.5 block text-sm text-gray-400 dark:text-gray-500">
-                Total Semua Pesanan
+                Total Pembelian
               </span>
-              <div className="mt-2 flex items-end gap-3">
-                <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
-                  {stats.ordersTotal} /{" "}
-                  {formatCurrency(stats.ordersTotalIncome)}
-                </h4>
-              </div>
+              <h4 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                {stats.purchasesTotal} / {formatCurrency(stats.purchasesTotalIncome)}
+              </h4>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-6">
-          <div className="w-full lg:w-8/12">
-            {/* Grafik Penghasilan */}
-            <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                  Penghasilan
-                </h3>
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg">
-                  {["12 Bulan", "30 Hari", "7 Hari", "24 Jam"].map((range) => (
-                    <button
-                      key={range}
-                      onClick={() => setIncomeTimeRange(range)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${incomeTimeRange === range
-                        ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" // Fixed closing quote
-                        }`}
-                    >
-                      {range}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 sm:px-6 sm:pt-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                <div className="w-full" style={{ minHeight: "350px" }}>
-                  {typeof window !== "undefined" && (
-                    <Chart
-                      options={incomeChartOptions}
-                      series={incomeChartSeries}
-                      type="bar"
-                      height={320}
-                    />
-                  )}
-                </div>
-
-                {/* Total income footer is optional now as it can be in the chart, but keeping it for consistency if needed */}
-                <div className="mt-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Penghasilan 14 Hari Terakhir:
-                  </span>
-                  <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(totalIncomeInChart)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Pesanan Terbaru (Previously Service Stats) */}
-            <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                  Pesanan Terbaru
-                </h3>
-              </div>
-
-              <div className="overflow-x-auto hidden md:block">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-gray-700">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-0">
-                        Pelanggan
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Paket
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Harga
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {recentOrders.map((order) => (
-                      <tr key={order.id}>
-                        <td className="px-6 py-4 whitespace-nowrap pl-0">
-                          <div className="flex items-center">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {order.customer_name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {order.invoice_number}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {order.package_details?.name || "-"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {formatCurrency(order.final_price)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === "completed"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                              : order.status === "pending_payment"
-                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                              }`}
-                          >
-                            {STATUS_MAPPING[order.status] || order.status.replace("_", " ")}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {recentOrders.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                          Belum ada pesanan terbaru.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card View (For Small Screens) */}
-              <div className="md:hidden space-y-4">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {order.customer_name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {order.invoice_number}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${order.status === "completed"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                          : order.status === "pending_payment"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+          <div className="flex flex-col sm:flex-row gap-6">
+            <div className="w-full lg:w-8/12">
+              {/* Grafik Penghasilan */}
+              <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="hidden sm:flex text-lg font-semibold text-gray-800 dark:text-white/90">
+                    Penghasilan
+                  </h3>
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg">
+                    {["12 Bulan", "30 Hari", "7 Hari", "24 Jam"].map((range) => (
+                      <button
+                        key={range}
+                        onClick={() => setIncomeTimeRange(range)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${incomeTimeRange === range
+                          ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" // Fixed closing quote
                           }`}
                       >
-                        {STATUS_MAPPING[order.status] || order.status.replace("_", " ")}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500 dark:text-slate-400">
-                        {order.package_details?.name || "-"}
-                      </span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(order.final_price)}
-                      </span>
-                    </div>
+                        {range}
+                      </button>
+                    ))}
                   </div>
-                ))}
-                {recentOrders.length === 0 && (
-                  <p className="text-center text-sm text-slate-500 py-4">Belum ada pesanan terbaru.</p>
-                )}
-              </div>
-            </div>
-          </div>
+                </div>
 
-          {/* Task List dan Proyek Terbaru */}
-          <div className="space-y-6 w-full lg:w-4/12">
-            {/* Task List (Kanban Style) */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden">
-              {/* Header */}
-              <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                <div className="flex flex-wrap gap-2">
-                  {["All", "Todo", "In Progress", "Completed"].map((group) => (
-                    <button
-                      key={group}
-                      onClick={() => setSelectedTaskGroup(group)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${selectedTaskGroup === group
-                        ? "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white"
-                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                        }`}
-                    >
-                      {group}
-                      <span className="ml-2 bg-white dark:bg-slate-600 px-1.5 py-0.5 rounded-full text-[10px] text-slate-600 dark:text-slate-300 shadow-sm">
-                        {group === "All"
-                          ? tasks.length
-                          : tasks.filter((t) => {
-                            if (group === "Todo") return t.status === "pending_payment" || t.status === "accepted";
-                            if (group === "In Progress") return t.status === "in_progress";
-                            if (group === "Completed") return t.status === "completed";
-                            return false;
-                          }).length}
-                      </span>
-                    </button>
-                  ))}
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 sm:px-6 sm:pt-6 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <div className="w-full" style={{ minHeight: "350px" }}>
+                    {typeof window !== "undefined" && (
+                      <Chart
+                        options={incomeChartOptions}
+                        series={incomeChartSeries}
+                        type="bar"
+                        height={320}
+                      />
+                    )}
+                  </div>
+
+                  {/* Total income footer is optional now as it can be in the chart, but keeping it for consistency if needed */}
+                  <div className="mt-2 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Total Penghasilan 14 Hari Terakhir:
+                    </span>
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(totalIncomeInChart)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* List */}
-              <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
-                {tasks
-                  .filter((t) => {
-                    if (selectedTaskGroup === "All") return true;
-                    if (selectedTaskGroup === "Todo") return t.status === "pending_payment" || t.status === "accepted";
-                    if (selectedTaskGroup === "In Progress") return t.status === "in_progress";
-                    if (selectedTaskGroup === "Completed") return t.status === "completed";
-                    return false;
-                  })
-                  .map((task) => (
-                    <div
-                      key={task.id}
-                      className="p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700 rounded-lg group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={() => {
-                            const nextStatus = task.status === "completed" ? "in_progress" : "completed";
-                            handleStatusChange(task.id, nextStatus);
-                          }}
-                          disabled={updatingTaskId === task.id}
-                          className={`mt-0.5 flex-shrink-0 ${task.status === "completed"
-                            ? "text-green-500"
-                            : "text-slate-400 hover:text-blue-500"
-                            } disabled:opacity-50`}
+              {/* Pesanan Terbaru (Previously Service Stats) */}
+              <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                    Pesanan Terbaru
+                  </h3>
+                </div>
+
+                <div className="overflow-x-auto hidden md:block">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-gray-700">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-0">
+                          Pelanggan
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Paket
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Harga
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {recentOrders.map((order) => (
+                        <tr key={order.id}>
+                          <td className="px-6 py-4 whitespace-nowrap pl-0">
+                            <div className="flex items-center">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {order.customer_name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {order.invoice_number}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {order.package_details?.name || "-"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {formatCurrency(order.final_price)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === "completed"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                : order.status === "pending_payment"
+                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                                }`}
+                            >
+                              {STATUS_MAPPING[order.status] || order.status.replace("_", " ")}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {recentOrders.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                            Belum ada pesanan terbaru.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View (For Small Screens) */}
+                <div className="md:hidden space-y-4">
+                  {recentOrders.map((order) => (
+                    <div key={order.id} className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {order.customer_name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {order.invoice_number}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${order.status === "completed"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : order.status === "pending_payment"
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                            }`}
                         >
-                          {task.status === "completed" ? <CheckSquare size={18} /> : <Square size={18} />}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${task.status === "completed" ? "text-slate-500 line-through" : "text-slate-800 dark:text-slate-200"}`}>
-                            {task.package_details.name}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            {task.customer_name}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${task.status === "in_progress" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-                              task.status === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                                "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                              }`}>
-                              {STATUS_MAPPING[task.status] || task.status.replace("_", " ")}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              {formatDate(task.created_at)}
-                            </span>
+                          {STATUS_MAPPING[order.status] || order.status.replace("_", " ")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 dark:text-slate-400">
+                          {order.package_details?.name || "-"}
+                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(order.final_price)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {recentOrders.length === 0 && (
+                    <p className="text-center text-sm text-slate-500 py-4">Belum ada pesanan terbaru.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Task List dan Proyek Terbaru */}
+            <div className="space-y-6 w-full lg:w-4/12">
+              {/* Task List (Kanban Style) */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden">
+                {/* Header */}
+                <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2">
+                    {["Semua", "Todo", "Dikerjakan"].map((group) => (
+                      <button
+                        key={group}
+                        onClick={() => setSelectedTaskGroup(group)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${selectedTaskGroup === group
+                          ? "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white"
+                          : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                          }`}
+                      >
+                        {group}
+                        <span className="ml-2 bg-white dark:bg-slate-600 px-1.5 py-0.5 rounded-full text-[10px] text-slate-600 dark:text-slate-300 shadow-sm">
+                          {group === "Semua"
+                            ? tasks.length
+                            : tasks.filter((t) => {
+                              if (group === "Todo") return t.status === "accepted";
+                              if (group === "Dikerjakan") return t.status === "in_progress";
+                              return false;
+                            }).length}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+                  {tasks
+                    .filter((t) => {
+                      if (selectedTaskGroup === "Semua") return true;
+                      if (selectedTaskGroup === "Todo") return t.status === "accepted";
+                      if (selectedTaskGroup === "Dikerjakan") return t.status === "in_progress";
+                      return false;
+                    })
+                    .map((task) => (
+                      <div
+                        key={task.id}
+                        className="p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700 rounded-lg group"
+                      >
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => {
+                              const nextStatus = task.status === "completed" ? "in_progress" : "completed";
+                              handleStatusChange(task.id, nextStatus);
+                            }}
+                            disabled={updatingTaskId === task.id}
+                            className={`mt-0.5 flex-shrink-0 ${task.status === "completed"
+                              ? "text-green-500"
+                              : "text-slate-400 hover:text-blue-500"
+                              } disabled:opacity-50`}
+                          >
+                            {task.status === "completed" ? <CheckSquare size={18} /> : <Square size={18} />}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${task.status === "completed" ? "text-slate-500 line-through" : "text-slate-800 dark:text-slate-200"}`}>
+                              {task.package_details.name}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              {task.customer_name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${task.status === "in_progress" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                                task.status === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                                  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                }`}>
+                                {STATUS_MAPPING[task.status] || task.status.replace("_", " ")}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                {formatDate(task.created_at)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                {tasks.length === 0 && (
-                  <p className="text-center text-sm text-slate-500 py-4">Tidak ada tugas.</p>
-                )}
+                    ))}
+                  {tasks.length === 0 && (
+                    <p className="text-center text-sm text-slate-500 py-4">Tidak ada tugas.</p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Pembelian Terbaru (List Style) */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                Pembelian Terbaru
-              </h2>
-              <div className="space-y-3">
-                {recentStorePurchases.map((purchase) => (
-                  <div
-                    key={purchase.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-700"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        {purchase.marketplace_assets?.nama_aset || `Produk #${purchase.id}`}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {purchase.customer_name}
-                      </p>
-                    </div>
-                    <div className="text-right ml-3">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {formatCurrency(purchase.price)}
-                      </p>
-                      <span
-                        className={`inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium ${purchase.status === "completed"
+              {/* Pembelian Terbaru (List Style) */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                  Pembelian Terbaru
+                </h2>
+                <div className="space-y-3">
+                  {recentStorePurchases.map((purchase) => (
+                    <div
+                      key={purchase.id}
+                      className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-700"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                          {purchase.marketplace_assets?.nama_aset || `Produk #${purchase.id}`}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {purchase.customer_name}
+                        </p>
+                      </div>
+                      <div className="text-right ml-3">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {formatCurrency(purchase.price)}
+                        </p>
+                        <span
+                          className={`inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium ${purchase.status === "completed"
                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                             : purchase.status === "pending_payment"
                               ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                               : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                          }`}
-                      >
-                        {STATUS_MAPPING[purchase.status] || purchase.status}
-                      </span>
+                            }`}
+                        >
+                          {STATUS_MAPPING[purchase.status] || purchase.status}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {recentStorePurchases.length === 0 && (
-                  <p className="text-sm text-slate-500 text-center py-4">Belum ada pembelian.</p>
-                )}
+                  ))}
+                  {recentStorePurchases.length === 0 && (
+                    <p className="text-sm text-slate-500 text-center py-4">Belum ada pembelian.</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
