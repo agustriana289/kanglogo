@@ -267,7 +267,7 @@ export default function AdminLayoutClient({
       icon: DocumentTextIcon,
       children: [
         { href: "/admin/blog", label: "Artikel", icon: DocumentTextIcon },
-        { href: "/admin/blog/categories", label: "Kategori", icon: ListBulletIcon },
+        { href: "/admin/categories", label: "Kategori", icon: ListBulletIcon },
         { href: "/admin/comments", label: "Komentar", icon: ChatBubbleLeftIcon },
       ],
     },

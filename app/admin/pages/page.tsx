@@ -248,8 +248,8 @@ export default function PagesManagementPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${page.is_published
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
                         }`}
                     >
                       {page.is_published ? (
@@ -273,22 +273,20 @@ export default function PagesManagementPage() {
                       <Link
                         href={`/pages/${page.slug}`}
                         target="_blank"
-                        className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                       >
-                        <EyeIcon className="h-4 w-4 mr-1" />
                         Lihat
                       </Link>
                       <Link
                         href={`/admin/pages/${page.id}/edit`}
-                        className="inline-flex items-center px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />
                         Edit
                       </Link>
                       <button
                         onClick={() => handleDelete(page.id)}
                         disabled={saving}
-                        className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
                       >
                         <TrashIcon className="h-4 w-4 mr-1" />
                         Hapus
@@ -322,8 +320,8 @@ export default function PagesManagementPage() {
                 </div>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${page.is_published
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
                     }`}
                 >
                   {page.is_published ? (
@@ -348,22 +346,20 @@ export default function PagesManagementPage() {
                   <Link
                     href={`/pages/${page.slug}`}
                     target="_blank"
-                    className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                   >
-                    <EyeIcon className="h-4 w-4 mr-1" />
                     Lihat
                   </Link>
                   <Link
                     href={`/admin/pages/${page.id}/edit`}
-                    className="inline-flex items-center px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                   >
-                    <PencilIcon className="h-4 w-4 mr-1" />
                     Edit
                   </Link>
                   <button
                     onClick={() => handleDelete(page.id)}
                     disabled={saving}
-                    className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
                   >
                     <TrashIcon className="h-4 w-4 mr-1" />
                     Hapus
@@ -430,8 +426,8 @@ export default function PagesManagementPage() {
                     key={page}
                     onClick={() => setCurrentPage(page as number)}
                     className={`px-3 py-2 rounded-md border ${currentPage === page
-                        ? "bg-primary text-white border-primary"
-                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                      ? "bg-primary text-white border-primary"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                       }`}
                   >
                     {page}

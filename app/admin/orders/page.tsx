@@ -454,7 +454,7 @@ export default function OrderManagementPage() {
       {/* Overview Stats */}
       {/* Overview Stats */}
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="sm:mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-gray-800 dark:text-white/90">
               Ringkasan
@@ -648,7 +648,7 @@ export default function OrderManagementPage() {
 
         {/* Table */}
         {/* Mobile Card View */}
-        <div className="block sm:hidden space-y-4 px-4 pb-4">
+        <div className="mt-4 sm:mt-0 block sm:hidden space-y-4 px-4 pb-4">
           {paginatedOrders.map((order) => {
             const statusOpt =
               statusOptions.find((opt) => opt.value === order.status) ||

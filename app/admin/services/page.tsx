@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
-import { uploadToImgBB } from "@/lib/imgbb";
 import {
   PlusIcon,
   PencilIcon,
@@ -13,13 +12,16 @@ import {
   StarIcon,
   XMarkIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon,
-  ClockIcon,
+  MagnifyingGlassIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
   CheckCircleIcon,
-  TagIcon,
   SparklesIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from "@heroicons/react/24/outline";
 
+// Interfaces
 interface ServicePackage {
   name: string;
   description: string;
@@ -41,19 +43,32 @@ interface Service {
   created_at?: string;
 }
 
+// Items per page
+const ITEMS_PER_PAGE = 12;
+
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const { showAlert, showConfirm } = useAlert();
 
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // State untuk modal service
+  // Modal State
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+
+  // Package Modal State
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [editingPackageIndex, setEditingPackageIndex] = useState<number | null>(null);
+
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -62,38 +77,12 @@ export default function ServicesPage() {
     image_alt: "",
     is_featured: false,
     packages: [
-      {
-        name: "",
-        description: "",
-        features: [""],
-        finalPrice: "",
-        originalPrice: "",
-        duration: "",
-      },
-      {
-        name: "",
-        description: "",
-        features: [""],
-        finalPrice: "",
-        originalPrice: "",
-        duration: "",
-      },
-      {
-        name: "",
-        description: "",
-        features: [""],
-        finalPrice: "",
-        originalPrice: "",
-        duration: "",
-      },
+      { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+      { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+      { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
     ] as ServicePackage[],
   });
 
-  // State untuk modal package
-  const [showPackageModal, setShowPackageModal] = useState(false);
-  const [editingPackageIndex, setEditingPackageIndex] = useState<number | null>(
-    null
-  );
   const [packageFormData, setPackageFormData] = useState<ServicePackage>({
     name: "",
     description: "",
@@ -103,22 +92,45 @@ export default function ServicesPage() {
     duration: "",
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredServices.slice(indexOfFirstItem, indexOfLastItem);
+
   useEffect(() => {
     fetchServices();
   }, []);
 
+  useEffect(() => {
+    // Filter services based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredServices(services);
+    } else {
+      const filtered = services.filter(
+        (service) =>
+          service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredServices(filtered);
+    }
+    setCurrentPage(1);
+  }, [searchQuery, services]);
+
   const fetchServices = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("services")
         .select("*")
         .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setServices(data || []);
+      setFilteredServices(data || []);
+      setTotalItems(data?.length || 0);
     } catch (error) {
-      console.error("Error fetching services:", error);
       console.error("Error fetching services:", error);
       showAlert("error", "Error", "Gagal memuat layanan!");
     } finally {
@@ -136,30 +148,9 @@ export default function ServicesPage() {
       image_alt: "",
       is_featured: false,
       packages: [
-        {
-          name: "",
-          description: "",
-          features: [""],
-          finalPrice: "",
-          originalPrice: "",
-          duration: "",
-        },
-        {
-          name: "",
-          description: "",
-          features: [""],
-          finalPrice: "",
-          originalPrice: "",
-          duration: "",
-        },
-        {
-          name: "",
-          description: "",
-          features: [""],
-          finalPrice: "",
-          originalPrice: "",
-          duration: "",
-        },
+        { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+        { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+        { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
       ],
     });
     setShowServiceModal(true);
@@ -174,7 +165,11 @@ export default function ServicesPage() {
       image_src: service.image_src || "",
       image_alt: service.image_alt || "",
       is_featured: service.is_featured,
-      packages: service.packages,
+      packages: service.packages && service.packages.length === 3 ? service.packages : [
+        { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+        { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+        { name: "", description: "", features: [""], finalPrice: "", originalPrice: "", duration: "" },
+      ],
     });
     setShowServiceModal(true);
   };
@@ -193,10 +188,51 @@ export default function ServicesPage() {
       const { error } = await supabase.from("services").delete().eq("id", id);
       if (error) throw error;
 
-      setServices(services.filter((s) => s.id !== id));
+      const updatedServices = services.filter((s) => s.id !== id);
+      setServices(updatedServices);
+      setFilteredServices(
+        searchQuery ? updatedServices.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase())) : updatedServices
+      );
+      setTotalItems(updatedServices.length);
       showAlert("success", "Berhasil", "Layanan berhasil dihapus!");
+
+      // Remove from selection if selected
+      if (selectedServices.includes(id)) {
+        setSelectedServices(prev => prev.filter(sid => sid !== id));
+      }
     } catch (error) {
       console.error("Error deleting service:", error);
+      showAlert("error", "Gagal", "Gagal menghapus layanan!");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedServices.length === 0) return;
+
+    const confirmed = await showConfirm(
+      "Hapus Layanan",
+      `Apakah Anda yakin ingin menghapus ${selectedServices.length} layanan terpilih?`,
+      "error",
+      "Ya, Hapus"
+    );
+    if (!confirmed) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("services")
+        .delete()
+        .in("id", selectedServices);
+
+      if (error) throw error;
+
+      showAlert("success", "Berhasil", `${selectedServices.length} layanan berhasil dihapus!`);
+      setSelectedServices([]);
+      fetchServices();
+    } catch (error) {
+      console.error("Error bulk deleting services:", error);
       showAlert("error", "Gagal", "Gagal menghapus layanan!");
     } finally {
       setSaving(false);
@@ -228,38 +264,50 @@ export default function ServicesPage() {
           .eq("id", editingService.id);
 
         if (error) throw error;
-        setServices(
-          services.map((s) =>
-            s.id === editingService.id ? { ...s, ...serviceData } : s
-          )
-        );
-        setServices(
-          services.map((s) =>
-            s.id === editingService.id ? { ...s, ...serviceData } : s
-          )
-        );
+
+        fetchServices();
         showAlert("success", "Berhasil", "Layanan berhasil diperbarui!");
       } else {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("services")
-          .insert([serviceData])
-          .select();
+          .insert([serviceData]);
 
         if (error) throw error;
-        setServices([...services, ...(data || [])]);
+
+        fetchServices();
         showAlert("success", "Berhasil", "Layanan berhasil ditambahkan!");
       }
 
       setShowServiceModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving service:", error);
-      showAlert("error", "Gagal", "Gagal menyimpan layanan!");
+      showAlert("error", "Gagal", error.message || "Gagal menyimpan layanan!");
     } finally {
       setSaving(false);
     }
   };
 
-  // Package editing functions
+  // Image Handling
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        showAlert("warning", "Peringatan", "Silakan pilih file gambar!");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert("warning", "Peringatan", "Ukuran file terlalu besar! Maksimal 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image_src: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Package Management
   const handleEditPackage = (index: number) => {
     setEditingPackageIndex(index);
     setPackageFormData({ ...formData.packages[index] });
@@ -271,7 +319,6 @@ export default function ServicesPage() {
       showAlert("warning", "Validasi", "Nama paket tidak boleh kosong!");
       return;
     }
-
     const newPackages = [...formData.packages];
     if (editingPackageIndex !== null) {
       newPackages[editingPackageIndex] = packageFormData;
@@ -299,590 +346,567 @@ export default function ServicesPage() {
     setPackageFormData({ ...packageFormData, features: newFeatures });
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files[0]) {
-      handleImageChange({ target: { files } } as any);
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        showAlert("warning", "Peringatan", "Silakan pilih file gambar!");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        showAlert("warning", "Peringatan", "Ukuran file terlalu besar! Maksimal 5MB");
-        return;
-      }
-
-      // Here you would typically upload the image to a service like ImgBB
-      // For now, we'll just show a preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image_src: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const closeServiceModal = () => {
-    setShowServiceModal(false);
-    setEditingService(null);
-  };
-
-  const closePackageModal = () => {
-    setShowPackageModal(false);
-    setEditingPackageIndex(null);
-  };
+  const inputStyle = "bg-white dark:bg-slate-900 shadow-sm focus:border-blue-300 focus:ring-blue-500/10 dark:focus:border-blue-800 w-full rounded-lg border border-gray-300 py-2.5 px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30";
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <LogoLoading />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+
+      {/* Header Section */}
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
+              Daftar Layanan
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {totalItems} layanan ditemukan
+            </p>
+          </div>
+          <button
+            onClick={handleAddService}
+            className="bg-primary hover:bg-primary/80 text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition shadow-sm"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Tambah Layanan
+          </button>
+        </div>
+
+        {/* Filters & View Toggle */}
+        <div className="mt-6 flex flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cari layanan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-auto">
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg ml-auto sm:ml-0">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-md transition ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+              >
+                <Squares2X2Icon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-md transition ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+              >
+                <ListBulletIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk Actions Bar */}
+      {selectedServices.length > 0 && (
+        <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 px-5 py-3 flex items-center justify-between rounded-xl border border-blue-100 dark:border-blue-800 transition-all">
+          <div className="flex items-center gap-2">
+            <CheckCircleIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              {selectedServices.length} layanan dipilih
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleAddService}
-              className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              onClick={() => setSelectedServices([])}
+              className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 font-medium px-3 py-1.5 rounded-lg transition-colors"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Tambah Layanan
+              Batal Pilih
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={saving}
+              className="text-sm text-red-600 hover:text-red-700 bg-white border border-red-200 hover:bg-red-50 font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+            >
+              <TrashIcon className="w-4 h-4" /> Hapus
             </button>
           </div>
         </div>
+      )}
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-600">
-            <thead className="bg-slate-50 dark:bg-slate-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Judul
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Featured
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {services.map((service) => (
-                <tr
-                  key={service.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
-                    <div className="flex items-center">
-                      <DocumentTextIcon className="h-5 w-5 text-slate-400 mr-3" />
-                      {service.title}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                    <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">
-                      {service.slug}
-                    </code>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                    {service.is_featured ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                        <StarIcon className="h-4 w-4 mr-1" />
-                        Ya
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400">
-                        Tidak
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditService(service)}
-                        className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
-                      >
-                        <PencilIcon className="h-4 w-4 mr-1" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteService(service.id)}
-                        className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                      >
-                        <TrashIcon className="h-4 w-4 mr-1" />
-                        Hapus
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Content Section */}
+      {currentItems.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+          <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Tidak ada layanan</h3>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Belum ada layanan yang ditambahkan.</p>
         </div>
-
-        {/* Mobile Card View */}
-        <div className="md:hidden space-y-4">
-          {services.map((service) => (
-            <div
-              key={service.id}
-              className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-start">
-                  <DocumentTextIcon className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-white">
-                      {service.title}
-                    </h3>
-                    <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400 mt-1 inline-block">
-                      {service.slug}
-                    </code>
-                  </div>
-                </div>
-                {service.is_featured ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                    <StarIcon className="h-4 w-4 mr-1" />
-                    Ya
-                  </span>
+      ) : viewMode === "grid" ? (
+        /* GRID VIEW */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {currentItems.map((service) => (
+            <div key={service.id} className={`group bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md border transition overflow-hidden flex flex-col ${selectedServices.includes(service.id) ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 dark:border-gray-700'}`}>
+              <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-slate-700">
+                {service.image_src ? (
+                  <img src={service.image_src} alt={service.title} className="w-full h-full object-cover transition duration-300 group-hover:scale-105" />
                 ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400">
-                    Tidak
+                  <div className="flex items-center justify-center h-full text-gray-300">
+                    <PhotoIcon className="w-12 h-12" />
+                  </div>
+                )}
+
+                {/* Checkbox */}
+                <div className="absolute top-2 left-2">
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 cursor-pointer"
+                    checked={selectedServices.includes(service.id)}
+                    onChange={() => {
+                      if (selectedServices.includes(service.id)) {
+                        setSelectedServices(selectedServices.filter((id) => id !== service.id));
+                      } else {
+                        setSelectedServices([...selectedServices, service.id]);
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Overlay Actions */}
+                <div className="absolute top-2 right-2 flex gap-1 transform translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition duration-200">
+                  <button
+                    onClick={() => handleEditService(service)}
+                    className="p-1.5 bg-white dark:bg-slate-800 rounded-full shadow-sm text-gray-600 hover:text-blue-500 hover:bg-blue-50 dark:text-gray-300"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteService(service.id)}
+                    className="p-1.5 bg-white dark:bg-slate-800 rounded-full shadow-sm text-gray-600 hover:text-red-500 hover:bg-red-50 dark:text-gray-300"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {service.is_featured && (
+                  <span className="absolute bottom-2 left-2 px-2 py-1 bg-amber-500/90 backdrop-blur-sm text-white text-xs font-medium rounded-md flex items-center gap-1">
+                    <StarIcon className="w-3 h-3" /> Featured
                   </span>
                 )}
               </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => handleEditService(service)}
-                  className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
-                >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteService(service.id)}
-                  className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                >
-                  <TrashIcon className="h-4 w-4 mr-1" />
-                  Hapus
-                </button>
+
+              <div className="p-4 flex-1 flex flex-col">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1">{service.title}</h3>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-1">{service.slug}</p>
+
+                <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex gap-1 flex-wrap">
+                    <span className="px-2 py-0.5 text-[10px] rounded-full font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      3 Paket
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-400">
+                    {formatDate(service.created_at || new Date().toISOString())}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      ) : (
+        /* LIST VIEW */
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
+                        checked={selectedServices.length === currentItems.length && currentItems.length > 0}
+                        onChange={() => {
+                          if (selectedServices.length === currentItems.length) {
+                            setSelectedServices([]);
+                          } else {
+                            setSelectedServices(currentItems.map((s) => s.id));
+                          }
+                        }}
+                      />
+                      <span>Layanan</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4">Slug</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Tanggal</th>
+                  <th className="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {currentItems.map((service) => (
+                  <tr key={service.id} className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedServices.includes(service.id) ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700"
+                          checked={selectedServices.includes(service.id)}
+                          onChange={() => {
+                            if (selectedServices.includes(service.id)) {
+                              setSelectedServices(selectedServices.filter((id) => id !== service.id));
+                            } else {
+                              setSelectedServices([...selectedServices, service.id]);
+                            }
+                          }}
+                        />
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-gray-600">
+                          {service.image_src ? (
+                            <img src={service.image_src} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <PhotoIcon className="h-5 w-5 m-auto text-gray-400 mt-2.5" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white underline-offset-4 hover:underline cursor-pointer" onClick={() => handleEditService(service)}>
+                            {service.title}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                      {service.slug}
+                    </td>
+                    <td className="px-6 py-4">
+                      {service.is_featured ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                          Featured
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">
+                          Standard
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {formatDate(service.created_at || new Date().toISOString())}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditService(service)}
+                          className="text-gray-400 hover:text-blue-500 transition"
+                          title="Edit"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteService(service.id)}
+                          className="text-gray-400 hover:text-red-500 transition"
+                          title="Hapus"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-        {/* Empty State */}
-        {services.length === 0 && (
-          <div className="text-center py-12">
-            <DocumentTextIcon className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              Tidak ada layanan
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Belum ada layanan yang dibuat.
-            </p>
-            <div className="mt-6">
+      {/* Pagination */}
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 px-0 py-4 mt-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} dari {totalItems} layanan
+          </p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+            >
+              <ChevronLeftIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+            >
+              <ChevronRightIcon className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Service Modal */}
+      {showServiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto w-full h-full">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-4xl shadow-xl my-8 relative">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 rounded-t-2xl z-10">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                {editingService ? "Edit Layanan" : "Tambah Layanan Baru"}
+              </h3>
               <button
-                onClick={handleAddService}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                onClick={() => setShowServiceModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                Tambah Layanan Baru
+                <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
-          </div>
-        )}
 
-        {/* Service Modal - Diperbaiki */}
-        {showServiceModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-700 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {editingService ? "Edit Layanan" : "Tambah Layanan Baru"}
-                </h2>
-                <button
-                  onClick={closeServiceModal}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Gambar Layanan
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 dark:border-gray-700 hover:border-primary'} cursor-pointer`}
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
+                  {formData.image_src ? (
+                    <div className="relative aspect-video max-h-60 mx-auto rounded-lg overflow-hidden">
+                      <img src={formData.image_src} alt="Preview" className="w-full h-full object-contain bg-gray-50 dark:bg-slate-900" />
+                      <button
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow hover:bg-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData(prev => ({ ...prev, image_src: "" }));
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                      >
+                        <XMarkIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto text-gray-400">
+                        <PhotoIcon className="w-6 h-6" />
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Klik untuk upload gambar
+                      </p>
+                      <p className="text-xs text-gray-400">JPG, PNG, WEBP (Max 5MB)</p>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
               </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Judul Layanan
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.title}
-                      onChange={(e) =>
-                        setFormData({ ...formData, title: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Slug (URL-friendly)
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.slug}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          slug: e.target.value
-                            .toLowerCase()
-                            .replace(/\s+/g, "-"),
-                        })
-                      }
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Judul Layanan
+                  </label>
+                  <input
+                    type="text"
+                    className={inputStyle}
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Contoh: Jasa Desain Logo"
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Slug
+                  </label>
+                  <input
+                    type="text"
+                    className={inputStyle}
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                    placeholder="Contoh: jasa-desain-logo"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Deskripsi Singkat
                   </label>
                   <textarea
                     rows={3}
-                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
+                    className={inputStyle}
                     value={formData.short_description}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        short_description: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                    placeholder="Deskripsi singkat layanan..."
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      URL Gambar
-                    </label>
+                <div className="col-span-2">
+                  <div className="flex items-center">
                     <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.image_src}
+                      type="checkbox"
+                      id="is_featured"
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      checked={formData.is_featured}
                       onChange={(e) =>
-                        setFormData({ ...formData, image_src: e.target.value })
+                        setFormData({
+                          ...formData,
+                          is_featured: e.target.checked,
+                        })
                       }
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Alt Text Gambar
+                    <label
+                      htmlFor="is_featured"
+                      className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+                    >
+                      Jadikan sebagai layanan utama (Featured)
                     </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.image_alt}
-                      onChange={(e) =>
-                        setFormData({ ...formData, image_alt: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="is_featured"
-                    className="h-4 w-4 text-primary focus:ring-primary border-slate-300 rounded"
-                    checked={formData.is_featured}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        is_featured: e.target.checked,
-                      })
-                    }
-                  />
-                  <label
-                    htmlFor="is_featured"
-                    className="ml-2 block text-sm text-slate-900 dark:text-white"
-                  >
-                    Jadikan sebagai layanan utama (featured)
-                  </label>
-                </div>
-
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-600">
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center">
-                    <SparklesIcon className="h-5 w-5 mr-2" />
-                    Paket Layanan
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {formData.packages.map((pkg, index) => (
-                      <div
-                        key={index}
-                        className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 hover:border-primary/50 transition-colors"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-medium text-slate-900 dark:text-white">
-                            Paket {index + 1}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => handleEditPackage(index)}
-                            className="text-primary hover:text-primary/80 flex items-center gap-1"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                            Edit
-                          </button>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <p className="font-medium text-slate-700 dark:text-slate-300">
-                            {pkg.name || (
-                              <span className="text-slate-400 dark:text-slate-500">
-                                Belum diisi
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-slate-500 dark:text-slate-400">
-                            {pkg.duration ? `${pkg.duration} hari kerja` : "-"}
-                          </p>
-                          <p className="text-slate-900 dark:text-white font-semibold">
-                            {pkg.finalPrice || "-"}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {pkg.features.filter((f) => f).length} fitur
-                          </p>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-600">
-                <button
-                  onClick={closeServiceModal}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500"
-                  disabled={saving}
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSaveService}
-                  disabled={saving}
-                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
-                >
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                  <SparklesIcon className="h-5 w-5 mr-2 text-primary" />
+                  Paket Layanan
+                </h3>
 
-        {/* Package Edit Modal - Diperbaiki */}
-        {showPackageModal && editingPackageIndex !== null && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-700 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Edit Paket {editingPackageIndex + 1}
-                </h2>
-                <button
-                  onClick={closePackageModal}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Nama Paket
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={packageFormData.name}
-                      onChange={(e) =>
-                        setPackageFormData({
-                          ...packageFormData,
-                          name: e.target.value,
-                        })
-                      }
-                      placeholder="Paket Basic"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Durasi (hari kerja)
-                    </label>
-                    <input
-                      type="number"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={packageFormData.duration}
-                      onChange={(e) =>
-                        setPackageFormData({
-                          ...packageFormData,
-                          duration: e.target.value,
-                        })
-                      }
-                      min="1"
-                      max="365"
-                      placeholder="7"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Deskripsi
-                  </label>
-                  <textarea
-                    rows={3}
-                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                    value={packageFormData.description}
-                    onChange={(e) =>
-                      setPackageFormData({
-                        ...packageFormData,
-                        description: e.target.value,
-                      })
-                    }
-                    placeholder="Deskripsi paket..."
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Harga Akhir
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={packageFormData.finalPrice}
-                      onChange={(e) =>
-                        setPackageFormData({
-                          ...packageFormData,
-                          finalPrice: e.target.value,
-                        })
-                      }
-                      placeholder="Rp 500.000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Harga Normal (opsional)
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={packageFormData.originalPrice || ""}
-                      onChange={(e) =>
-                        setPackageFormData({
-                          ...packageFormData,
-                          originalPrice: e.target.value,
-                        })
-                      }
-                      placeholder="Rp 750.000"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Fitur-fitur
-                  </label>
-                  {packageFormData.features.map((feature, fIndex) => (
-                    <div key={fIndex} className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        className="flex-1 rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                        value={feature}
-                        onChange={(e) => updateFeature(fIndex, e.target.value)}
-                        placeholder={`Fitur ${fIndex + 1}`}
-                      />
-                      {packageFormData.features.length > 1 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {formData.packages.map((pkg, index) => (
+                    <div
+                      key={index}
+                      className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:border-primary/50 transition-all bg-gray-50 dark:bg-slate-800/50"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">
+                          Paket {index + 1}
+                        </h4>
                         <button
                           type="button"
-                          onClick={() => removeFeatureFromPackage(fIndex)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                          onClick={() => handleEditPackage(index)}
+                          className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm font-medium"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <PencilIcon className="h-4 w-4" />
+                          Edit
                         </button>
-                      )}
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <p className="font-medium text-gray-700 dark:text-gray-300">
+                          {pkg.name || (
+                            <span className="text-gray-400 dark:text-gray-500 italic">
+                              Belum diberi nama
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                          {pkg.duration ? `${pkg.duration} hari kerja` : "Durasi -"}
+                        </p>
+                        <p className="text-gray-900 dark:text-white font-bold text-lg">
+                          {pkg.finalPrice || "Rp -"}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-700 p-2 rounded-lg border border-gray-100 dark:border-gray-600">
+                          {pkg.features.filter((f) => f).length} fitur
+                        </p>
+                      </div>
                     </div>
                   ))}
-                  <button
-                    type="button"
-                    onClick={addFeatureToPackage}
-                    className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-md hover:bg-primary/80"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                    Tambah Fitur
-                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-600">
-                <button
-                  onClick={closePackageModal}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSavePackage}
-                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
-                >
-                  Simpan Paket
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl sticky bottom-0">
+              <button
+                onClick={() => setShowServiceModal(false)}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-slate-700 dark:text-white dark:border-gray-600 transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveService}
+                disabled={saving}
+                className="px-6 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 transition shadow-sm"
+              >
+                {saving ? "Menyimpan..." : "Simpan Layanan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Package Edit Modal (Nested) */}
+      {showPackageModal && editingPackageIndex !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Edit Paket {editingPackageIndex + 1}
+              </h3>
+              <button onClick={() => setShowPackageModal(false)} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Paket</label>
+                <input type="text" className={inputStyle} value={packageFormData.name} onChange={e => setPackageFormData({ ...packageFormData, name: e.target.value })} placeholder="Basic / Premium" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durasi (Hari)</label>
+                  <input type="number" className={inputStyle} value={packageFormData.duration} onChange={e => setPackageFormData({ ...packageFormData, duration: e.target.value })} placeholder="7" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga</label>
+                  <input type="text" className={inputStyle} value={packageFormData.finalPrice} onChange={e => setPackageFormData({ ...packageFormData, finalPrice: e.target.value })} placeholder="Rp 500.000" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deskripsi</label>
+                <textarea rows={2} className={inputStyle} value={packageFormData.description} onChange={e => setPackageFormData({ ...packageFormData, description: e.target.value })} placeholder="Keterangan singkat..." />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fitur ({packageFormData.features.length})</label>
+                <div className="space-y-2">
+                  {packageFormData.features.map((feature, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input type="text" className={inputStyle} value={feature} onChange={e => updateFeature(i, e.target.value)} placeholder={`Fitur ${i + 1}`} />
+                      <button onClick={() => removeFeatureFromPackage(i)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="w-5 h-5" /></button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={addFeatureToPackage} className="mt-2 text-sm text-primary font-medium hover:underline flex items-center gap-1">
+                  <PlusIcon className="w-4 h-4" /> Tambah Fitur
                 </button>
               </div>
             </div>
+            <div className="p-5 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-2 bg-gray-50 dark:bg-slate-800/50 rounded-b-xl">
+              <button onClick={() => setShowPackageModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
+              <button onClick={handleSavePackage} className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg shadow-sm">Simpan</button>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Toast Notification */}
-
+        </div>
+      )}
     </div>
   );
 }

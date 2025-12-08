@@ -348,7 +348,7 @@ export default function ProjectManagementPage() {
 
       {/* Header Section */}
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="hidden sm:flex sm:flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
               Daftar Proyek
@@ -367,7 +367,7 @@ export default function ProjectManagementPage() {
         </div>
 
         {/* Filters & View Toggle */}
-        <div className="mt-6 flex flex-col gap-4">
+        <div className="sm:mt-6 flex flex-col gap-4">
           {/* Search Bar - Full Width on Mobile */}
           <div className="relative w-full">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

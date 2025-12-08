@@ -172,16 +172,15 @@ export default function WidgetsManagementPage() {
                     <div className="flex space-x-2">
                       <Link
                         href={`/admin/widgets/${widget.id}/edit`}
-                        className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />
                         Edit
                       </Link>
                       <button
                         onClick={() =>
                           handleDeleteWidget(widget.id, widget.title)
                         }
-                        className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
                         disabled={deleting}
                       >
                         <TrashIcon className="h-4 w-4 mr-1" />
@@ -229,14 +228,13 @@ export default function WidgetsManagementPage() {
                 <div className="flex justify-end space-x-2">
                   <Link
                     href={`/admin/widgets/${widget.id}/edit`}
-                    className="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                   >
-                    <PencilIcon className="h-4 w-4 mr-1" />
                     Edit
                   </Link>
                   <button
                     onClick={() => handleDeleteWidget(widget.id, widget.title)}
-                    className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
                     disabled={deleting}
                   >
                     <TrashIcon className="h-4 w-4 mr-1" />
