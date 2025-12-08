@@ -18,9 +18,9 @@ declare module "jspdf" {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { invoice_number: string } }
+  { params }: { params: Promise<{ invoice_number: string }> }
 ) {
-  const { invoice_number } = params;
+  const { invoice_number } = await params;
 
   try {
     // Ambil data pesanan dan join dengan tabel services dan payment_methods
