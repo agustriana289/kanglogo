@@ -1,7 +1,7 @@
 // app/order/[invoice_number]/confirm/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Order } from "@/types/order";
 import { supabase } from "@/lib/supabase";
@@ -12,8 +12,9 @@ import LogoLoading from "@/components/LogoLoading";
 export default function ConfirmPaymentPage({
   params,
 }: {
-  params: { invoice_number: string };
+  params: Promise<{ invoice_number: string }>;
 }) {
+  const { invoice_number } = use(params);
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,11 +39,11 @@ export default function ConfirmPaymentPage({
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .eq("invoice_number", params.invoice_number)
+        .eq("invoice_number", invoice_number)
         .single();
 
       if (error || !data || data.status !== "pending_payment") {
-        router.push(`/order/${params.invoice_number}`); // Redirect jika bukan status pending
+        router.push(`/order/${invoice_number}`); // Redirect jika bukan status pending
         return;
       }
       setOrder(data);
@@ -50,7 +51,7 @@ export default function ConfirmPaymentPage({
     };
 
     fetchOrder();
-  }, [params.invoice_number, router]);
+  }, [invoice_number, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,7 +155,7 @@ export default function ConfirmPaymentPage({
       setUploadProgress(100);
 
       alert("Konfirmasi pembayaran berhasil! Kami akan segera memeriksanya.");
-      router.push(`/order/${params.invoice_number}`);
+      router.push(`/order/${invoice_number}`);
     } catch (error: any) {
       console.error("Error confirming payment:", error);
       alert(error.message || "Gagal mengirim konfirmasi. Silakan coba lagi.");
@@ -194,11 +195,10 @@ export default function ConfirmPaymentPage({
               <button
                 type="button"
                 onClick={() => setProofMethod("file")}
-                className={`p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                  proofMethod === "file"
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-gray-300 hover:border-gray-400"
-                }`}
+                className={`p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${proofMethod === "file"
+                  ? "border-blue-600 bg-blue-50 text-blue-700"
+                  : "border-gray-300 hover:border-gray-400"
+                  }`}
               >
                 <Upload size={20} />
                 Upload File
@@ -206,11 +206,10 @@ export default function ConfirmPaymentPage({
               <button
                 type="button"
                 onClick={() => setProofMethod("url")}
-                className={`p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                  proofMethod === "url"
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-gray-300 hover:border-gray-400"
-                }`}
+                className={`p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${proofMethod === "url"
+                  ? "border-blue-600 bg-blue-50 text-blue-700"
+                  : "border-gray-300 hover:border-gray-400"
+                  }`}
               >
                 <LinkIcon size={20} />
                 Input URL

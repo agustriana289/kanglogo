@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   Download,
@@ -22,8 +22,9 @@ import InvoiceGate from "@/components/InvoiceGate";
 export default function InvoiceDetailPage({
   params,
 }: {
-  params: { invoice_number: string };
+  params: Promise<{ invoice_number: string }>;
 }) {
+  const { invoice_number } = use(params);
   const router = useRouter();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [order, setOrder] = useState<Order | null>(null);
@@ -44,7 +45,7 @@ export default function InvoiceDetailPage({
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .select("*")
-        .eq("invoice_number", params.invoice_number)
+        .eq("invoice_number", invoice_number)
         .single();
 
       if (orderError || !orderData) {
@@ -112,7 +113,7 @@ export default function InvoiceDetailPage({
     };
 
     fetchOrder();
-  }, [params.invoice_number]);
+  }, [invoice_number]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);

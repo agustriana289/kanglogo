@@ -37,8 +37,8 @@ export default function MarketplacePage() {
 
   // Pagination states
   const [displayCount, setDisplayCount] = useState(10);
-  const maxItems = 20;
-  const itemsPerPage = 10;
+  const maxItems = 30;
+  const itemsPerPage = 30;
 
   useEffect(() => {
     fetchAssets();

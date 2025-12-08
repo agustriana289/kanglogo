@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import {
     Download,
@@ -49,8 +49,9 @@ interface StoreOrder {
 export default function StoreInvoiceDetailPage({
     params,
 }: {
-    params: { invoice_number: string };
+    params: Promise<{ invoice_number: string }>;
 }) {
+    const { invoice_number } = use(params);
     const router = useRouter();
     const invoiceRef = useRef<HTMLDivElement>(null);
     const [order, setOrder] = useState<StoreOrder | null>(null);
@@ -60,7 +61,7 @@ export default function StoreInvoiceDetailPage({
 
     useEffect(() => {
         fetchOrder();
-    }, [params.invoice_number]);
+    }, [invoice_number]);
 
     const fetchOrder = async () => {
         // Fetch order with asset details
@@ -73,7 +74,7 @@ export default function StoreInvoiceDetailPage({
           image_url
         )
       `)
-            .eq("order_number", params.invoice_number) // Using order_number column
+            .eq("order_number", invoice_number) // Using order_number column
             .single();
 
         if (orderError || !orderData) {
