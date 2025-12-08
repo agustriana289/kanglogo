@@ -1,12 +1,6 @@
 // app/admin/blog/new/page.tsx
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
-
-// Dynamic import untuk Rich Text Editor
-const ArticleEditor = dynamic(() => import("@/components/ArticleEditor"), {
-  ssr: false,
-  loading: () => <div>Loading editor...</div>,
-});
+import ArticleEditor from "@/components/ArticleEditor";
 
 export default function NewArticlePage() {
   return (

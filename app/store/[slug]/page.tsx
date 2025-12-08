@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers"; // Tambahkan import ini
 import { supabase } from "@/lib/supabase";
 import { MarketplaceAsset } from "@/types/marketplace";
-import dynamic from "next/dynamic";
+
 import Image from "next/image";
 import {
   StarIcon,
@@ -15,16 +15,7 @@ import {
 import WidgetArea from "@/components/WidgetArea";
 import AssetActions from "./AssetActions";
 
-// Import ShareButtons secara dinamis dengan ssr: false
-const ShareButtons = dynamic(() => import("./ShareButtons"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex flex-col space-y-4">
-      <h3 className="text-lg font-semibold text-slate-900">Bagikan Aset Ini</h3>
-      <div className="h-10 bg-slate-100 rounded-lg animate-pulse"></div>
-    </div>
-  ),
-});
+import ShareButtons from "./ShareButtons";
 
 export const revalidate = 0;
 
