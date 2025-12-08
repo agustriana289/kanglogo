@@ -34,6 +34,9 @@ import {
   TagIcon,
   StarIcon,
   ListBulletIcon,
+  LifebuoyIcon,
+  SunIcon,
+  BoldIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 
@@ -269,6 +272,14 @@ export default function AdminLayoutClient({
         { href: "/admin/blog", label: "Artikel", icon: DocumentTextIcon },
         { href: "/admin/categories", label: "Kategori", icon: ListBulletIcon },
         { href: "/admin/comments", label: "Komentar", icon: ChatBubbleLeftIcon },
+      ],
+    },
+    {
+      label: "Generator",
+      icon: LifebuoyIcon,
+      children: [
+        { href: "/admin/generator/logo", label: "Logo", icon: SunIcon },
+        { href: "/admin/generator/fonts", label: "Tambah Font", icon: BoldIcon },
       ],
     },
     {
