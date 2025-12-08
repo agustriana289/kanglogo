@@ -55,14 +55,15 @@ const formatMultiLine = (text: string | null | undefined) => {
 export default async function AssetDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const asset = await getAsset(params.slug);
+  const { slug } = await params;
+  const asset = await getAsset(slug);
 
   // --- TAMBAHKAN BAGIAN INI ---
-  const requestHeaders = headers();
+  const requestHeaders = await headers();
   const host = requestHeaders.get("host");
-  const url = `https://${host}/store/${params.slug}`;
+  const url = `https://${host}/store/${slug}`;
   // --- AKHIR TAMBAHAN ---
 
   return (

@@ -21,9 +21,10 @@ async function getService(slug: string): Promise<Service> {
 export default async function ServicePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const service = await getService(params.slug);
+  const { slug } = await params;
+  const service = await getService(slug);
 
   return <SingleServicePricing service={service} />;
 }

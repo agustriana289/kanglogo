@@ -4,18 +4,18 @@ import { supabase } from '@/lib/supabase';
 import ArticleContent from '@/components/ArticleContent';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     year: string;
     month: string;
     slug: string;
-  };
+  }>;
 }
 
 // Revalidate setiap 60 detik (ISR - Incremental Static Regeneration)
 // Ini akan membuat Next.js me-refresh halaman setiap 60 detik
 export const revalidate = 60;
 
-async function getArticle(params: PageProps['params']) {
+async function getArticle(params: { year: string; month: string; slug: string }) {
   const { year, month, slug } = params;
 
   try {
@@ -58,7 +58,8 @@ async function getArticle(params: PageProps['params']) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const article = await getArticle(params);
+  const resolvedParams = await params;
+  const article = await getArticle(resolvedParams);
 
   if (!article) {
     return {
@@ -78,7 +79,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ArticlePage({ params }: PageProps) {
-  const article = await getArticle(params);
+  const resolvedParams = await params;
+  const article = await getArticle(resolvedParams);
 
   if (!article) {
     notFound();

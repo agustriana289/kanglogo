@@ -35,6 +35,11 @@ export default function MarketplacePage() {
   const [selectedTag, setSelectedTag] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Pagination states
+  const [displayCount, setDisplayCount] = useState(10);
+  const maxItems = 20;
+  const itemsPerPage = 10;
+
   useEffect(() => {
     fetchAssets();
   }, []);
@@ -131,7 +136,22 @@ export default function MarketplacePage() {
     setSelectedCategory("Semua");
     setSelectedType("Semua");
     setSelectedTag("");
+    setDisplayCount(30); // Reset display count when clearing filters
   };
+
+  // Pagination handlers
+  const handleLoadMore = () => {
+    setDisplayCount(prev => Math.min(prev + itemsPerPage, maxItems));
+  };
+
+  const handleHide = () => {
+    setDisplayCount(itemsPerPage);
+  };
+
+  // Calculate displayed items (max 20, paginated by 10)
+  const displayedAssets = filteredAssets.slice(0, Math.min(displayCount, maxItems));
+  const canLoadMore = displayCount < maxItems && displayCount < filteredAssets.length;
+  const isShowingAll = displayCount >= Math.min(maxItems, filteredAssets.length) && filteredAssets.length > itemsPerPage;
 
   const hasActiveFilters =
     searchQuery ||
@@ -211,11 +231,10 @@ export default function MarketplacePage() {
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedCategory === category
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
                     >
                       {category}
                     </button>
@@ -233,11 +252,10 @@ export default function MarketplacePage() {
                     <button
                       key={type}
                       onClick={() => setSelectedType(type)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedType === type
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
                     >
                       {type}
                     </button>
@@ -258,11 +276,10 @@ export default function MarketplacePage() {
                         onClick={() =>
                           setSelectedTag(selectedTag === tag ? "" : tag)
                         }
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
-                          selectedTag === tag
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
                       >
                         {tag}
                       </button>
@@ -334,11 +351,10 @@ export default function MarketplacePage() {
                         <button
                           key={category}
                           onClick={() => setSelectedCategory(category)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                            selectedCategory === category
-                              ? "bg-primary text-white"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
                         >
                           {category}
                         </button>
@@ -359,11 +375,10 @@ export default function MarketplacePage() {
                       <button
                         key={type}
                         onClick={() => setSelectedType(type)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                          selectedType === type
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
                       >
                         {type}
                       </button>
@@ -384,11 +399,10 @@ export default function MarketplacePage() {
                           onClick={() =>
                             setSelectedTag(selectedTag === tag ? "" : tag)
                           }
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
-                            selectedTag === tag
-                              ? "bg-primary text-white"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
                         >
                           {tag}
                         </button>
@@ -425,10 +439,14 @@ export default function MarketplacePage() {
 
             {/* Asset Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredAssets.map((asset) => (
+              {displayedAssets.map((asset, index) => (
                 <div
                   key={asset.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden group"
+                  className="bg-white rounded-xl shadow-md overflow-hidden group animate-fadeIn"
+                  style={{
+                    animationDelay: index >= displayCount - itemsPerPage ? `${(index % itemsPerPage) * 50}ms` : '0ms',
+                    animationFillMode: 'backwards'
+                  }}
                 >
                   <Link href={`/store/${asset.slug}`}>
                     <div className="relative w-full h-64">
@@ -449,11 +467,10 @@ export default function MarketplacePage() {
                       )}
                       <div className="absolute top-2 right-2">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            asset.jenis === "premium"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${asset.jenis === "premium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                            }`}
                         >
                           {asset.jenis === "premium" ? (
                             <StarIcon className="h-4 w-4 mr-1" />
@@ -490,6 +507,27 @@ export default function MarketplacePage() {
                 </div>
               ))}
             </div>
+
+            {/* Load More / Hide Button */}
+            {filteredAssets.length > itemsPerPage && (
+              <div className="mt-8 text-center">
+                {canLoadMore ? (
+                  <button
+                    onClick={handleLoadMore}
+                    className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-md hover:shadow-lg"
+                  >
+                    Selanjutnya ({Math.min(itemsPerPage, filteredAssets.length - displayCount)} lagi)
+                  </button>
+                ) : isShowingAll ? (
+                  <button
+                    onClick={handleHide}
+                    className="px-8 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                  >
+                    Sembunyikan
+                  </button>
+                ) : null}
+              </div>
+            )}
 
             {/* Empty State */}
             {filteredAssets.length === 0 && (
