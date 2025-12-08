@@ -6,9 +6,9 @@ import Sidebar from '@/components/Sidebar';
 import ArticleCard from '@/components/ArticleCard';
 
 interface PageProps {
-    params: {
+    params: Promise<{
         slug: string;
-    };
+    }>;
 }
 
 // Fungsi untuk mengambil data kategori berdasarkan slug
@@ -74,7 +74,8 @@ async function getArticlesByCategoryId(categoryId: number) {
 
 // Fungsi untuk membuat metadata halaman (judul, deskripsi)
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const category = await getCategoryBySlug(params.slug);
+    const { slug } = await params;
+    const category = await getCategoryBySlug(slug);
 
     if (!category) {
         return {
@@ -90,7 +91,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // Komponen Halaman Utama
 export default async function CategoryPage({ params }: PageProps) {
-    const category = await getCategoryBySlug(params.slug);
+    const { slug } = await params;
+    const category = await getCategoryBySlug(slug);
 
     // Jika kategori tidak ditemukan, tampilkan halaman 404
     if (!category) {

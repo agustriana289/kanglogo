@@ -7,9 +7,9 @@ import EnhancedPageContent from "@/components/EnhancedPageContent";
 import Sidebar from "@/components/Sidebar";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 // Revalidate setiap 60 detik (ISR - Incremental Static Regeneration)
@@ -33,7 +33,8 @@ async function getPage(slug: string): Promise<Page | null> {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const page = await getPage(params.slug);
+  const { slug } = await params;
+  const page = await getPage(slug);
 
   if (!page) {
     return {
@@ -49,7 +50,8 @@ export async function generateMetadata({
 }
 
 export default async function StaticPage({ params }: PageProps) {
-  const page = await getPage(params.slug);
+  const { slug } = await params;
+  const page = await getPage(slug);
 
   if (!page) {
     notFound();
@@ -67,3 +69,4 @@ export default async function StaticPage({ params }: PageProps) {
     </div>
   );
 }
+

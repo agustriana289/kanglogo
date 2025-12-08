@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabase';
 import DynamicArticlesList from '@/components/DynamicArticlesList';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     category: string;
-  };
+  }>;
 }
 
 async function getCategory(categorySlug: string) {
@@ -16,44 +16,46 @@ async function getCategory(categorySlug: string) {
     .select('*')
     .eq('slug', categorySlug)
     .single();
-  
+
   if (error || !data) {
     return null;
   }
-  
+
   return data;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const category = await getCategory(params.category);
-  
-  if (!category) {
+  const { category } = await params;
+  const categoryData = await getCategory(category);
+
+  if (!categoryData) {
     return {
       title: 'Kategori Tidak Ditemukan',
     };
   }
-  
+
   return {
-    title: `Kategori: ${category.name} - Kanglogo`,
-    description: category.description || `Artikel dalam kategori ${category.name}`,
+    title: `Kategori: ${categoryData.name} - Kanglogo`,
+    description: categoryData.description || `Artikel dalam kategori ${categoryData.name}`,
   };
 }
 
 export default async function CategoryPage({ params }: PageProps) {
-  const category = await getCategory(params.category);
-  
-  if (!category) {
+  const { category } = await params;
+  const categoryData = await getCategory(category);
+
+  if (!categoryData) {
     notFound();
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Kategori: {category.name}</h1>
-        {category.description && (
-          <p className="text-gray-600 mb-8">{category.description}</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Kategori: {categoryData.name}</h1>
+        {categoryData.description && (
+          <p className="text-gray-600 mb-8">{categoryData.description}</p>
         )}
-        <DynamicArticlesList initialCategory={params.category} />
+        <DynamicArticlesList initialCategory={category} />
       </div>
     </div>
   );
