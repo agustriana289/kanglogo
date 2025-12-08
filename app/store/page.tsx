@@ -33,6 +33,7 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedType, setSelectedType] = useState("Semua");
   const [selectedTag, setSelectedTag] = useState("");
+  const [selectedPrice, setSelectedPrice] = useState("Semua");
   const [showFilters, setShowFilters] = useState(false);
 
   // Pagination states
@@ -45,7 +46,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     filterAssets();
-  }, [assets, searchQuery, selectedCategory, selectedType, selectedTag]);
+  }, [assets, searchQuery, selectedCategory, selectedType, selectedTag, selectedPrice]);
 
   // Fungsi untuk memecah string tagline menjadi array tag
   const parseTags = (tagline: string | null | undefined): string[] => {
@@ -119,6 +120,21 @@ export default function MarketplacePage() {
       filtered = filtered.filter((asset) => asset.tags.includes(selectedTag));
     }
 
+    // Filter by price
+    if (selectedPrice !== "Semua") {
+      if (selectedPrice === "Gratis") {
+        filtered = filtered.filter((asset) => asset.harga_aset === 0);
+      } else if (selectedPrice === "< Rp 100.000") {
+        filtered = filtered.filter((asset) => asset.harga_aset > 0 && asset.harga_aset < 100000);
+      } else if (selectedPrice === "Rp 100.000 - Rp 500.000") {
+        filtered = filtered.filter((asset) => asset.harga_aset >= 100000 && asset.harga_aset <= 500000);
+      } else if (selectedPrice === "Rp 500.000 - Rp 1.000.000") {
+        filtered = filtered.filter((asset) => asset.harga_aset > 500000 && asset.harga_aset <= 1000000);
+      } else if (selectedPrice === "> Rp 1.000.000") {
+        filtered = filtered.filter((asset) => asset.harga_aset > 1000000);
+      }
+    }
+
     setFilteredAssets(filtered);
   };
 
@@ -135,6 +151,7 @@ export default function MarketplacePage() {
     setSelectedCategory("Semua");
     setSelectedType("Semua");
     setSelectedTag("");
+    setSelectedPrice("Semua");
     setCurrentPage(1); // Reset to page 1 when clearing filters
   };
 
@@ -147,13 +164,14 @@ export default function MarketplacePage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedType, selectedTag]);
+  }, [searchQuery, selectedCategory, selectedType, selectedTag, selectedPrice]);
 
   const hasActiveFilters =
     searchQuery ||
     selectedCategory !== "Semua" ||
     selectedType !== "Semua" ||
-    selectedTag;
+    selectedTag ||
+    selectedPrice !== "Semua";
 
   if (loading) {
     return (
@@ -254,6 +272,27 @@ export default function MarketplacePage() {
                         }`}
                     >
                       {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Filter */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-slate-700 mb-2">
+                  Rentang Harga
+                </h3>
+                <div className="space-y-2">
+                  {["Semua", "Gratis", "< Rp 100.000", "Rp 100.000 - Rp 500.000", "Rp 500.000 - Rp 1.000.000", "> Rp 1.000.000"].map((price) => (
+                    <button
+                      key={price}
+                      onClick={() => setSelectedPrice(price)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedPrice === price
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                    >
+                      {price}
                     </button>
                   ))}
                 </div>
@@ -517,8 +556,8 @@ export default function MarketplacePage() {
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
                         className={`px-4 py-2 rounded-md text-sm font-medium ${pageNum === currentPage
-                            ? "bg-primary text-white"
-                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          ? "bg-primary text-white"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                           }`}
                       >
                         {pageNum}

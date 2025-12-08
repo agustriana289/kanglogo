@@ -747,13 +747,24 @@ export default function MarketplaceManagementPage() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Harga (Rp)
                       </label>
-                      <input
-                        type="number"
+                      <select
                         className={inputStyle}
                         value={formData.harga_aset}
                         onChange={(e) => setFormData({ ...formData, harga_aset: Number(e.target.value) })}
-                        placeholder="0"
-                      />
+                      >
+                        <option value="0">Gratis</option>
+                        <option value="50000">Rp 50.000</option>
+                        <option value="100000">Rp 100.000</option>
+                        <option value="150000">Rp 150.000</option>
+                        <option value="200000">Rp 200.000</option>
+                        <option value="250000">Rp 250.000</option>
+                        <option value="500000">Rp 500.000</option>
+                        <option value="750000">Rp 750.000</option>
+                        <option value="1000000">Rp 1.000.000</option>
+                        <option value="2000000">Rp 2.000.000</option>
+                        <option value="2500000">Rp 2.500.000</option>
+                        <option value="5000000">Rp 5.000.000</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
