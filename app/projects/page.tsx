@@ -30,6 +30,10 @@ export default function AllProjectsPage() {
   const [selectedYear, setSelectedYear] = useState("Semua"); // Tambahkan state untuk tahun yang dipilih
   const [showFilters, setShowFilters] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -135,14 +139,26 @@ export default function AllProjectsPage() {
     setSearchQuery("");
     setSelectedType("Semua");
     setSelectedOwner("Semua");
-    setSelectedYear("Semua"); // Reset filter tahun
+    setSelectedYear("Semua");
+    setCurrentPage(1); // Reset to page 1
   };
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedType, selectedOwner, selectedYear]);
 
   const hasActiveFilters =
     searchQuery ||
     selectedType !== "Semua" ||
     selectedOwner !== "Semua" ||
-    selectedYear !== "Semua"; // Tambahkan filter tahun ke pengecekan
+    selectedYear !== "Semua";
 
   if (loading) {
     return (
@@ -214,8 +230,8 @@ export default function AllProjectsPage() {
                     <button
                       onClick={() => setSelectedType("Semua")}
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === "Semua"
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                         }`}
                     >
                       Semua
@@ -225,8 +241,8 @@ export default function AllProjectsPage() {
                         key={type}
                         onClick={() => setSelectedType(type)}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                       >
                         {type}
@@ -246,8 +262,8 @@ export default function AllProjectsPage() {
                     <button
                       onClick={() => setSelectedYear("Semua")}
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === "Semua"
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                         }`}
                     >
                       Semua
@@ -257,8 +273,8 @@ export default function AllProjectsPage() {
                         key={year}
                         onClick={() => setSelectedYear(year)}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === year
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                       >
                         {year}
@@ -332,8 +348,8 @@ export default function AllProjectsPage() {
                       <button
                         onClick={() => setSelectedType("Semua")}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === "Semua"
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                       >
                         Semua
@@ -343,8 +359,8 @@ export default function AllProjectsPage() {
                           key={type}
                           onClick={() => setSelectedType(type)}
                           className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
-                              ? "bg-primary text-white"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                         >
                           {type}
@@ -364,8 +380,8 @@ export default function AllProjectsPage() {
                       <button
                         onClick={() => setSelectedYear("Semua")}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === "Semua"
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                       >
                         Semua
@@ -375,8 +391,8 @@ export default function AllProjectsPage() {
                           key={year}
                           onClick={() => setSelectedYear(year)}
                           className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === year
-                              ? "bg-primary text-white"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                         >
                           {year}
@@ -396,8 +412,8 @@ export default function AllProjectsPage() {
                       <button
                         onClick={() => setSelectedOwner("Semua")}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedOwner === "Semua"
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                       >
                         Semua
@@ -407,8 +423,8 @@ export default function AllProjectsPage() {
                           key={owner}
                           onClick={() => setSelectedOwner(owner)}
                           className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedOwner === owner
-                              ? "bg-primary text-white"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                         >
                           {owner}
@@ -447,10 +463,10 @@ export default function AllProjectsPage() {
 
             {/* Project Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProjects.map((project) => (
+              {paginatedProjects.map((project) => (
                 <div
                   key={project.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden group"
+                  className="bg-white rounded-xl shadow-md overflow-hidden group animate-fadeIn"
                 >
                   <Link href={`/projects/${project.slug}`}>
                     <div className="relative w-full h-64">
@@ -469,40 +485,78 @@ export default function AllProjectsPage() {
                           Tidak Ada Gambar
                         </div>
                       )}
+                      {/* Badge tipe di pojok kanan atas */}
+                      {project.type && (
+                        <div className="absolute top-2 right-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <TagIcon className="h-3 w-3 mr-1" />
+                            {project.type}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </Link>
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">
                       {project.title}
                     </h3>
 
-                    <div className="flex items-center text-sm text-slate-600 mb-2">
-                      <TagIcon className="h-4 w-4 mr-1" />
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {project.type}
-                      </span>
-                    </div>
-
-                    {/* Tambahkan tampilan tahun */}
-                    {project.start_date && (
-                      <div className="flex items-center text-sm text-slate-600 mb-2">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        <span>
+                    <div className="flex items-center justify-between mb-4">
+                      {/* Tahun */}
+                      {project.start_date && (
+                        <span className="inline-flex items-center text-sm text-slate-600">
+                          <CalendarIcon className="h-4 w-4 mr-1" />
                           {new Date(project.start_date).getFullYear()}
                         </span>
-                      </div>
-                    )}
-
-                    <Link
-                      href={`/projects/${project.slug}`}
-                      className="text-primary font-semibold hover:underline"
-                    >
-                      Lihat Detail &rarr;
-                    </Link>
+                      )}
+                      {/* Owner atau link detail */}
+                      <Link
+                        href={`/projects/${project.slug}`}
+                        className="text-primary font-semibold text-sm hover:underline"
+                      >
+                        Lihat Detail →
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Sebelumnya
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${pageNum === currentPage
+                          ? "bg-primary text-white"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  )}
+                  <button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Empty State */}
             {filteredProjects.length === 0 && (

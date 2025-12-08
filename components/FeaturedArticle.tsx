@@ -54,6 +54,13 @@ export default function FeaturedArticle() {
     });
   };
 
+  const getArticleUrl = (article: Article) => {
+    const date = new Date(article.published_at);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `/article/${year}/${month}/${article.slug}`;
+  };
+
   if (!article) {
     return null;
   }
@@ -74,7 +81,7 @@ export default function FeaturedArticle() {
       )}
       <div className="absolute inset-0 bg-primary bg-opacity-70 flex items-end">
         <div className="p-6 text-white">
-          <Link href={`/article/${article.slug}`} className="block">
+          <Link href={getArticleUrl(article)} className="block">
             <h2 className="text-2xl md:text-3xl font-bold mb-2 hover:text-blue-200 transition-colors">
               {article.title}
             </h2>

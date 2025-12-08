@@ -36,9 +36,8 @@ export default function MarketplacePage() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Pagination states
-  const [displayCount, setDisplayCount] = useState(10);
-  const maxItems = 30;
-  const itemsPerPage = 30;
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
 
   useEffect(() => {
     fetchAssets();
@@ -136,22 +135,19 @@ export default function MarketplacePage() {
     setSelectedCategory("Semua");
     setSelectedType("Semua");
     setSelectedTag("");
-    setDisplayCount(30); // Reset display count when clearing filters
+    setCurrentPage(1); // Reset to page 1 when clearing filters
   };
 
-  // Pagination handlers
-  const handleLoadMore = () => {
-    setDisplayCount(prev => Math.min(prev + itemsPerPage, maxItems));
-  };
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAssets = filteredAssets.slice(startIndex, endIndex);
 
-  const handleHide = () => {
-    setDisplayCount(itemsPerPage);
-  };
-
-  // Calculate displayed items (max 20, paginated by 10)
-  const displayedAssets = filteredAssets.slice(0, Math.min(displayCount, maxItems));
-  const canLoadMore = displayCount < maxItems && displayCount < filteredAssets.length;
-  const isShowingAll = displayCount >= Math.min(maxItems, filteredAssets.length) && filteredAssets.length > itemsPerPage;
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedType, selectedTag]);
 
   const hasActiveFilters =
     searchQuery ||
@@ -439,14 +435,10 @@ export default function MarketplacePage() {
 
             {/* Asset Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {displayedAssets.map((asset, index) => (
+              {paginatedAssets.map((asset) => (
                 <div
                   key={asset.id}
                   className="bg-white rounded-xl shadow-md overflow-hidden group animate-fadeIn"
-                  style={{
-                    animationDelay: index >= displayCount - itemsPerPage ? `${(index % itemsPerPage) * 50}ms` : '0ms',
-                    animationFillMode: 'backwards'
-                  }}
                 >
                   <Link href={`/store/${asset.slug}`}>
                     <div className="relative w-full h-64">
@@ -508,24 +500,39 @@ export default function MarketplacePage() {
               ))}
             </div>
 
-            {/* Load More / Hide Button */}
-            {filteredAssets.length > itemsPerPage && (
-              <div className="mt-8 text-center">
-                {canLoadMore ? (
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center">
+                <div className="flex space-x-2">
                   <button
-                    onClick={handleLoadMore}
-                    className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-md hover:shadow-lg"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Selanjutnya ({Math.min(itemsPerPage, filteredAssets.length - displayCount)} lagi)
+                    Sebelumnya
                   </button>
-                ) : isShowingAll ? (
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${pageNum === currentPage
+                            ? "bg-primary text-white"
+                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  )}
                   <button
-                    onClick={handleHide}
-                    className="px-8 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Sembunyikan
+                    Selanjutnya
                   </button>
-                ) : null}
+                </div>
               </div>
             )}
 
