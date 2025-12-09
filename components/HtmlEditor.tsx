@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useRef } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Impor style default
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css'; // Impor style default
 
 interface HtmlEditorProps {
     value: string;

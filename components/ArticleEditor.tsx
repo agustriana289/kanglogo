@@ -9,12 +9,12 @@ import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 
 // Dynamic import untuk Quill editor
-const ReactQuill = dynamic(() => import('react-quill'), {
+const ReactQuill = dynamic(() => import('react-quill-new'), {
   ssr: false,
   loading: () => <div>Loading editor...</div>
 });
 
-import 'react-quill/dist/quill.snow.css';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface Article {
   id?: number;

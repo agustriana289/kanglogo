@@ -40,6 +40,11 @@ export default function ArticleContent({ article }: ArticleContentProps) {
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
   // Add loading state
   const [loading, setLoading] = useState<boolean>(true);
+  const [currentUrl, setCurrentUrl] = useState('');
+
+  useEffect(() => {
+    setCurrentUrl(window.location.href);
+  }, []);
 
   useEffect(() => {
     fetchRelatedArticles();
@@ -315,13 +320,14 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
           <WidgetArea position="Blog_footer" />
 
+
           {/* Share Buttons */}
           <div className="mt-8 mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Bagikan artikel ini
             </h3>
             <ShareButtons
-              url={typeof window !== "undefined" ? window.location.href : ""}
+              url={currentUrl}
               title={article.title}
             />
           </div>
