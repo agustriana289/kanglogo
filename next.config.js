@@ -11,7 +11,20 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
 });
 const nextConfig = {
   images: {
-    domains: ["i.ibb.co", "ibb.co"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ibb.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
+    ],
   },
 };
 module.exports = withBundleAnalyzer(withPWA(nextConfig));

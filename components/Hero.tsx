@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import LogoLoading from "./LogoLoading";
+import NextImage from "next/image";
 
 // Definisikan tipe untuk data yang akan digunakan
 interface HeroContent {
@@ -178,85 +179,94 @@ export default function Hero() {
           {(content.hero_rating ||
             content.hero_rating_count ||
             content.hero_rating_text) && (
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-x-6">
-              {/* Client Images - hanya muncul jika ada */}
-              {[1, 2, 3, 4, 5].some((num) => content[`client_image${num}`]) && (
-                <div className="hidden sm:flex -space-x-2">
-                  {[1, 2, 3, 4, 5].map(
-                    (num) =>
-                      content[`client_image${num}`] && (
-                        <img
-                          key={num}
-                          className="inline-block h-12 w-12 rounded-full ring-2 ring-white"
-                          src={content[`client_image${num}`]}
-                          alt={`Client ${num}`}
-                        />
-                      )
-                  )}
-                </div>
-              )}
-
-              {/* Rating - hanya muncul jika ada datanya */}
-              {(content.hero_rating ||
-                content.hero_rating_count ||
-                content.hero_rating_text) && (
-                <div className="border-none sm:border-l-2 border-indigo-700 sm:pl-8">
-                  <div className="flex items-center text-white">
-                    {content.hero_rating && (
-                      <h3 className="text-2xl font-semibold mr-2">
-                        {content.hero_rating}
-                      </h3>
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-x-6">
+                {/* Client Images - hanya muncul jika ada */}
+                {[1, 2, 3, 4, 5].some((num) => content[`client_image${num}`]) && (
+                  <div className="hidden sm:flex -space-x-2">
+                    {[1, 2, 3, 4, 5].map(
+                      (num) =>
+                        content[`client_image${num}`] && (
+                          <NextImage
+                            key={num}
+                            className="inline-block rounded-full ring-2 ring-white"
+                            src={content[`client_image${num}`]}
+                            alt={`Client ${num}`}
+                            width={48}
+                            height={48}
+                            style={{ objectFit: "cover" }}
+                            loading="lazy"
+                          />
+                        )
                     )}
-                    {/* SVG Ikon Bintang */}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="2"
-                      stroke="currentColor"
-                      className="size-6"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
-                      />
-                    </svg>
                   </div>
-                  {content.hero_rating_text && (
-                    <p className="text-sm text-white">
-                      {content.hero_rating_text}
-                      {content.client_rating_url && (
-                        <>
-                          {" "}
-                          di{" "}
-                          <a
-                            href={content.client_rating_url}
-                            className="hover:underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Google
-                          </a>
-                          .
-                        </>
+                )}
+
+                {/* Rating - hanya muncul jika ada datanya */}
+                {(content.hero_rating ||
+                  content.hero_rating_count ||
+                  content.hero_rating_text) && (
+                    <div className="border-none sm:border-l-2 border-indigo-700 sm:pl-8">
+                      <div className="flex items-center text-white">
+                        {content.hero_rating && (
+                          <h3 className="text-2xl font-semibold mr-2">
+                            {content.hero_rating}
+                          </h3>
+                        )}
+                        {/* SVG Ikon Bintang */}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="2"
+                          stroke="currentColor"
+                          className="size-6"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
+                          />
+                        </svg>
+                      </div>
+                      {content.hero_rating_text && (
+                        <p className="text-sm text-white">
+                          {content.hero_rating_text}
+                          {content.client_rating_url && (
+                            <>
+                              {" "}
+                              di{" "}
+                              <a
+                                href={content.client_rating_url}
+                                className="hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Google
+                              </a>
+                              .
+                            </>
+                          )}
+                        </p>
                       )}
-                    </p>
+                    </div>
                   )}
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
         </div>
 
         {/* Kolom Kanan: Gambar - hanya muncul jika ada gambar */}
         {content.hero_image && (
           <div className="w-full md:w-1/3 flex justify-center md:justify-end">
-            <img
+            <NextImage
               className="max-w-full h-auto"
               src={content.hero_image}
               alt="Hero Image"
+              width={400}
+              height={400}
+              priority
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwEAAhEDEEA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
             />
           </div>
         )}

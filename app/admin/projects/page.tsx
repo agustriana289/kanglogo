@@ -6,6 +6,7 @@ import { useAlert } from "@/components/providers/AlertProvider";
 import { Project } from "@/types/project";
 import LogoLoading from "@/components/LogoLoading";
 import { uploadFile } from "@/lib/supabase-storage";
+import Link from "next/link";
 import {
   PlusIcon,
   PencilIcon,
@@ -23,6 +24,7 @@ import {
   BriefcaseIcon,
   TagIcon,
   ComputerDesktopIcon,
+  CloudArrowUpIcon,
 } from "@heroicons/react/24/outline";
 
 // Opsi untuk jenis proyek
@@ -353,13 +355,22 @@ export default function ProjectManagementPage() {
               {totalItems} proyek ditemukan
             </p>
           </div>
-          <button
-            onClick={handleAddProject}
-            className="bg-primary hover:bg-primary/80 text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition shadow-sm"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Tambah Proyek
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/projects/batch"
+              className="border border-primary text-primary hover:bg-primary hover:text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition"
+            >
+              <CloudArrowUpIcon className="w-5 h-5" />
+              Batch Upload
+            </Link>
+            <button
+              onClick={handleAddProject}
+              className="bg-primary hover:bg-primary/80 text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition shadow-sm"
+            >
+              <PlusIcon className="w-5 h-5" />
+              Tambah Proyek
+            </button>
+          </div>
         </div>
 
         {/* Filters & View Toggle */}

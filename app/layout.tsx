@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import RootLayoutClient from "./RootLayoutClient";
 import PublicNotificationPopup from "@/components/PublicNotificationPopup";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
+import JsonLd from "@/components/JsonLd";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -87,11 +88,50 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Organization Schema - untuk rich snippets dengan logo
+  const organizationData = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'KangLogo.com',
+    alternateName: 'Kang Logo',
+    url: 'https://kanglogo.com',
+    logo: 'https://kanglogo.com/icons/icon-512x512.png',
+    description: 'Jasa desain logo profesional #1 di Indonesia dengan harga terjangkau',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+62-851-7336-6997',
+      contactType: 'customer service',
+      availableLanguage: 'Indonesian',
+    },
+    sameAs: [
+      'https://www.facebook.com/kanglogo',
+      'https://www.instagram.com/kanglogo',
+    ],
+  };
+
+  // WebSite Schema - untuk Sitelinks dengan Search Box
+  const websiteData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'KangLogo.com',
+    url: 'https://kanglogo.com',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://kanglogo.com/search?q={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
     <html lang="id">
       <body
         className={`${inter.className} font-sans antialiased bg-slate-100 m-0 p-0`}
       >
+        <JsonLd data={organizationData} />
+        <JsonLd data={websiteData} />
         <RootLayoutClient />
         <Header />
         {children}

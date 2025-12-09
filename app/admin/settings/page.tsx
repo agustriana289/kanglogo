@@ -28,6 +28,9 @@ export default function SettingsPage() {
     website_author: "",
     website_country: "",
     website_language: "id",
+    seo_og_image: "",
+    seo_sitemap_enabled: true,
+    seo_robots_txt: "",
   });
 
   // State untuk meta tags
@@ -228,7 +231,7 @@ export default function SettingsPage() {
       // Update state dengan URL baru
       setGeneralSettings((prev) => ({
         ...prev,
-        [`${type}_url`]: e.target?.result as string,
+        [type === "seo_og" ? "seo_og_image" : `${type}_url`]: e.target?.result as string,
       }));
     };
     reader.readAsDataURL(file);
@@ -258,17 +261,24 @@ export default function SettingsPage() {
       // Update state dengan URL baru
       setGeneralSettings((prev) => ({
         ...prev,
-        [`${type}_url`]: publicUrl,
+        [type === "seo_og" ? "seo_og_image" : `${type}_url`]: publicUrl,
       }));
 
+      const getTypeName = (t: string) => {
+        if (t === "logo") return "Logo";
+        if (t === "favicon") return "Favicon";
+        if (t === "seo_og") return "OG Image";
+        return t;
+      }
+
       showNotification(
-        `${type === "logo" ? "Logo" : "Favicon"} berhasil diunggah!`,
+        `${getTypeName(type)} berhasil diunggah!`,
         "success"
       );
     } catch (error) {
       console.error("Kesalahan saat mengunggah file:", error);
       showNotification(
-        `Gagal mengunggah ${type === "logo" ? "logo" : "favicon"}! Kesalahan: ${(error as any).message || error
+        `Gagal mengunggah file! Kesalahan: ${(error as any).message || error
         }`,
         "error"
       );
@@ -596,6 +606,15 @@ export default function SettingsPage() {
             onClick={() => setActiveTab("links")}
           >
             Tautan
+          </button>
+          <button
+            className={`py-2 px-4 font-medium text-sm rounded-t-lg ${activeTab === "seo"
+              ? "text-primary border-b-2 border-primary"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
+            onClick={() => setActiveTab("seo")}
+          >
+            SEO
           </button>
         </div>
 
@@ -1423,6 +1442,132 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ))}
+            </div>
+          </div>
+        )}
+
+        {/* SEO Tab */}
+        {activeTab === "seo" && (
+          <div className="p-6">
+            <div className="max-w-4xl">
+              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-6">
+                Pengaturan SEO & Social Share
+              </h3>
+
+              {/* Default OG Image */}
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Default Open Graph Image
+                </label>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                  Gambar ini akan muncul saat link website dibagikan di media sosial (Facebook, Twitter, WhatsApp) jika halaman tersebut tidak memiliki gambar khusus. Ukuran rekomendasi: 1200x630px.
+                </p>
+                <div className="flex items-center justify-center w-full">
+                  <label
+                    htmlFor="og-dropzone-file"
+                    className="flex flex-col items-center justify-center w-full h-64 bg-neutral-secondary-medium border border-dashed border-default-strong rounded-2xl cursor-pointer hover:bg-neutral-tertiary-medium"
+                  >
+                    {generalSettings.seo_og_image ? (
+                      <div className="flex flex-col items-center justify-center">
+                        <img
+                          src={generalSettings.seo_og_image}
+                          alt="OG Image"
+                          className="h-48 w-auto object-contain mb-4"
+                        />
+                        <p className="text-sm text-slate-500">
+                          Klik untuk mengganti gambar
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-body pt-5 pb-6">
+                        <svg
+                          className="w-8 h-8 mb-4 text-slate-400"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 17h3a3 3 0 0 0 0-6h-.025a5.56 5.56 0 0 0 .025-.5A5.5 5.5 0 0 0 7.207 9.021C7.137 9.017 7.071 9 7 9a4 4 0 1 0 0 8h2.167M12 19v-9m0 0-2 2m2-2 2 2"
+                          />
+                        </svg>
+                        <p className="mb-2 text-sm text-slate-500">
+                          <span className="font-semibold">Klik untuk mengunggah</span>
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          PNG, JPG, atau GIF (MAKS. 2MB)
+                        </p>
+                      </div>
+                    )}
+                    <input
+                      id="og-dropzone-file"
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, "seo_og")}
+                      accept="image/*"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Robots.txt Custom Rules */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Aturan Robots.txt Tambahan
+                </label>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                  Tambahkan aturan khusus untuk robots.txt (satu per baris). Contoh: <code>Disallow: /rahasia/</code>
+                </p>
+                <textarea
+                  rows={4}
+                  className={inputStyle}
+                  placeholder="User-agent: *&#10;Disallow: /private/"
+                  value={generalSettings.seo_robots_txt || ""}
+                  onChange={(e) =>
+                    setGeneralSettings({
+                      ...generalSettings,
+                      seo_robots_txt: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* Sitemap Toggle */}
+              <div className="mb-8">
+                <div className="flex items-center">
+                  <input
+                    id="sitemap-toggle"
+                    type="checkbox"
+                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    checked={generalSettings.seo_sitemap_enabled !== false}
+                    onChange={(e) =>
+                      setGeneralSettings({
+                        ...generalSettings,
+                        seo_sitemap_enabled: e.target.checked,
+                      })
+                    }
+                  />
+                  <label htmlFor="sitemap-toggle" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    Aktifkan Sitemap Otomatis
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSaveGeneralSettings}
+                  disabled={saving}
+                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                >
+                  {saving ? "Menyimpan..." : "Simpan Pengaturan SEO"}
+                </button>
+              </div>
             </div>
           </div>
         )}
