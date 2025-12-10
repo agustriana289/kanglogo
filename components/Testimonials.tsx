@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import { Testimonial } from "@/types/testimonial";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Parallax } from "swiper/modules";
+import "swiper/css";
 
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -76,35 +79,55 @@ export default function Testimonials() {
         </div>
 
         <div className="relative w-full md:w-[1028px] mx-auto">
-          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
+          <Swiper
+            modules={[Autoplay, Parallax]}
+            parallax={true}
+            centeredSlides={true}
+            loop={true}
+            autoplay={{
+              delay: 2000,
+              disableOnInteraction: false,
+            }}
+            slidesPerView={1}
+            breakpoints={{
+              640: {
+                slidesPerView: 2,
+              },
+              1024: {
+                slidesPerView: 4,
+              },
+            }}
+            className="mySwiper !pb-12"
+          >
             {testimonials.map((testimonial) => (
-              <div
-                key={testimonial.id}
-                className="flex-none w-[calc(33.333%-0.75rem)] sm:w-[calc(33.333%-1.33rem)] md:w-[calc(33.333%-1.33rem)] cursor-pointer hover:scale-105 transition-transform duration-300"
-                onClick={() => openTestiModal(testimonial)}
-              >
-                <div className="relative w-full h-48 md:h-64">
-                  {testimonial.image_url ? (
-                    <Image
-                      src={testimonial.image_url}
-                      alt={testimonial.alt_text || "Testimoni"}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className="shadow-lg rounded-xl"
-                      sizes="(max-width: 768px) 33vw, (max-width: 1200px) 33vw, 33vw"
-                      loading="lazy"
-                      placeholder="blur"
-                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwEAAhEDEEA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 rounded-xl">
-                      Tidak Ada Gambar
-                    </div>
-                  )}
+              <SwiperSlide key={testimonial.id}>
+                <div
+                  className="px-2 cursor-pointer hover:scale-105 transition-transform duration-300"
+                  onClick={() => openTestiModal(testimonial)}
+                >
+                  <div className="relative w-full h-48 md:h-64">
+                    {testimonial.image_url ? (
+                      <Image
+                        src={testimonial.image_url}
+                        alt={testimonial.alt_text || "Testimoni"}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="shadow-lg rounded-xl"
+                        sizes="(max-width: 768px) 33vw, (max-width: 1200px) 33vw, 33vw"
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwAAhEDEQA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 rounded-xl">
+                        Tidak Ada Gambar
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
 
         <div className="mx-auto max-w-6xl text-center mt-12">
