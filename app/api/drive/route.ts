@@ -21,22 +21,22 @@ function extractFolderId(url: string): string | null {
   // Format: https://drive.google.com/drive/u/0/folders/FOLDER_ID
   // Format: https://drive.google.com/open?id=FOLDER_ID
   // Format: FOLDER_ID (direct ID)
-  
+
   if (!url) return null;
-  
+
   // If it's already just an ID (no slashes or dots)
   if (/^[a-zA-Z0-9_-]+$/.test(url) && url.length > 20) {
     return url;
   }
-  
+
   // Match folder URL patterns
   const folderMatch = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
   if (folderMatch) return folderMatch[1];
-  
+
   // Match open?id= pattern
   const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (idMatch) return idMatch[1];
-  
+
   return null;
 }
 
@@ -68,36 +68,46 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const folderUrl = searchParams.get("folderUrl");
   const folderId = searchParams.get("folderId");
-  
+
   const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
-  
+
   if (!apiKey) {
     return NextResponse.json(
       { error: "Google Drive API key not configured" },
       { status: 500 }
     );
   }
-  
+
   // Get folder ID from URL or direct ID
   const targetFolderId = folderId || (folderUrl ? extractFolderId(folderUrl) : null);
-  
+
   if (!targetFolderId) {
     return NextResponse.json(
       { error: "Invalid or missing folder URL/ID" },
       { status: 400 }
     );
   }
-  
+
   try {
+    // Fetch folder metadata to get its name
+    const folderMetaUrl = `https://www.googleapis.com/drive/v3/files/${targetFolderId}?fields=id,name&key=${apiKey}`;
+    const folderMetaResponse = await fetch(folderMetaUrl);
+    let folderName = "Files";
+
+    if (folderMetaResponse.ok) {
+      const folderMeta = await folderMetaResponse.json();
+      folderName = folderMeta.name || "Files";
+    }
+
     // Fetch folder contents from Google Drive API
     const fields = "files(id,name,mimeType,size,modifiedTime,webContentLink,webViewLink)";
     const query = `'${targetFolderId}' in parents and trashed = false`;
     const orderBy = "folder,name";
-    
+
     const apiUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}&orderBy=${encodeURIComponent(orderBy)}&key=${apiKey}&pageSize=100`;
-    
+
     const response = await fetch(apiUrl);
-    
+
     if (!response.ok) {
       const error = await response.json();
       console.error("Google Drive API error:", error);
@@ -106,9 +116,9 @@ export async function GET(request: NextRequest) {
         { status: response.status }
       );
     }
-    
+
     const data: DriveApiResponse = await response.json();
-    
+
     // Transform the response
     const files = data.files.map((file) => ({
       id: file.id,
@@ -122,22 +132,23 @@ export async function GET(request: NextRequest) {
       downloadLink: file.webContentLink || null,
       viewLink: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`,
     }));
-    
+
     // Sort: folders first, then files by name
     files.sort((a, b) => {
       if (a.isFolder && !b.isFolder) return -1;
       if (!a.isFolder && b.isFolder) return 1;
       return a.name.localeCompare(b.name);
     });
-    
+
     return NextResponse.json({
       success: true,
       folderId: targetFolderId,
+      folderName,
       files,
       totalFiles: files.filter(f => !f.isFolder).length,
       totalFolders: files.filter(f => f.isFolder).length,
     });
-    
+
   } catch (error) {
     console.error("Error fetching Drive contents:", error);
     return NextResponse.json(

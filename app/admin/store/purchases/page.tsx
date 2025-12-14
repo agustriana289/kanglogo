@@ -685,7 +685,7 @@ export default function StorePurchasesPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsEditingDownloadLink(false)}
-                                                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
+                                                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
                                                 >
                                                     OK
                                                 </button>
@@ -694,29 +694,29 @@ export default function StorePurchasesPage() {
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     onClick={() => downloadLink && window.open(`/file/s/${selectedOrder?.order_number}`, '_blank')}
-                                                    className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 ${downloadLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-600' : ''}`}
+                                                    className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 overflow-hidden ${downloadLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-600' : ''}`}
                                                 >
                                                     {downloadLink ? (
                                                         <>
-                                                            <FolderOpenIcon className="w-5 h-5 text-primary flex-shrink-0" />
-                                                            <span className="text-sm text-gray-800 dark:text-white truncate flex-1">
-                                                                {downloadLink.length > 40 ? downloadLink.substring(0, 40) + '...' : downloadLink}
+                                                            <FolderOpenIcon className="w-4 h-4 text-primary flex-shrink-0" />
+                                                            <span className="text-sm text-gray-800 dark:text-white truncate">
+                                                                {downloadLink}
                                                             </span>
                                                             <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                                         </>
                                                     ) : (
                                                         <span className="text-sm text-gray-400">
-                                                            Belum ada link file
+                                                            Belum ada link
                                                         </span>
                                                     )}
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsEditingDownloadLink(true)}
-                                                    className="p-2.5 text-gray-500 hover:text-primary bg-white dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600"
+                                                    className="p-2 text-gray-500 hover:text-primary bg-white dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 flex-shrink-0"
                                                     title="Edit Link"
                                                 >
-                                                    <PencilSquareIcon className="w-5 h-5" />
+                                                    <PencilSquareIcon className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         )}

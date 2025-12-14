@@ -1026,7 +1026,7 @@ export default function OrderManagementPage() {
                           <button
                             type="button"
                             onClick={() => setIsEditingFileLink(false)}
-                            className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
+                            className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
                           >
                             OK
                           </button>
@@ -1035,29 +1035,29 @@ export default function OrderManagementPage() {
                         <div className="flex items-center gap-2">
                           <div
                             onClick={() => finalFileLink && window.open(`/file/o/${selectedOrder?.invoice_number}`, '_blank')}
-                            className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 ${finalFileLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800' : ''}`}
+                            className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800' : ''}`}
                           >
                             {finalFileLink ? (
                               <>
-                                <FolderOpenIcon className="w-5 h-5 text-primary flex-shrink-0" />
-                                <span className="text-sm text-gray-800 dark:text-white/90 truncate flex-1">
-                                  {finalFileLink.length > 40 ? finalFileLink.substring(0, 40) + '...' : finalFileLink}
+                                <FolderOpenIcon className="w-4 h-4 text-primary flex-shrink-0" />
+                                <span className="text-sm text-gray-800 dark:text-white/90 truncate">
+                                  {finalFileLink}
                                 </span>
                                 <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                               </>
                             ) : (
                               <span className="text-sm text-gray-400 dark:text-white/30">
-                                Belum ada link file
+                                Belum ada link
                               </span>
                             )}
                           </div>
                           <button
                             type="button"
                             onClick={() => setIsEditingFileLink(true)}
-                            className="p-2.5 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+                            className="p-2 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 flex-shrink-0"
                             title="Edit Link"
                           >
-                            <PencilSquareIcon className="w-5 h-5" />
+                            <PencilSquareIcon className="w-4 h-4" />
                           </button>
                         </div>
                       )}

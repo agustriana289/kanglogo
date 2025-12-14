@@ -17,6 +17,7 @@ import {
     ChevronRightIcon,
     HomeIcon,
     ArrowLeftIcon,
+    ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 
 interface DriveFile {
@@ -74,15 +75,28 @@ export default function StoreFileManagerPage({
         download_link: string | null;
         status: string;
     } | null>(null);
+    const [websitePhone, setWebsitePhone] = useState<string>("");
 
     // Folder navigation
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
     const [folderPath, setFolderPath] = useState<FolderPath[]>([]);
     const [rootFolderId, setRootFolderId] = useState<string | null>(null);
+    const [rootFolderName, setRootFolderName] = useState<string>("Files");
 
     useEffect(() => {
         fetchOrderAndFiles();
+        fetchWebsiteSettings();
     }, [orderNumber]);
+
+    const fetchWebsiteSettings = async () => {
+        const { data } = await supabase
+            .from("website_settings")
+            .select("website_phone")
+            .single();
+        if (data?.website_phone) {
+            setWebsitePhone(data.website_phone);
+        }
+    };
 
     const fetchOrderAndFiles = async () => {
         setLoading(true);
@@ -145,10 +159,11 @@ export default function StoreFileManagerPage({
 
             setFiles(data.files);
 
-            // Set root folder ID on first load
+            // Set root folder ID and name on first load
             if (!rootFolderId) {
                 setRootFolderId(data.folderId);
                 setCurrentFolderId(data.folderId);
+                setRootFolderName(data.folderName || "Files");
             }
 
         } catch (err: any) {
@@ -196,6 +211,12 @@ export default function StoreFileManagerPage({
         }
     };
 
+    const handleOpenInDrive = () => {
+        if (orderData?.download_link) {
+            window.open(orderData.download_link, "_blank");
+        }
+    };
+
     const formatDate = (dateString: string) => {
         if (!dateString) return "-";
         return new Date(dateString).toLocaleDateString("id-ID", {
@@ -203,6 +224,11 @@ export default function StoreFileManagerPage({
             month: "short",
             year: "numeric",
         });
+    };
+
+    const getWhatsAppLink = () => {
+        const cleanedNumber = websitePhone.replace(/\D/g, "");
+        return `https://wa.me/${cleanedNumber}`;
     };
 
     if (loading) {
@@ -235,32 +261,22 @@ export default function StoreFileManagerPage({
                 <div className="container mx-auto px-4 max-w-6xl">
                     {/* Header */}
                     <div className="mb-6">
-                        <button
-                            onClick={() => router.back()}
-                            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary mb-4"
-                        >
-                            <ArrowLeftIcon className="w-4 h-4" />
-                            Kembali ke Invoice
-                        </button>
                         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                            File Manager
+                            File Akhir untuk Proyek {orderData.order_number}
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            Order #{orderData.order_number} - {orderData.customer_name}
-                        </p>
                     </div>
 
                     {/* File Manager Card */}
                     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
                         {/* Header with breadcrumb */}
-                        <div className="mb-4 flex items-center justify-between px-6">
+                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between px-6 gap-4">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <button
                                     onClick={() => navigateBack(-1)}
                                     className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-primary"
                                 >
                                     <HomeIcon className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Root</span>
+                                    <span className="text-sm font-medium">{rootFolderName}</span>
                                 </button>
 
                                 {folderPath.map((folder, index) => (
@@ -378,6 +394,37 @@ export default function StoreFileManagerPage({
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Download All Button */}
+                    <div className="mt-6 flex justify-center">
+                        <button
+                            onClick={handleOpenInDrive}
+                            className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/80 shadow-lg"
+                        >
+                            <ArrowTopRightOnSquareIcon className="w-5 h-5" />
+                            Unduh File Desain
+                        </button>
+                    </div>
+
+                    {/* Thank You Message */}
+                    <div className="mt-8 text-center">
+                        <p className="text-gray-700 dark:text-gray-300 font-medium">
+                            Terima kasih telah order di kanglogo.com. Semoga desain anda jadi simbol kesuksesan anda.
+                        </p>
+                        {websitePhone && (
+                            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                                Jika ada kendala atau kesalahan dalam pengiriman file, silahkan hubungi{" "}
+                                <a
+                                    href={getWhatsAppLink()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline font-medium"
+                                >
+                                    {websitePhone}
+                                </a>
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
