@@ -134,7 +134,7 @@ export default function StoreInvoiceDetailPage({
 
     const downloadAsset = () => {
         if (order?.download_link) {
-            window.open(order.download_link, "_blank");
+            router.push(`/file/s/${order.order_number}`);
         }
     };
 
@@ -258,7 +258,7 @@ export default function StoreInvoiceDetailPage({
                                         onClick={downloadAsset}
                                         className="bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-medium"
                                     >
-                                        <Download size={18} /> Unduh File
+                                        <Download size={18} /> Lihat File
                                     </button>
                                 )}
                                 <button

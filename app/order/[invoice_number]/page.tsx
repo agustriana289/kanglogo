@@ -127,15 +127,14 @@ export default function InvoiceDetailPage({
     setIsDownloading(true);
 
     try {
-      // Jika order completed dan ada final_file_link, download file final
+      // Jika order completed dan ada final_file_link, buka file manager
       if (order.status === "completed" && order.final_file_link) {
-        window.open(order.final_file_link, "_blank");
+        router.push(`/file/o/${order.invoice_number}`);
       }
       // Jika tidak, generate dan download invoice PDF
       else {
         if (!invoiceRef.current) return;
 
-        // --- PERUBAHAN KRUSIAL ADA DI SINI ---
         const options = {
           margin: 10,
           filename: "invoice.pdf",
@@ -147,7 +146,6 @@ export default function InvoiceDetailPage({
             orientation: "portrait" as const,
           },
         };
-        // --- AKHIR PERUBAHAN ---
 
         await html2pdf().set(options).from(invoiceRef.current).save();
       }
@@ -162,16 +160,17 @@ export default function InvoiceDetailPage({
   const getDownloadButtonText = () => {
     if (isDownloading) return "Downloading...";
     if (order?.status === "completed" && order.final_file_link)
-      return "Unduh File";
+      return "Lihat File";
     return "Unduh";
   };
 
   const getDownloadButtonTextLong = () => {
     if (isDownloading) return "Downloading...";
     if (order?.status === "completed" && order.final_file_link)
-      return "Unduh File";
+      return "Lihat File";
     return "Unduh Invoice";
   };
+
 
   if (loading) {
     return (

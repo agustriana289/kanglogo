@@ -17,6 +17,8 @@ import {
     ChevronUpIcon,
     ChevronDownIcon,
     ArrowTopRightOnSquareIcon,
+    FolderOpenIcon,
+    PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -69,6 +71,7 @@ export default function StorePurchasesPage() {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [editedStatus, setEditedStatus] = useState("");
     const [downloadLink, setDownloadLink] = useState("");
+    const [isEditingDownloadLink, setIsEditingDownloadLink] = useState(false);
     const [saving, setSaving] = useState(false);
     const { showAlert, showConfirm } = useAlert();
 
@@ -146,6 +149,7 @@ export default function StorePurchasesPage() {
         setSelectedOrder(order);
         setEditedStatus(order.status);
         setDownloadLink(order.download_link || "");
+        setIsEditingDownloadLink(false);
         setShowDetailModal(true);
     };
 
@@ -668,13 +672,54 @@ export default function StorePurchasesPage() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link File Final</label>
-                                        <input
-                                            type="text"
-                                            className={inputStyle}
-                                            placeholder="https://..."
-                                            value={downloadLink}
-                                            onChange={(e) => setDownloadLink(e.target.value)}
-                                        />
+                                        {isEditingDownloadLink ? (
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    className={inputStyle}
+                                                    placeholder="https://drive.google.com/drive/folders/..."
+                                                    value={downloadLink}
+                                                    onChange={(e) => setDownloadLink(e.target.value)}
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsEditingDownloadLink(false)}
+                                                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
+                                                >
+                                                    OK
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    onClick={() => downloadLink && window.open(`/file/s/${selectedOrder?.order_number}`, '_blank')}
+                                                    className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 ${downloadLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-600' : ''}`}
+                                                >
+                                                    {downloadLink ? (
+                                                        <>
+                                                            <FolderOpenIcon className="w-5 h-5 text-primary flex-shrink-0" />
+                                                            <span className="text-sm text-gray-800 dark:text-white truncate flex-1">
+                                                                {downloadLink.length > 40 ? downloadLink.substring(0, 40) + '...' : downloadLink}
+                                                            </span>
+                                                            <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">
+                                                            Belum ada link file
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsEditingDownloadLink(true)}
+                                                    className="p-2.5 text-gray-500 hover:text-primary bg-white dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600"
+                                                    title="Edit Link"
+                                                >
+                                                    <PencilSquareIcon className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Dibuat</label>

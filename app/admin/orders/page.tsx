@@ -22,6 +22,8 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   ArrowTopRightOnSquareIcon,
+  LinkIcon,
+  FolderOpenIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { format, addDays, isBefore } from "date-fns";
@@ -106,6 +108,7 @@ export default function OrderManagementPage() {
   // Edit/Detail States
   const [editedStatus, setEditedStatus] = useState("");
   const [finalFileLink, setFinalFileLink] = useState("");
+  const [isEditingFileLink, setIsEditingFileLink] = useState(false);
   const [editedCreatedAt, setEditedCreatedAt] = useState("");
   const [editedPaymentDeadline, setEditedPaymentDeadline] = useState("");
   const [saving, setSaving] = useState(false);
@@ -296,6 +299,7 @@ export default function OrderManagementPage() {
     setSelectedOrder(order);
     setEditedStatus(order.status);
     setFinalFileLink(order.final_file_link || "");
+    setIsEditingFileLink(false);
     // Format dates for input type="date" (YYYY-MM-DD)
     setEditedCreatedAt(order.created_at ? order.created_at.split('T')[0] : "");
     setEditedPaymentDeadline(order.payment_deadline ? order.payment_deadline.split('T')[0] : "");
@@ -1009,13 +1013,54 @@ export default function OrderManagementPage() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Link File Final
                       </label>
-                      <input
-                        type="text"
-                        className={inputStyle}
-                        placeholder="https://..."
-                        value={finalFileLink}
-                        onChange={(e) => setFinalFileLink(e.target.value)}
-                      />
+                      {isEditingFileLink ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className={inputStyle}
+                            placeholder="https://drive.google.com/drive/folders/..."
+                            value={finalFileLink}
+                            onChange={(e) => setFinalFileLink(e.target.value)}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingFileLink(false)}
+                            className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
+                          >
+                            OK
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div
+                            onClick={() => finalFileLink && window.open(`/file/o/${selectedOrder?.invoice_number}`, '_blank')}
+                            className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 ${finalFileLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800' : ''}`}
+                          >
+                            {finalFileLink ? (
+                              <>
+                                <FolderOpenIcon className="w-5 h-5 text-primary flex-shrink-0" />
+                                <span className="text-sm text-gray-800 dark:text-white/90 truncate flex-1">
+                                  {finalFileLink.length > 40 ? finalFileLink.substring(0, 40) + '...' : finalFileLink}
+                                </span>
+                                <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              </>
+                            ) : (
+                              <span className="text-sm text-gray-400 dark:text-white/30">
+                                Belum ada link file
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingFileLink(true)}
+                            className="p-2.5 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+                            title="Edit Link"
+                          >
+                            <PencilSquareIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
