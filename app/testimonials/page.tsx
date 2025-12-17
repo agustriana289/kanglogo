@@ -206,7 +206,7 @@ export default function TestimonialsPage() {
 
                                 {/* Review Text */}
                                 <p className="text-gray-600 leading-relaxed mb-4 line-clamp-5">
-                                    "{testimonial.review_text}"
+                                    &quot;{testimonial.review_text}&quot;
                                 </p>
 
                                 {/* Footer: Customer Info */}

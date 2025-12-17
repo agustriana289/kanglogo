@@ -343,7 +343,7 @@ export default function SEOPage() {
                     <div className="p-6">
                         {metaTags.length === 0 ? (
                             <p className="text-sm text-gray-500 text-center py-8">
-                                Belum ada meta tag. Klik "Tambah" untuk menambahkan.
+                                Belum ada meta tag. Klik &quot;Tambah&quot; untuk menambahkan.
                             </p>
                         ) : (
                             <div className="space-y-3">
@@ -493,7 +493,7 @@ export default function SEOPage() {
                         <div className="p-6">
                             {verificationTags.length === 0 ? (
                                 <p className="text-sm text-gray-500 text-center py-8">
-                                    Belum ada tag verifikasi. Klik "Tambah" untuk menambahkan.
+                                    Belum ada tag verifikasi. Klik &quot;Tambah&quot; untuk menambahkan.
                                 </p>
                             ) : (
                                 <div className="space-y-3">

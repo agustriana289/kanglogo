@@ -27,20 +27,22 @@ interface Link {
   order_index: number;
 }
 
+import Link from "next/link";
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [navLinks, setNavLinks] = useState<Link[]>([]);
   const pathname = usePathname();
 
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
   // Jangan tampilkan header di halaman admin dan login
   if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
     return null;
   }
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   const fetchSettings = async () => {
     try {
@@ -90,9 +92,8 @@ export default function Header() {
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const waLink = `https://wa.me/${
-    settings?.website_phone?.replace(/\D/g, "") || ""
-  }`;
+  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
+    }`;
   const waDisplay = settings?.website_phone;
   const logoUrl = settings?.logo_url;
 
@@ -105,7 +106,7 @@ export default function Header() {
             <div className="flex-1 md:flex md:items-center md:gap-12">
               <div className="section" id="nav-logo" data-name="Logo">
                 <div className="widget Header" data-version="2" id="Header1">
-                  <a
+                  <Link
                     className="flex items-center space-x-3 rtl:space-x-reverse logo"
                     href="/"
                     title={settings?.website_name}
@@ -115,7 +116,7 @@ export default function Header() {
                       src={logoUrl}
                       alt={settings?.website_name}
                     />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -130,12 +131,12 @@ export default function Header() {
                     <ul className="flex items-center gap-6 text-sm">
                       {navLinks.map((link, idx) => (
                         <li key={idx}>
-                          <a
+                          <Link
                             className="text-slate-500 transition hover:text-slate-500/75"
                             href={link.url}
                           >
                             {link.label}
-                          </a>
+                          </Link>
                         </li>
                       ))}
                     </ul>
@@ -144,9 +145,8 @@ export default function Header() {
 
                 {/* Mobile Menu */}
                 <div
-                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${
-                    mobileMenuOpen ? "block" : "hidden"
-                  }`}
+                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${mobileMenuOpen ? "block" : "hidden"
+                    }`}
                   id="mobile-menu"
                 >
                   <div className="p-4 border-b">
@@ -180,22 +180,22 @@ export default function Header() {
                     <ul className="space-y-2">
                       {navLinks.map((link, idx) => (
                         <li key={idx}>
-                          <a
+                          <Link
                             className="nav-item text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded transition-colors block p-2"
                             href={link.url}
                             onClick={closeMobileMenu}
                           >
                             {link.label}
-                          </a>
+                          </Link>
+
                         </li>
                       ))}
                     </ul>
                   </nav>
                 </div>
                 <div
-                  className={`menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden ${
-                    mobileMenuOpen ? "block" : "hidden"
-                  }`}
+                  className={`menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden ${mobileMenuOpen ? "block" : "hidden"
+                    }`}
                   id="menu-overlay"
                   onClick={closeMobileMenu}
                 ></div>

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Service } from "@/types/service";
 import { supabase } from "@/lib/supabase";
 
+import Link from "next/link";
+
 export default function Pricing() {
   const router = useRouter();
   const [featuredService, setFeaturedService] = useState<Service | null>(null);
@@ -137,7 +139,7 @@ export default function Pricing() {
                     <span className={`line-through`}>{plan.originalPrice}</span>
                   )}{" "}
                 </p>
-                <a
+                <Link
                   className={`bg-primary text-white py-2 px-4 rounded-full text-lg transition duration-300 ease-in-out inline-flex items-center flex items-center justify-center w-full`}
                   href={`/order/new?service=${encodeURIComponent(
                     featuredService.slug
@@ -157,7 +159,7 @@ export default function Pricing() {
                     ></path>
                   </svg>
                   Pilih Paket
-                </a>
+                </Link>
                 <p
                   className={`mt-4 text-sm ${plan.titleColor === "text-white"
                     ? "text-white"
@@ -173,12 +175,12 @@ export default function Pricing() {
 
         {/* --- Bagian 2: Grid Layanan Lainnya --- */}
         <div className="text-center justify-center">
-          <a
+          <Link
             className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
             href="/services"
           >
             Semua layanan
-          </a>
+          </Link>
         </div>
       </div>
     </section>

@@ -417,7 +417,7 @@ export default function NavigasiPage() {
                     <div className="p-6">
                         {socialMedia.length === 0 ? (
                             <p className="text-sm text-gray-500 text-center py-8">
-                                Belum ada social media. Klik "Tambah" untuk menambahkan.
+                                Belum ada social media. Klik &quot;Tambah&quot; untuk menambahkan.
                             </p>
                         ) : (
                             <div className="space-y-3">

@@ -322,7 +322,7 @@ export default function ProfilePage() {
                             <div className="text-center py-12">
                                 <KeyIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                                 <p className="text-sm text-gray-500">
-                                    Klik tombol "Ubah Password" untuk mengubah password Anda.
+                                    Klik tombol &quot;Ubah Password&quot; untuk mengubah password Anda.
                                 </p>
                             </div>
                         )}

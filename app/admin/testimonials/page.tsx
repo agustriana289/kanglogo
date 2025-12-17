@@ -749,7 +749,7 @@ export default function TestimonialManagementPage() {
 
                 {testimonial.review_text && (
                   <p className="text-sm text-gray-600 italic line-clamp-2 mb-3">
-                    "{testimonial.review_text}"
+                    &quot;{testimonial.review_text}&quot;
                   </p>
                 )}
 

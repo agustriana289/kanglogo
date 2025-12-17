@@ -296,7 +296,7 @@ export default function AdminSearchPage() {
                     Hasil Pencarian
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400">
-                    Menampilkan hasil untuk keyword <span className="font-semibold text-primary">"{query}"</span>
+                    Menampilkan hasil untuk keyword <span className="font-semibold text-primary">&quot;{query}&quot;</span>
                 </p>
             </div>
 

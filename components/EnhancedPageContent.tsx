@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import Link from "next/link";
 import ShareButtons from "./ShareButtons";
 import { Page } from "@/types/page";
 
@@ -35,12 +36,12 @@ export default function EnhancedPageContent({
           <nav aria-label="Breadcrumb" className="mb-4">
             <ol className="flex flex-wrap items-center space-x-2">
               <li>
-                <a
+                <Link
                   href="/"
                   className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-full text-xs font-medium text-gray-700 transition-colors"
                 >
                   Beranda
-                </a>
+                </Link>
               </li>
               <li className="flex items-center">
                 <svg

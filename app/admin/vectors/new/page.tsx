@@ -101,11 +101,10 @@ export default function NewVectorPage() {
         {/* Notification */}
         {notification.show && (
           <div
-            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-              notification.type === "success"
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${notification.type === "success"
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
-            }`}
+              }`}
           >
             {notification.message}
           </div>
@@ -195,8 +194,8 @@ export default function NewVectorPage() {
                       placeholder="https://drive.google.com/file/d/FILE_ID/view"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Pastikan file sudah di-set ke "Anyone with the link can
-                      view"
+                      Pastikan file sudah di-set ke &quot;Anyone with the link can
+                      view&quot;
                     </p>
                   </div>
 

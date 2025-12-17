@@ -74,7 +74,7 @@ export default function TrakteerWidget() {
                                             <span className="text-[10px] text-slate-400">memberikan {s.quantity} {s.unit}</span>
                                         </div>
                                         {s.message && (
-                                            <p className="text-[10px] text-slate-600 italic">"{s.message}"</p>
+                                            <p className="text-[10px] text-slate-600 italic">&quot;{s.message}&quot;</p>
                                         )}
                                     </div>
                                 </div>
