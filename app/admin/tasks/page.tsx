@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
@@ -47,16 +47,9 @@ export default function TaskManagementPage() {
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const { showAlert } = useAlert();
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
 
-  useEffect(() => {
-    filterTasks();
-    setDisplayLimit(10); // Reset display limit when filters change
-  }, [tasks, selectedTaskGroup, searchQuery, dateFilter]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch orders with relevant statuses
@@ -64,9 +57,9 @@ export default function TaskManagementPage() {
         .from("orders")
         .select(
           `
-          *,
-          services ( title )
-        `
+  *,
+  services(title)
+    `
         )
         .in("status", [STATUS_TODO, STATUS_IN_PROGRESS, STATUS_COMPLETED])
         .order("created_at", { ascending: false });
@@ -78,9 +71,9 @@ export default function TaskManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterTasks = () => {
+  const filterTasks = useCallback(() => {
     let filtered = tasks;
 
     // Filter by Tab
@@ -109,7 +102,7 @@ export default function TaskManagementPage() {
 
       filtered = filtered.filter((t) => {
         const taskDate = new Date(t.created_at);
-        
+
         switch (dateFilter) {
           case "today":
             return taskDate >= today;
@@ -130,13 +123,23 @@ export default function TaskManagementPage() {
     }
 
     setFilteredTasks(filtered);
-  };
+  }, [tasks, selectedTaskGroup, searchQuery, dateFilter]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    filterTasks();
+    setDisplayLimit(10); // Reset display limit when filters change
+  }, [filterTasks]);
+
 
   // Group tasks for "InProgress" tab based on deadline urgency
   const groupTasksByUrgency = (tasks: OrderWithService[]) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
-    
+
     const overdue: OrderWithService[] = [];
     const urgent: OrderWithService[] = [];
     const normal: OrderWithService[] = [];
@@ -145,7 +148,7 @@ export default function TaskManagementPage() {
     tasks.forEach((task) => {
       // Use payment_deadline or work_deadline, whichever is available
       const deadlineStr = (task as any).payment_deadline || task.work_deadline;
-      
+
       if (!deadlineStr) {
         noDeadline.push(task);
         return;
@@ -153,7 +156,7 @@ export default function TaskManagementPage() {
 
       const deadline = new Date(deadlineStr);
       deadline.setHours(0, 0, 0, 0); // Reset to start of day
-      
+
       const diffTime = deadline.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -330,11 +333,10 @@ export default function TaskManagementPage() {
               <button
                 key={tab.key}
                 onClick={() => setSelectedTaskGroup(tab.key as any)}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
-                  selectedTaskGroup === tab.key
-                    ? "shadow-sm text-gray-900 bg-white"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
+                className={`text - sm h - 10 rounded - md px - 3 py - 2 font - medium transition - all ${selectedTaskGroup === tab.key
+                  ? "shadow-sm text-gray-900 bg-white"
+                  : "text-gray-500 hover:text-gray-900"
+                  } `}
               >
                 {tab.label}
               </button>
@@ -354,7 +356,7 @@ export default function TaskManagementPage() {
                 className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
               />
             </div>
-            
+
             {/* Date Filter Dropdown */}
             <div className="relative">
               <button
@@ -369,7 +371,7 @@ export default function TaskManagementPage() {
                         dateFilter === "30days" ? "30 hari terakhir" :
                           dateFilter === "thisMonth" ? "Bulan ini" : dateFilter}
                 </span>
-                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${dateDropdownOpen ? "rotate-180" : ""}`} />
+                <ChevronDownIcon className={`w - 4 h - 4 text - gray - 400 transition - transform ${dateDropdownOpen ? "rotate-180" : ""} `} />
               </button>
               {dateDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -386,10 +388,10 @@ export default function TaskManagementPage() {
                         setDateFilter(option.value);
                         setDateDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${dateFilter === option.value
+                      className={`w - full text - left px - 3 py - 2 text - sm hover: bg - gray - 100 first: rounded - t - lg last: rounded - b - lg transition - colors ${dateFilter === option.value
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-gray-700"
-                      }`}
+                        } `}
                     >
                       {option.label}
                     </button>
@@ -399,7 +401,7 @@ export default function TaskManagementPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Mobile Tabs - Below Filters */}
         <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg mt-4 lg:hidden">
           {[
@@ -409,11 +411,10 @@ export default function TaskManagementPage() {
             <button
               key={tab.key}
               onClick={() => setSelectedTaskGroup(tab.key as any)}
-              className={`flex-1 text-sm py-2.5 px-3 rounded-md font-medium transition-all ${
-                selectedTaskGroup === tab.key
-                  ? "shadow-sm text-white bg-primary"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
+              className={`flex - 1 text - sm py - 2.5 px - 3 rounded - md font - medium transition - all ${selectedTaskGroup === tab.key
+                ? "shadow-sm text-white bg-primary"
+                : "text-gray-500 hover:text-gray-900"
+                } `}
             >
               {tab.label}
             </button>
@@ -436,87 +437,87 @@ export default function TaskManagementPage() {
         <div className="space-y-4">
           {/* List View - Task Cards */}
           {selectedTaskGroup === "InProgress" ? (
-                /* Grouped view for InProgress */
-                (() => {
-                  const groups = groupTasksByUrgency(filteredTasks);
-                  
-                  // Calculate how many tasks to show from each group
-                  let remainingLimit = displayLimit;
-                  const overdueToShow = Math.min(groups.overdue.length, remainingLimit);
-                  remainingLimit -= overdueToShow;
-                  
-                  const urgentToShow = Math.min(groups.urgent.length, remainingLimit);
-                  remainingLimit -= urgentToShow;
-                  
-                  const normalToShow = Math.min(groups.normal.length, remainingLimit);
-                  remainingLimit -= normalToShow;
-                  
-                  const noDeadlineToShow = Math.min(groups.noDeadline.length, remainingLimit);
-                  
-                  return (
-                    <>
-                      {/* Overdue Group */}
-                      {groups.overdue.length > 0 && overdueToShow > 0 && (
-                        <div className="rounded-2xl border border-red-200 bg-white p-4 sm:p-6">
-                          <h3 className="flex items-center gap-2 text-sm font-semibold text-red-700 mb-3">
-                            <ClockIcon className="w-4 h-4" />
-                            Terlambat ({groups.overdue.length})
-                          </h3>
-                          <div className="space-y-3">
-                            {groups.overdue.slice(0, overdueToShow).map((task) => (
-                              <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
+            /* Grouped view for InProgress */
+            (() => {
+              const groups = groupTasksByUrgency(filteredTasks);
 
-                      {/* Urgent Group (3 days or less) */}
-                      {groups.urgent.length > 0 && urgentToShow > 0 && (
-                        <div className="rounded-2xl border border-orange-200 bg-white p-4 sm:p-6">
-                          <h3 className="flex items-center gap-2 text-sm font-semibold text-orange-700 mb-3">
-                            <ClockIcon className="w-4 h-4" />
-                            Segera ({groups.urgent.length})
-                          </h3>
-                          <div className="space-y-3">
-                            {groups.urgent.slice(0, urgentToShow).map((task) => (
-                              <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
+              // Calculate how many tasks to show from each group
+              let remainingLimit = displayLimit;
+              const overdueToShow = Math.min(groups.overdue.length, remainingLimit);
+              remainingLimit -= overdueToShow;
 
-                      {/* Normal Group */}
-                      {groups.normal.length > 0 && normalToShow > 0 && (
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-                          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                            <ClockIcon className="w-4 h-4" />
-                            Normal ({groups.normal.length})
-                          </h3>
-                          <div className="space-y-3">
-                            {groups.normal.slice(0, normalToShow).map((task) => (
-                              <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
+              const urgentToShow = Math.min(groups.urgent.length, remainingLimit);
+              remainingLimit -= urgentToShow;
 
-                      {/* No Deadline Group */}
-                      {groups.noDeadline.length > 0 && noDeadlineToShow > 0 && (
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-                          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-3">
-                            <ClockIcon className="w-4 h-4" />
-                            Tanpa Deadline ({groups.noDeadline.length})
-                          </h3>
-                          <div className="space-y-3">
-                            {groups.noDeadline.slice(0, noDeadlineToShow).map((task) => (
-                              <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()
+              const normalToShow = Math.min(groups.normal.length, remainingLimit);
+              remainingLimit -= normalToShow;
+
+              const noDeadlineToShow = Math.min(groups.noDeadline.length, remainingLimit);
+
+              return (
+                <>
+                  {/* Overdue Group */}
+                  {groups.overdue.length > 0 && overdueToShow > 0 && (
+                    <div className="rounded-2xl border border-red-200 bg-white p-4 sm:p-6">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold text-red-700 mb-3">
+                        <ClockIcon className="w-4 h-4" />
+                        Terlambat ({groups.overdue.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.overdue.slice(0, overdueToShow).map((task) => (
+                          <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Urgent Group (3 days or less) */}
+                  {groups.urgent.length > 0 && urgentToShow > 0 && (
+                    <div className="rounded-2xl border border-orange-200 bg-white p-4 sm:p-6">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold text-orange-700 mb-3">
+                        <ClockIcon className="w-4 h-4" />
+                        Segera ({groups.urgent.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.urgent.slice(0, urgentToShow).map((task) => (
+                          <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Normal Group */}
+                  {groups.normal.length > 0 && normalToShow > 0 && (
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                        <ClockIcon className="w-4 h-4" />
+                        Normal ({groups.normal.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.normal.slice(0, normalToShow).map((task) => (
+                          <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Deadline Group */}
+                  {groups.noDeadline.length > 0 && noDeadlineToShow > 0 && (
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-3">
+                        <ClockIcon className="w-4 h-4" />
+                        Tanpa Deadline ({groups.noDeadline.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.noDeadline.slice(0, noDeadlineToShow).map((task) => (
+                          <TaskListCard key={task.id} task={task} toggleTaskStatus={toggleTaskStatus} formatDate={formatDate} getDeadlineCountdown={getDeadlineCountdown} getCompletionText={getCompletionText} isCompleted={false} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()
           ) : (
             /* Simple list for Completed */
             <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
@@ -576,7 +577,7 @@ function TaskListCard({
 }) {
   const displayTitle =
     task.services?.title || task.package_details?.name || "Pesanan Kustom";
-  
+
   // Use payment_deadline or work_deadline, whichever is available
   const deadlineStr = (task as any).payment_deadline || task.work_deadline;
 
@@ -586,18 +587,16 @@ function TaskListCard({
         {/* Functional Checkbox */}
         <button
           onClick={() => toggleTaskStatus(task.id, task.status)}
-          className={`mt-0.5 flex-shrink-0 ${
-            task.status === STATUS_COMPLETED
-              ? "text-green-500"
-              : "text-slate-400 hover:text-primary"
-          }`}
+          className={`mt - 0.5 flex - shrink - 0 ${task.status === STATUS_COMPLETED
+            ? "text-green-500"
+            : "text-slate-400 hover:text-primary"
+            } `}
         >
           <div
-            className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-              task.status === STATUS_COMPLETED
-                ? "bg-green-500 border-green-500"
-                : "border-gray-300 hover:border-primary bg-white"
-            }`}
+            className={`w - 5 h - 5 rounded border flex items - center justify - center transition - colors ${task.status === STATUS_COMPLETED
+              ? "bg-green-500 border-green-500"
+              : "border-gray-300 hover:border-primary bg-white"
+              } `}
           >
             {task.status === STATUS_COMPLETED && (
               <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />
@@ -607,11 +606,10 @@ function TaskListCard({
 
         <div className="flex-1 min-w-0">
           <p
-            className={`text-sm font-medium ${
-              task.status === STATUS_COMPLETED
-                ? "text-slate-500 line-through"
-                : "text-slate-800"
-            }`}
+            className={`text - sm font - medium ${task.status === STATUS_COMPLETED
+              ? "text-slate-500 line-through"
+              : "text-slate-800"
+              } `}
           >
             {displayTitle}
           </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useAlert } from "@/components/providers/AlertProvider";
@@ -40,24 +40,6 @@ export default function CategoriesManagementPage() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredCategories.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!pageDropdownOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
-        setPageDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [pageDropdownOpen]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   useEffect(() => {
     // Filter categories based on search query
     if (searchQuery.trim() === "") {
@@ -77,7 +59,23 @@ export default function CategoriesManagementPage() {
     setCurrentPage(1);
   }, [searchQuery, categories]);
 
-  const fetchCategories = async () => {
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!pageDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen]);
+
+  // Define fetchCategories with useCallback
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -99,7 +97,31 @@ export default function CategoriesManagementPage() {
       showAlert("error", "Error", "Terjadi kesalahan saat memuat kategori");
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    // Filter categories based on search query
+    // ... rest of useEffect
+    if (searchQuery.trim() === "") {
+      setFilteredCategories(categories);
+    } else {
+      const filtered = categories.filter(
+        (category) =>
+          category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          category.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (category.description &&
+            category.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()))
+      );
+      setFilteredCategories(filtered);
+    }
+    setCurrentPage(1);
+  }, [searchQuery, categories]);
 
   const handleDelete = async (category: Category) => {
     const isConfirmed = await showConfirm(
@@ -349,8 +371,8 @@ export default function CategoriesManagementPage() {
                     <button
                       onClick={() => setCurrentPage(page)}
                       className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
                         }`}
                     >
                       {page}
@@ -389,8 +411,8 @@ export default function CategoriesManagementPage() {
                       setCurrentPage(1);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700 dark:text-gray-300"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-gray-700 dark:text-gray-300"
                       }`}
                   >
                     {value} halaman

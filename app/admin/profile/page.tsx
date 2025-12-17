@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
@@ -27,11 +27,7 @@ export default function ProfilePage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPasswordFields, setShowPasswordFields] = useState(false);
 
-    useEffect(() => {
-        fetchUser();
-    }, []);
-
-    const fetchUser = async () => {
+    const fetchUser = useCallback(async () => {
         setLoading(true);
         try {
             const {
@@ -50,7 +46,11 @@ export default function ProfilePage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [showAlert]);
+
+    useEffect(() => {
+        fetchUser();
+    }, [fetchUser]);
 
     const handleEditField = (field: string) => {
         setEditingField(field);

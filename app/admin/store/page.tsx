@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { MarketplaceAsset } from "@/types/marketplace";
@@ -145,9 +145,8 @@ export default function MarketplaceManagementPage() {
     setSelectedIds([]);
   }, [activeTab, searchQuery, categoryFilter, priceFilter, itemsPerPage]);
 
-  useEffect(() => {
-    fetchAssets();
-  }, []);
+
+
 
   // Auto generate slug
   useEffect(() => {
@@ -160,7 +159,7 @@ export default function MarketplaceManagementPage() {
     }
   }, [formData.nama_aset, editingAsset]);
 
-  const fetchAssets = async () => {
+  const fetchAssets = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -176,7 +175,11 @@ export default function MarketplaceManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchAssets();
+  }, [fetchAssets]);
 
   const handleAddAsset = () => {
     setEditingAsset(null);

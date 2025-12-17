@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useAlert } from "@/components/providers/AlertProvider";
@@ -50,24 +50,6 @@ export default function BlogManagementPage() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredArticles.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!pageDropdownOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
-        setPageDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [pageDropdownOpen]);
-
-  useEffect(() => {
-    fetchArticles();
-  }, []);
-
   useEffect(() => {
     // Filter articles based on search query and tab
     let filtered = articles;
@@ -90,7 +72,23 @@ export default function BlogManagementPage() {
     setCurrentPage(1);
   }, [searchQuery, articles, activeTab]);
 
-  const fetchArticles = async () => {
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!pageDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen]);
+
+  // Define fetchArticles with useCallback BEFORE useEffect
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -112,7 +110,11 @@ export default function BlogManagementPage() {
       showAlert("error", "Error", "Terjadi kesalahan saat memuat artikel");
       setLoading(false);
     }
-  };
+  }, [showAlert]); // Add dependencies as needed
+
+  useEffect(() => {
+    fetchArticles();
+  }, [fetchArticles]); // Add fetchArticles to dependency array
 
   const handleDelete = async (article: Article) => {
     const isConfirmed = await showConfirm(
@@ -170,8 +172,8 @@ export default function BlogManagementPage() {
             <button
               onClick={() => setActiveTab("all")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Semua ({stats.total})
@@ -179,8 +181,8 @@ export default function BlogManagementPage() {
             <button
               onClick={() => setActiveTab("published")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "published"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Dipublikasikan ({stats.published})
@@ -188,8 +190,8 @@ export default function BlogManagementPage() {
             <button
               onClick={() => setActiveTab("draft")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "draft"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Draft ({stats.draft})
@@ -287,8 +289,8 @@ export default function BlogManagementPage() {
                       <td className="px-6 py-4">
                         <span
                           className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${article.status === "published"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                              : "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
                             }`}
                         >
                           {article.status === "published"
@@ -346,8 +348,8 @@ export default function BlogManagementPage() {
                     </div>
                     <span
                       className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ml-2 flex-shrink-0 ${article.status === "published"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-slate-100 text-slate-800"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-slate-100 text-slate-800"
                         }`}
                     >
                       {article.status === "published" ? "Dipublikasikan" : "Draft"}
@@ -413,8 +415,8 @@ export default function BlogManagementPage() {
                     <button
                       onClick={() => setCurrentPage(page)}
                       className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
                         }`}
                     >
                       {page}
@@ -453,8 +455,8 @@ export default function BlogManagementPage() {
                       setCurrentPage(1);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700 dark:text-gray-300"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-gray-700 dark:text-gray-300"
                       }`}
                   >
                     {value} halaman
