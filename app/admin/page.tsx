@@ -133,11 +133,12 @@ export default function AdminDashboard() {
         59,
         59
       );
-      const { count: lastMonthCount } = await supabase
+      const { count: lastMonthCountRaw } = await supabase
         .from("orders")
         .select("*", { count: "exact", head: true })
         .gte("created_at", lastMonthStart.toISOString())
         .lte("created_at", lastMonthEnd.toISOString());
+      const lastMonthCount = lastMonthCountRaw ?? 0;
 
       // This Year
       const yearStart = new Date(now.getFullYear(), 0, 1);

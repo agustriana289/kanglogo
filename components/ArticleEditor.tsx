@@ -7,11 +7,12 @@ import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
+import Image from 'next/image';
 
 // Dynamic import untuk Quill editor
 const ReactQuill = dynamic(() => import('react-quill-new'), {
   ssr: false,
-  loading: () => <div>Loading editor...</div>
+  loading: () => <div className="animate-pulse bg-gray-100 h-96 rounded-lg"></div>
 });
 
 import 'react-quill-new/dist/quill.snow.css';
@@ -25,6 +26,7 @@ interface Article {
   featured_image: string;
   status: string;
   published_at?: string;
+  author_name?: string;
   article_categories?: {
     categories: {
       id: number;
@@ -53,6 +55,7 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
     featured_image: '',
     status: 'draft',
     published_at: '',
+    author_name: '',
   });
 
   useEffect(() => {
@@ -66,6 +69,7 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
         featured_image: article.featured_image || '',
         status: article.status,
         published_at: article.published_at || '',
+        author_name: article.author_name || '',
       });
 
       // Set selected categories
@@ -145,14 +149,14 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
         ...formData,
         featured_image: data.publicUrl,
       });
+      showToast('Gambar berhasil diupload', 'success');
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Gagal mengupload gambar');
+      showToast('Gagal mengupload gambar', 'error');
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +175,7 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
         excerpt: formData.excerpt,
         featured_image: formData.featured_image,
         status: formData.status,
+        author_name: formData.author_name,
         published_at: formData.status === 'published' && !article ? new Date().toISOString() : formData.published_at,
       };
 
@@ -233,6 +238,7 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
     }
   };
 
+  // FIX: Remove 'bullet' from formats list
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -251,7 +257,7 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
   const formats = [
     'header',
     'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
+    'list', // FIXED: Remove 'bullet' - it's part of 'list'
     'align',
     'color', 'background',
     'link', 'image'
@@ -260,191 +266,240 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Judul Artikel
-          </label>
-          <input
-            type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-            value={formData.title}
-            onChange={handleTitleChange}
-            required
-          />
-        </div>
+        {/* 2 Column Layout: Editor (Left 70%) + Settings (Right 30%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            URL Slug
-          </label>
-          <input
-            type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-            value={formData.slug}
-            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Kategori
-          </label>
-          <div className="space-y-2">
-            {categories.map((category) => (
-              <label key={category.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                  checked={selectedCategories.includes(category.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedCategories([...selectedCategories, category.id]);
-                    } else {
-                      setSelectedCategories(selectedCategories.filter(id => id !== category.id));
-                    }
-                  }}
-                />
-                {category.name}
+          {/* LEFT COLUMN - Editor Area (70%) */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Title Input */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Judul Artikel
               </label>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Featured Image
-          </label>
-          {formData.featured_image && (
-            <img
-              src={formData.featured_image}
-              alt="Featured"
-              className="w-full h-48 object-cover rounded-md mb-2"
-            />
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Konten Artikel
-          </label>
-          {/* Tombol Toggle untuk Mode Editor */}
-          <div className="flex mb-2 border-b">
-            <button
-              type="button"
-              onClick={() => setEditorMode('visual')}
-              className={`px-4 py-2 font-medium text-sm rounded-t-md ${editorMode === 'visual'
-                ? 'bg-white text-blue-600 border border-b-0 border-l border-t border-r border-gray-300'
-                : 'bg-gray-100 text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              Compose
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditorMode('html')}
-              className={`px-4 py-2 font-medium text-sm rounded-t-md ${editorMode === 'html'
-                ? 'bg-white text-blue-600 border border-b-0 border-l border-t border-r border-gray-300'
-                : 'bg-gray-100 text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              HTML
-            </button>
-          </div>
-          <div className="bg-white dark:bg-gray-700 rounded-md rounded-tl-none border border-t-0 border-gray-300">
-            {editorMode === 'visual' ? (
-              // Mode Visual (ReactQuill)
-              <ReactQuill
-                theme="snow"
-                value={formData.content}
-                onChange={handleContentChange}
-                modules={modules}
-                formats={formats}
-                placeholder="Tulis konten utama artikel di sini..."
-                style={{ minHeight: '300px' }}
+              <input
+                type="text"
+                className="w-full px-4 py-3 text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                value={formData.title}
+                onChange={handleTitleChange}
+                placeholder="Masukkan judul artikel..."
+                required
               />
-            ) : (
-              // Mode HTML (Textarea)
-              <textarea
-                className="w-full px-3 py-2 border-0 rounded-md rounded-tl-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                rows={15}
-                value={formData.content}
-                onChange={(e) => {
-                  const newContent = e.target.value;
-                  setFormData({ ...formData, content: newContent });
-                  // Opsional: Update excerpt juga saat di mode HTML
-                  setFormData(prev => ({
-                    ...prev,
-                    content: newContent,
-                    excerpt: newContent.replace(/<[^>]*>/g, '').substring(0, 200) + '...'
-                  }));
-                }}
-                placeholder="Tulis konten artikel dalam format HTML di sini..."
+            </div>
+
+            {/* Content Editor */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+              <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('visual')}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${editorMode === 'visual'
+                      ? 'bg-white text-primary shadow-sm border border-gray-200'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      }`}
+                  >
+                    Visual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('html')}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${editorMode === 'html'
+                      ? 'bg-white text-primary shadow-sm border border-gray-200'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      }`}
+                  >
+                    HTML
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {editorMode === 'visual' ? (
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.content}
+                    onChange={handleContentChange}
+                    modules={modules}
+                    formats={formats}
+                    placeholder="Tulis konten artikel di sini..."
+                    className="quill-editor"
+                    style={{ minHeight: '400px' }}
+                  />
+                ) : (
+                  <textarea
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary font-mono text-sm"
+                    rows={20}
+                    value={formData.content}
+                    onChange={(e) => {
+                      const newContent = e.target.value;
+                      setFormData({
+                        ...formData,
+                        content: newContent,
+                        excerpt: newContent.replace(/<[^>]*>/g, '').substring(0, 200) + '...'
+                      });
+                    }}
+                    placeholder="<p>Tulis konten artikel dalam format HTML...</p>"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN - Settings (30%) */}
+          <div className="lg:col-span-4 space-y-6 flex flex-col">
+
+            {/* Action Buttons - Full Width */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-4 sm:order-1">
+              <div className="flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => router.push('/admin/blog')}
+                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-medium transition-colors"
+                >
+                  {loading ? 'Menyimpan...' : (article ? 'Perbarui Artikel' : 'Publikasikan')}
+                </button>
+              </div>
+            </div>
+
+            {/* Publish Settings */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-1 sm:order-2">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Publikasi</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tanggal Publikasi
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                    value={formData.published_at ? new Date(formData.published_at).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setFormData({ ...formData, published_at: new Date(e.target.value).toISOString() })}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Kosongkan untuk waktu sekarang
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Penulis
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    value={formData.author_name}
+                    onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
+                    placeholder="Nama penulis"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    URL Slug
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Categories */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-2 sm:order-3">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Kategori</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {categories.map((category) => (
+                  <label key={category.id} className="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories([...selectedCategories, category.id]);
+                        } else {
+                          setSelectedCategories(selectedCategories.filter(id => id !== category.id));
+                        }
+                      }}
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{category.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Featured Image */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-3 sm:order-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Gambar Unggulan</h3>
+
+              {formData.featured_image && (
+                <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
+                  <Image
+                    src={formData.featured_image}
+                    alt="Featured"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-white hover:file:bg-primary/90 cursor-pointer"
               />
-            )}
+              <p className="mt-2 text-xs text-gray-500">
+                Ukuran maksimal 2MB. Format: JPG, PNG, WebP
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="pt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tanggal Publikasi
-            </label>
-            <input
-              type="datetime-local"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-              value={formData.published_at ? new Date(formData.published_at).toISOString().slice(0, 16) : ''}
-              onChange={(e) => setFormData({ ...formData, published_at: new Date(e.target.value).toISOString() })}
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Biarkan kosong untuk menggunakan waktu saat ini saat dipublikasikan.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Status
-            </label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Dipublikasikan</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-2 pt-6">
-          <button
-            type="button"
-            onClick={() => router.push('/admin/blog')}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:opacity-50"
-          >
-            {loading ? 'Menyimpan...' : (article ? 'Perbarui Artikel' : 'Simpan Artikel')}
-          </button>
         </div>
       </form>
+
       <Toast
         show={toast.show}
         message={toast.message}
         type={toast.type}
         onClose={hideToast}
       />
+
+      <style jsx global>{`
+        .quill-editor .ql-container {
+          min-height: 400px;
+          font-size: 16px;
+        }
+        .quill-editor .ql-editor {
+          min-height: 400px;
+        }
+      `}</style>
     </>
   );
 }

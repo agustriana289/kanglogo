@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/components/Sidebar';
 import ArticleCard from '@/components/ArticleCard';
+import Link from "next/link";
 
 interface PageProps {
     params: Promise<{
@@ -109,25 +110,42 @@ export default async function CategoryPage({ params }: PageProps) {
     }));
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Kategori: {category.name}</h1>
-                    <p className="text-gray-600 mt-2">Menampilkan {transformedArticles.length} artikel</p>
+        <div className="min-h-screen py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="text-center mb-10">
+                    <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-4">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Kembali ke Beranda
+                    </Link>
+                    <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
+                        Kategori: <span className="text-primary">{category.name}</span>
+                    </h1>
+                    <p className="text-slate-600 max-w-xl mx-auto">
+                        Menampilkan {transformedArticles.length} artikel
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Kolom Konten Utama - Daftar Artikel */}
                     <div className="lg:col-span-2">
                         {transformedArticles.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {transformedArticles.map((article) => (
-                                    <ArticleCard key={article.id} article={article} />
-                                ))}
+                            <div className="bg-white rounded-xl shadow-sm p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {transformedArticles.map((article) => (
+                                        <ArticleCard key={article.id} article={article} />
+                                    ))}
+                                </div>
                             </div>
                         ) : (
-                            <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                                <p className="text-gray-500">Belum ada artikel dalam kategori ini.</p>
+                            <div className="text-center py-16">
+                                <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">Belum ada artikel dalam kategori ini</h3>
+                                <p className="text-gray-500">Artikel akan muncul di sini setelah dipublikasikan</p>
                             </div>
                         )}
                     </div>

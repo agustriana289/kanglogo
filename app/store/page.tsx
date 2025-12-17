@@ -31,7 +31,7 @@ export default function MarketplacePage() {
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [selectedCategory, setSelectedCategory] = useState("Logo");
   const [selectedType, setSelectedType] = useState("Semua");
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("Semua");

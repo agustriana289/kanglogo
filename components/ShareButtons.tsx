@@ -1,12 +1,34 @@
 // components/ShareButtons.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
+
 interface ShareButtonsProps {
   url: string;
   title: string;
 }
 
 export default function ShareButtons({ url, title }: ShareButtonsProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Wait until component is mounted on client to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="flex space-x-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
+
   const shareLinks = [
     {
       name: 'Facebook',

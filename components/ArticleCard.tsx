@@ -1,5 +1,7 @@
 // components/ArticleCard.tsx
 import Link from 'next/link';
+import Image from 'next/image';
+import { ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 
 interface ArticleCardProps {
     article: {
@@ -8,6 +10,7 @@ interface ArticleCardProps {
         excerpt: string;
         published_at: string;
         author_name: string;
+        featured_image?: string;
         categories: {
             id: number;
             name: string;
@@ -21,7 +24,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         const date = new Date(dateString);
         return date.toLocaleDateString('id-ID', {
             day: 'numeric',
-            month: 'long',
+            month: 'short',
             year: 'numeric'
         });
     };
@@ -34,29 +37,52 @@ export default function ArticleCard({ article }: ArticleCardProps) {
     };
 
     return (
-        <article className="flex flex-col items-start">
-            {article.categories.length > 0 && (
-                <Link
-                    className="inline-block rounded-full bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700"
-                    href={`/category/${article.categories[0].slug}`}
-                >
-                    {article.categories[0].name}
-                </Link>
+        <Link
+            href={getArticleUrl(article)}
+            className="overflow-hidden"
+        >
+            {/* Image */}
+            {article.featured_image && (
+                <div className="relative w-full h-48">
+                    <Image
+                        src={article.featured_image}
+                        alt={article.title}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="transition-transform duration-300 hover:scale-105"
+                        unoptimized
+                    />
+                    {/* Badge Category */}
+                    {article.categories.length > 0 && (
+                        <div className="absolute top-2 right-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {article.categories[0].name}
+                            </span>
+                        </div>
+                    )}
+                </div>
             )}
-            <div className="mt-5 flex items-center gap-x-2 text-sm text-slate-700">
-                <time dateTime={article.published_at}>{formatDate(article.published_at)}</time>
-                <span aria-hidden="true">•</span>
-                <p>ditulis oleh {article.author_name}</p>
-            </div>
-            <div className="group relative mt-3">
-                <h3 className="text-lg font-semibold leading-6 text-slate-900 group-hover:text-slate-700">
-                    <Link href={getArticleUrl(article)}>
-                        <span className="absolute inset-0"></span>
-                        {article.title}
-                    </Link>
+
+            {/* Content */}
+            <div className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {article.title}
                 </h3>
-                <p className="mt-5 line-clamp-2 text-sm font-normal leading-7 text-slate-700">{article.excerpt}</p>
+
+                <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                    {article.excerpt}
+                </p>
+
+                <div className="flex gap-x-2 items-center text-xs">
+                    <span className="text-gray-500 flex gap-1">
+                        <ClockIcon className="w-4 h-4" /> {formatDate(article.published_at)}
+                    </span>
+                    <span className="text-gray-500 flex gap-1">
+                        <UserIcon className="w-4 h-4" /> {article.author_name}
+                    </span>
+                </div>
             </div>
-        </article>
+        </Link>
     );
 }
+

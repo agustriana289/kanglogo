@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
+import { ClockIcon } from "@heroicons/react/24/outline";
 
 interface Article {
   id: number;
@@ -12,6 +13,7 @@ interface Article {
   slug: string;
   excerpt: string;
   featured_image: string;
+  content?: string;
   published_at: string;
   view_count: number;
 }
@@ -19,24 +21,43 @@ interface Article {
 export default function FeaturedArticle() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
     fetchFeaturedArticle();
   }, []);
 
+  // Fungsi untuk mengekstrak gambar pertama dari HTML content
+  const extractFirstImage = (htmlContent: string): string | null => {
+    const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
+    const match = htmlContent.match(imgRegex);
+    return match ? match[1] : null;
+  };
+
   const fetchFeaturedArticle = async () => {
     try {
       const { data, error } = await supabase
         .from("articles")
-        .select("*")
+        .select("id, title, slug, excerpt, featured_image, content, published_at, view_count")
         .eq("status", "published")
         .order("view_count", { ascending: false })
         .limit(1);
 
       if (error) {
         console.error("Error fetching featured article:", error);
-      } else {
-        setArticle(data?.[0] || null);
+      } else if (data?.[0]) {
+        const fetchedArticle = data[0];
+        setArticle(fetchedArticle);
+
+        // Prioritaskan featured_image, jika tidak ada ambil dari content
+        if (fetchedArticle.featured_image) {
+          setImageUrl(fetchedArticle.featured_image);
+        } else if (fetchedArticle.content) {
+          const extractedImage = extractFirstImage(fetchedArticle.content);
+          if (extractedImage) {
+            setImageUrl(extractedImage);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching featured article:", error);
@@ -67,16 +88,17 @@ export default function FeaturedArticle() {
 
   return (
     <div className="relative h-64 md:h-96 rounded-lg overflow-hidden shadow-lg">
-      {article.featured_image ? (
+      {imageUrl ? (
         <Image
-          src={article.featured_image}
+          src={imageUrl}
           alt={article.title}
           fill
           className="object-cover"
+          unoptimized
         />
       ) : (
-        <div className="bg-gray-200 h-full w-full flex items-center justify-center">
-          <span className="text-white text-lg">No Image</span>
+        <div className="bg-gradient-to-r from-primary to-blue-600 h-full w-full flex items-center justify-center">
+          <span className="text-white text-lg">📰 Featured Article</span>
         </div>
       )}
       <div className="absolute inset-0 bg-primary bg-opacity-70 flex items-end">
@@ -87,8 +109,8 @@ export default function FeaturedArticle() {
             </h2>
           </Link>
           <p className="text-sm md:text-base mb-2">{article.excerpt}</p>
-          <div className="flex items-center text-xs md:text-sm">
-            <span>{formatDate(article.published_at)}</span>
+          <div className="flex items-center text-xs">
+            <span className="flex gap-1"><ClockIcon className="w-4 h-4 mr-1" /> <span>{formatDate(article.published_at)}</span></span>
             {article.view_count && (
               <span className="ml-4 flex items-center">
                 <svg

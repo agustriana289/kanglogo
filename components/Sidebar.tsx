@@ -96,8 +96,8 @@ export default function Sidebar() {
     <div className="space-y-6">
       {/* PERUBAHAN: Hanya render kategori jika isBlogPage benar */}
       {isBlogPage && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="font-semibold mb-4 text-gray-900">
             Kategori
           </h3>
           <div className="space-y-2">
@@ -105,18 +105,18 @@ export default function Sidebar() {
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className="flex justify-between items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex justify-between items-center p-2 rounded-md hover:bg-gray-100 transition-colors"
               >
-                <span className="text-gray-700 dark:text-gray-300">
+                <span className="text-sm text-gray-700">
                   {category.name}
                 </span>
-                <span className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
+                <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
                   {category.count}
                 </span>
               </Link>
             ))}
             {categories.length === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-gray-500 text-sm">
                 Belum ada kategori
               </p>
             )}
@@ -128,13 +128,13 @@ export default function Sidebar() {
       {widgets.map((widget) => (
         <div
           key={widget.id}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
+          className="bg-white rounded-lg shadow p-4"
         >
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">
             {widget.title}
           </h3>
           <div
-            className="text-gray-700 dark:text-gray-300 prose prose-sm max-w-none"
+            className="text-gray-700 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: widget.content }}
           />
         </div>

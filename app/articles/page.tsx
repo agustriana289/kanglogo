@@ -4,15 +4,31 @@ import DynamicArticlesList from "@/components/DynamicArticlesList";
 import FeaturedArticle from "@/components/FeaturedArticle";
 import CategoryArticles from "@/components/CategoryArticles";
 import Sidebar from "@/components/Sidebar";
-import Pagination from "@/components/Pagination";
+import Link from "next/link";
 
 export default function ArticlesPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+    <main className="min-h-screen py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali ke Beranda
+          </Link>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
+            <span className="text-primary">Artikel</span> & Blog
+          </h1>
+          <p className="text-slate-600 max-w-xl mx-auto">
+            Jelajahi artikel seputar desain logo, branding, dan tips kreatif
+          </p>
+        </div>
+
         {/* Featured Article Banner */}
         <Suspense
-          fallback={<div className="h-64 bg-gray-200 animate-pulse"></div>}
+          fallback={<div className="h-64 bg-gray-200 animate-pulse rounded-xl"></div>}
         >
           <FeaturedArticle />
         </Suspense>
@@ -20,17 +36,17 @@ export default function ArticlesPage() {
         {/* Category Articles */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           <Suspense
-            fallback={<div className="h-40 bg-gray-200 animate-pulse"></div>}
+            fallback={<div className="h-40 bg-gray-200 animate-pulse rounded-xl"></div>}
           >
             <CategoryArticles categoryName="Panduan" />
           </Suspense>
           <Suspense
-            fallback={<div className="h-40 bg-gray-200 animate-pulse"></div>}
+            fallback={<div className="h-40 bg-gray-200 animate-pulse rounded-xl"></div>}
           >
             <CategoryArticles categoryName="Informasi" />
           </Suspense>
           <Suspense
-            fallback={<div className="h-40 bg-gray-200 animate-pulse"></div>}
+            fallback={<div className="h-40 bg-gray-200 animate-pulse rounded-xl"></div>}
           >
             <CategoryArticles categoryName="Tutorial" />
           </Suspense>
@@ -48,18 +64,14 @@ export default function ArticlesPage() {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <Suspense
-              fallback={<div className="h-40 bg-gray-200 animate-pulse"></div>}
+              fallback={<div className="h-40 bg-gray-200 animate-pulse rounded-xl"></div>}
             >
               <Sidebar />
             </Suspense>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
-export const metadata = {
-  title: "Semua Artikel - Kanglogo",
-  description: "Jelajahi semua artikel kami tentang desain logo dan branding.",
-};

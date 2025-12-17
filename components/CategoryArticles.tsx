@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 
 interface Article {
   id: number;
@@ -94,29 +95,34 @@ export default function CategoryArticles({
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="p-6 bg-white rounded-xl shadow-sm">
       <h3
-        className={`text-xl font-semibold mb-4 ${getCategoryColor(
+        className={`font-semibold mb-4 ${getCategoryColor(
           categoryName
         )} border-b pb-2`}
       >
         {categoryName}
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-8">
         {articles.map((article) => (
           <div key={article.id} className="article">
             <Link href={getArticleUrl(article)} className="block">
-              <h4 className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+              <h4 className="font-semibold text-gray-900 line-clamp-2 transition-colors mb-2">
                 {article.title}
               </h4>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatDate(article.published_at)}
-              </p>
+              <div className="flex gap-x-2 items-center text-xs">
+                <span className="text-gray-500 flex gap-1">
+                  <ClockIcon className="w-4 h-4" /> {formatDate(article.published_at)}
+                </span>
+                <span className="text-gray-500 flex gap-1">
+                  <UserIcon className="w-4 h-4" /> {article.author_name}
+                </span>
+              </div>
             </Link>
           </div>
         ))}
         {articles.length === 0 && (
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-xs">
             Belum ada artikel di kategori ini
           </p>
         )}

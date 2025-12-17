@@ -4,7 +4,6 @@ import { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { Page } from "@/types/page";
 import EnhancedPageContent from "@/components/EnhancedPageContent";
-import Sidebar from "@/components/Sidebar";
 
 interface PageProps {
   params: Promise<{
@@ -58,15 +57,8 @@ export default async function StaticPage({ params }: PageProps) {
   }
 
   return (
-    // <-- 2. Gunakan layout yang sama dengan artikel
-    <div className="py-8 bg-slate-100">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="flex flex-col lg:flex-row gap-8">
-          <EnhancedPageContent page={page} />
-          <Sidebar />
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <EnhancedPageContent page={page} />
     </div>
   );
 }
-

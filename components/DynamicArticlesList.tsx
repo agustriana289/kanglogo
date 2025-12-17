@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ArticleCard from "./ArticleCard";
-import LogoLoading from "./LogoLoading";
+import LogoPathAnimation from "./LogoPathAnimation";
 
 // --- PERUBAHAN 1: PERBAIKI INTERFACE Article ---
 // Interface ini disesuaikan dengan yang diharapkan oleh komponen ArticleCard
@@ -129,73 +129,79 @@ export default function DynamicArticlesList({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Dapatkan inspirasi dan wawasan baru di artikel terbaru kami.
-          </p>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
     <div>
+
       {/* Articles Grid */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
+      ) : articles.length === 0 ? (
+        <div className="text-center py-16">
+          <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Tidak ada artikel yang ditemukan</h3>
+          <p className="text-gray-500">Coba ubah filter pencarian Anda</p>
+        </div>
       ) : (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-xl font-semibold mb-4 text-blue-600 border-blue-200 border-b pb-2">
-            New Updates
-          </h3>
-
-          <div className="grid grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-            {articles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 bg-white rounded-xl shadow-sm p-6">
+          {articles.map((article) => (
+            <ArticleCard key={article.id} article={article} />
+          ))}
         </div>
       )}
 
       {/* Pagination */}
       {!loading && totalPages > 1 && (
-        <div className="mt-12 flex justify-center">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-              (pageNum) => (
+        <nav aria-label="Page navigation" className="flex justify-center mt-10">
+          <ul className="flex -space-x-px text-sm">
+            {/* Previous Button */}
+            <li>
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                className="flex items-center justify-center text-gray-600 bg-white box-border border border-gray-200 hover:bg-gray-50 hover:text-gray-900 font-medium rounded-s-lg text-sm px-3 h-10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+            </li>
+
+            {/* Page Numbers */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <li key={pageNum}>
                 <button
-                  key={pageNum}
                   onClick={() => setPage(pageNum)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    pageNum === page
-                      ? "bg-primary text-white"
-                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                  aria-current={pageNum === page ? "page" : undefined}
+                  className={`flex items-center justify-center box-border border font-medium text-sm w-10 h-10 focus:outline-none transition-colors ${pageNum === page
+                    ? "text-primary bg-gray-100 border-gray-200 hover:text-primary"
+                    : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
                 >
                   {pageNum}
                 </button>
-              )
-            )}
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={page === totalPages}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+              </li>
+            ))}
+
+            {/* Next Button */}
+            <li>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className="flex items-center justify-center text-gray-600 bg-white box-border border border-gray-200 hover:bg-gray-50 hover:text-gray-900 font-medium rounded-e-lg text-sm px-3 h-10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </li>
+          </ul>
+        </nav>
       )}
     </div>
   );

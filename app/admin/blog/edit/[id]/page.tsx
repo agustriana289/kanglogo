@@ -2,12 +2,11 @@
 
 import { notFound } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
-import LogoLoading from "@/components/LogoLoading";
-
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import ArticleEditor from "@/components/ArticleEditor";
+import Link from "next/link";
 
 export default function EditArticlePage() {
   const params = useParams();
@@ -51,15 +50,8 @@ export default function EditArticlePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }
@@ -69,11 +61,27 @@ export default function EditArticlePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-          Edit Artikel
-        </h1>
+    <div className="min-h-screen py-8">
+      <div className="px-4 sm:px-6 lg:px-8">
+        {/* Header with Back Link */}
+        <div className="mb-6">
+          <Link
+            href="/admin/blog"
+            className="inline-flex items-center gap-2 text-primary hover:underline mb-4"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali ke Artikel
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Edit Artikel
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Perbarui informasi artikel Anda
+          </p>
+        </div>
+
         <Suspense fallback={<div>Loading...</div>}>
           <ArticleEditor article={article} />
         </Suspense>

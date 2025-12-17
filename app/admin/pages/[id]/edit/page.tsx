@@ -5,7 +5,13 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Page } from "@/types/page";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+
+// Import ReactQuill dynamically
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+import "react-quill-new/dist/quill.snow.css";
 
 export default function EditPageForm() {
   const params = useParams();
@@ -15,14 +21,13 @@ export default function EditPageForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // --- STATE UNTUK NOTIFIKASI ---
+  // State untuk notifikasi
   const [notification, setNotification] = useState({
     show: false,
     message: "",
-    type: "", // 'success' atau 'error'
+    type: "",
   });
 
-  // --- FUNGSI UNTUK MENAMPILKAN NOTIFIKASI ---
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
@@ -42,7 +47,7 @@ export default function EditPageForm() {
       .single();
     if (error) {
       console.error("Error fetching page:", error);
-      showNotification("Gagal memuat halaman.", "error"); // GANTI ALERT
+      showNotification("Gagal memuat halaman.", "error");
       router.push("/admin/pages");
     } else {
       setFormData(data);
@@ -62,6 +67,10 @@ export default function EditPageForm() {
     }));
   };
 
+  const handleContentChange = (content: string) => {
+    setFormData((prev) => ({ ...prev!, content }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;
@@ -70,17 +79,15 @@ export default function EditPageForm() {
     try {
       const { error } = await supabase
         .from("pages")
-        .update(formData)
+        .update({ ...formData, updated_at: new Date().toISOString() })
         .eq("id", params.id);
 
       if (error) throw error;
 
-      // GANTI ALERT DENGAN NOTIFIKASI
       showNotification("Halaman berhasil diperbarui!", "success");
-      router.push("/admin/pages");
+      setTimeout(() => router.push("/admin/pages"), 1000);
     } catch (error: any) {
       console.error("Error updating page:", error);
-      // GANTI ALERT DENGAN NOTIFIKASI
       showNotification(`Gagal memperbarui halaman: ${error.message}`, "error");
     } finally {
       setSaving(false);
@@ -89,145 +96,175 @@ export default function EditPageForm() {
 
   if (loading || !formData) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-import LogoPathAnimation from "@/components/LogoPathAnimation";
-
-// ... existing code ...
-
-      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
-        <LogoPathAnimation />
-      </div>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center">
+          <LogoPathAnimation />
+          <p className="mt-8 text-xl text-slate-600">
+            Memuat halaman...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
-      {/* --- RENDER NOTIFIKASI --- */}
-      {notification.show && (
-        <div
-          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-            notification.type === "success"
-              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
-              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
-          }`}
-        >
-          {notification.message}
-        </div>
-      )}
+    <div className="min-h-screen py-8">
+      <div className="px-4 sm:px-6 lg:px-8">
+        {/* Notification */}
+        {notification.show && (
+          <div
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${notification.type === "success"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+              }`}
+          >
+            {notification.message}
+          </div>
+        )}
 
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Halaman</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ... (Form fields Anda tetap sama) ... */}
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Judul Halaman
-            </label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              required
-              value={formData.title}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="slug"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Slug (URL)
-            </label>
-            <input
-              type="text"
-              name="slug"
-              id="slug"
-              required
-              value={formData.slug}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="meta_description"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Meta Description (untuk SEO)
-            </label>
-            <textarea
-              name="meta_description"
-              id="meta_description"
-              rows={3}
-              value={formData.meta_description ?? ""}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-            ></textarea>
-          </div>
-          <div>
-            <label
-              htmlFor="content"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Konten (HTML)
-            </label>
-            <textarea
-              name="content"
-              id="content"
-              rows={15}
-              required
-              value={formData.content ?? ""}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border font-mono text-sm"
-            ></textarea>
-            <p className="text-xs text-gray-500 mt-1">
-              Anda bisa menggunakan tag HTML di sini.
-            </p>
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="is_published"
-              id="is_published"
-              checked={formData.is_published}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="is_published"
-              className="ml-2 block text-sm text-gray-900"
-            >
-              Terbitkan halaman ini
-            </label>
-          </div>
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/admin/pages")}
-              className="px-4 py-2 bg-gray-200 text-gray-900 rounded-md hover:bg-gray-300"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {saving ? "Menyimpan..." : "Simpan Perubahan"}
-            </button>
+        {/* Header with Back Link */}
+        <div className="mb-6">
+          <Link
+            href="/admin/pages"
+            className="inline-flex items-center gap-2 text-primary hover:underline mb-4"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali ke Halaman
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Edit Halaman
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Perbarui konten halaman statis Anda
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {/* 2 Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* LEFT COLUMN - Title & Content */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Title */}
+              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Judul Halaman
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Masukkan judul halaman..."
+                />
+              </div>
+
+              {/* Content Editor */}
+              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Konten
+                </label>
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.content || ""}
+                    onChange={handleContentChange}
+                    style={{ minHeight: "400px" }}
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        ["link", "image"],
+                        ["clean"],
+                      ],
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN - Settings */}
+            <div className="lg:col-span-4 space-y-6 flex flex-col">
+              {/* Action Buttons */}
+              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-1">
+                <div className="flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/admin/pages")}
+                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-medium transition-colors"
+                  >
+                    {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Publish Settings */}
+              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-2">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Publikasi</h3>
+
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="is_published"
+                      id="is_published"
+                      checked={formData.is_published}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-primary rounded focus:ring-primary"
+                    />
+                    <label htmlFor="is_published" className="ml-2 text-sm text-gray-700">
+                      Terbitkan halaman ini
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEO Settings */}
+              <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 order-3">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">SEO</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Slug (URL)
+                    </label>
+                    <input
+                      type="text"
+                      name="slug"
+                      required
+                      value={formData.slug}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Meta Description
+                    </label>
+                    <textarea
+                      name="meta_description"
+                      rows={3}
+                      value={formData.meta_description ?? ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Deskripsi untuk mesin pencari..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </div>
