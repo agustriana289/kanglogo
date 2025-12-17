@@ -52,13 +52,6 @@ export default function Footer() {
   if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
     return null;
   }
- +++++++ REPLACE
-
-  const fetchSettings = async () => {
-  const fetchSettings = async () => {
- +++++++ REPLACE
- +++++++ REPLACE
-
   const fetchSettings = async () => {
     try {
       // Fetch pengaturan umum
@@ -112,7 +105,7 @@ export default function Footer() {
       console.error("Error fetching settings:", error);
     }
   };
- +++++++ REPLACE
+
 
   const logoUrl = settings?.logo_url;
 
