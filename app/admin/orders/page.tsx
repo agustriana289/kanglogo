@@ -25,6 +25,7 @@ import {
   LinkIcon,
   FolderOpenIcon,
   ChatBubbleLeftEllipsisIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { format, addDays, isBefore } from "date-fns";
@@ -34,8 +35,8 @@ import {
   createOrderDeletedNotification,
 } from "@/lib/notifications";
 
-// ... constants ...
 const statusOptions = [
+ +++++++ REPLACE
   {
     value: "pending_payment",
     label: "Belum Dibayar",

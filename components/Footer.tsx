@@ -44,14 +44,20 @@ export default function Footer() {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const pathname = usePathname();
 
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
   // Jangan tampilkan footer di halaman admin dan login
   if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
     return null;
   }
+ +++++++ REPLACE
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  const fetchSettings = async () => {
+  const fetchSettings = async () => {
+ +++++++ REPLACE
+ +++++++ REPLACE
 
   const fetchSettings = async () => {
     try {
@@ -106,6 +112,7 @@ export default function Footer() {
       console.error("Error fetching settings:", error);
     }
   };
+ +++++++ REPLACE
 
   const logoUrl = settings?.logo_url;
 
