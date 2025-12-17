@@ -23,7 +23,7 @@ interface LinkCategory {
   order_index: number;
 }
 
-interface Link {
+interface FooterLink {
   id: number;
   category_id: number;
   label: string;
@@ -41,7 +41,7 @@ interface SocialMedia {
 export default function Footer() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [linkCategories, setLinkCategories] = useState<LinkCategory[]>([]);
-  const [links, setLinks] = useState<Link[]>([]);
+  const [links, setLinks] = useState<FooterLink[]>([]);
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const pathname = usePathname();
 
