@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import WidgetArea from "./WidgetArea";
+import Link from "next/link";
 
 // Definisikan tipe untuk data yang akan digunakan
 interface Settings {
@@ -138,7 +139,7 @@ export default function Footer() {
           <div className="col-span-full mb-10 lg:col-span-2 lg:mb-0">
             <div className="section" id="foot-logo" data-name="Logo Footer">
               <div className="widget Header" data-version="2" id="Header2">
-                <a
+                <Link
                   className="flex justify-center lg:justify-start"
                   href="/"
                   title={
@@ -159,7 +160,7 @@ export default function Footer() {
                     loading="lazy"
                     className="lazyload h-12 brightness-0 invert opacity-90"
                   />
-                </a>
+                </Link>
               </div>
               <div className="widget Text" data-version="1" id="Text3">
                 <div className="widget-content">
@@ -252,10 +253,10 @@ export default function Footer() {
           <div className="mx-auto max-w-7xl flex items-center justify-center flex-col lg:justify-between lg:flex-row">
             <span className="text-sm text-white text-center sm:text-left">
               ©
-              <a href="/" className="hover:underline">
+              <Link href="/" className="hover:underline">
                 {settings?.website_name ||
                   "Jasa Logo #1 Indonesia - Kanglogo.com"}
-              </a>{" "}
+              </Link>{" "}
               2018, All rights reserved{" "}
               {settings?.website_author || "Pt Dualapan Creative Design"}.
             </span>
