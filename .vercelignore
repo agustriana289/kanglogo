@@ -1,0 +1,10 @@
+.git
+.gitignore
+README.md
+.env.example
+.env.local.example
+build_log*.txt
+build_output.txt
+*.log
+.DS_Store
+.next/cache
