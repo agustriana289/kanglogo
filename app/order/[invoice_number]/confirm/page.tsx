@@ -1,20 +1,17 @@
 // app/order/[invoice_number]/confirm/page.tsx
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Order } from "@/types/order";
 import { supabase } from "@/lib/supabase";
 import { uploadToImgBB } from "@/lib/imgbb-upload";
 import { Upload, Link as LinkIcon, X } from "lucide-react";
 import LogoLoading from "@/components/LogoLoading";
 
-export default function ConfirmPaymentPage({
-  params,
-}: {
-  params: Promise<{ invoice_number: string }>;
-}) {
-  const { invoice_number } = use(params);
+export default function ConfirmPaymentPage() {
+  const params = useParams();
+  const invoice_number = params?.invoice_number as string;
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { Order } from "@/types/order";
@@ -149,39 +149,45 @@ export default function OrderManagementPage() {
     null
   );
 
-  useEffect(() => {
-    fetchOrders();
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     const { data, error } = await supabase
       .from("services")
       .select("*")
-      .order("title", { ascending: true });
+      .order("id", { ascending: true });
+    if (data) setServices(data);
+  }, []);
 
-    if (!error && data) {
-      setServices(data);
-    }
-  };
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          services (
+            id,
+            title,
+            slug
+          )
+        `)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching orders:", error);
-      showAlert("error", "Error", "Gagal memuat pesanan");
-    } else {
+      if (error) throw error;
       const ordersData = data || [];
       setOrders(ordersData);
       calculateStats(ordersData);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      showAlert("error", "Error", "Gagal memuat pesanan");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchServices();
+  }, [fetchOrders, fetchServices]);
 
   const calculateStats = (data: Order[]) => {
     const now = new Date();

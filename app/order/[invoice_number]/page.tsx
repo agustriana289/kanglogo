@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import {
   Download,
   Copy,
@@ -19,12 +19,9 @@ import { supabase } from "@/lib/supabase";
 import LogoLoading from "@/components/LogoLoading";
 import InvoiceGate from "@/components/InvoiceGate";
 
-export default function InvoiceDetailPage({
-  params,
-}: {
-  params: Promise<{ invoice_number: string }>;
-}) {
-  const { invoice_number } = use(params);
+export default function InvoiceDetailPage() {
+  const params = useParams();
+  const invoice_number = params?.invoice_number as string;
   const router = useRouter();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [order, setOrder] = useState<Order | null>(null);

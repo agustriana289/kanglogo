@@ -1,7 +1,8 @@
 // app/review/[invoice_number]/page.tsx
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Testimonial } from "@/types/testimonial";
 import LogoLoading from "@/components/LogoLoading";
@@ -19,12 +20,9 @@ const ratingCategories: RatingCategory[] = [
     { key: "rating_communication", label: "Komunikasi", description: "Responsif dan keramahan tim" },
 ];
 
-export default function SubmitTestimonialPage({
-    params,
-}: {
-    params: Promise<{ invoice_number: string }>;
-}) {
-    const { invoice_number } = use(params);
+export default function SubmitTestimonialPage() {
+    const params = useParams();
+    const invoice_number = params?.invoice_number as string;
     const [testimonial, setTestimonial] = useState<Testimonial | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -157,8 +155,8 @@ export default function SubmitTestimonialPage({
                     <Star
                         size={32}
                         className={`${star <= value
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "fill-gray-200 text-gray-200"
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "fill-gray-200 text-gray-200"
                             } transition-colors`}
                     />
                 </button>

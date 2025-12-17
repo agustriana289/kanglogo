@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useAlert } from "@/components/providers/AlertProvider";
@@ -71,9 +71,7 @@ export default function CommentsPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [pageDropdownOpen]);
 
-  useEffect(() => {
-    fetchComments();
-  }, []);
+
 
   useEffect(() => {
     // Filter comments based on search query and tab
@@ -98,7 +96,7 @@ export default function CommentsPage() {
     setCurrentPage(1);
   }, [searchQuery, comments, activeTab]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -119,7 +117,11 @@ export default function CommentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const updateCommentStatus = async (commentId: number, status: string) => {
     try {
@@ -231,8 +233,8 @@ export default function CommentsPage() {
             <button
               onClick={() => setActiveTab("all")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Semua ({stats.total})
@@ -240,8 +242,8 @@ export default function CommentsPage() {
             <button
               onClick={() => setActiveTab("approved")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "approved"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Disetujui ({stats.approved})
@@ -249,8 +251,8 @@ export default function CommentsPage() {
             <button
               onClick={() => setActiveTab("pending")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "pending"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Menunggu ({stats.pending})
@@ -258,8 +260,8 @@ export default function CommentsPage() {
             <button
               onClick={() => setActiveTab("rejected")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "rejected"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Ditolak ({stats.rejected})
@@ -457,8 +459,8 @@ export default function CommentsPage() {
                     <button
                       onClick={() => setCurrentPage(page)}
                       className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
                         }`}
                     >
                       {page}
@@ -497,8 +499,8 @@ export default function CommentsPage() {
                       setCurrentPage(1);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700 dark:text-gray-300"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-gray-700 dark:text-gray-300"
                       }`}
                   >
                     {value} halaman

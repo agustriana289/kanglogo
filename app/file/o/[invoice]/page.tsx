@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LogoLoading from "@/components/LogoLoading";
 import InvoiceGate from "@/components/InvoiceGate";
@@ -57,12 +57,9 @@ function FileTypeIcon({ category, className = "w-5 h-5" }: { category: string; c
     }
 }
 
-export default function OrderFileManagerPage({
-    params,
-}: {
-    params: Promise<{ invoice: string }>;
-}) {
-    const { invoice } = use(params);
+export default function OrderFileManagerPage() {
+    const params = useParams();
+    const invoice = params?.invoice as string;
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);

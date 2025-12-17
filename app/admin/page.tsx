@@ -101,10 +101,17 @@ export default function AdminDashboard() {
         .select("price")
         .gte("created_at", weekStart.toISOString());
 
-      const weekCount = (weekOrdersData?.length || 0) + (weekStoreData?.length || 0);
+      const weekCount =
+        (weekOrdersData?.length || 0) + (weekStoreData?.length || 0);
       const revenueThisWeek =
-        (weekOrdersData?.reduce((sum, o) => sum + (parseFloat(o.final_price) || 0), 0) || 0) +
-        (weekStoreData?.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) || 0);
+        (weekOrdersData?.reduce(
+          (sum, o) => sum + (parseFloat(o.final_price) || 0),
+          0
+        ) || 0) +
+        (weekStoreData?.reduce(
+          (sum, s) => sum + (parseFloat(s.price) || 0),
+          0
+        ) || 0);
 
       // This Month
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -118,10 +125,17 @@ export default function AdminDashboard() {
         .select("price")
         .gte("created_at", monthStart.toISOString());
 
-      const monthCount = (monthOrdersData?.length || 0) + (monthStoreData?.length || 0);
+      const monthCount =
+        (monthOrdersData?.length || 0) + (monthStoreData?.length || 0);
       const revenueThisMonth =
-        (monthOrdersData?.reduce((sum, o) => sum + (parseFloat(o.final_price) || 0), 0) || 0) +
-        (monthStoreData?.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) || 0);
+        (monthOrdersData?.reduce(
+          (sum, o) => sum + (parseFloat(o.final_price) || 0),
+          0
+        ) || 0) +
+        (monthStoreData?.reduce(
+          (sum, s) => sum + (parseFloat(s.price) || 0),
+          0
+        ) || 0);
 
       // Last Month (for comparison)
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -152,10 +166,17 @@ export default function AdminDashboard() {
         .select("price")
         .gte("created_at", yearStart.toISOString());
 
-      const yearCount = (yearOrdersData?.length || 0) + (yearStoreData?.length || 0);
+      const yearCount =
+        (yearOrdersData?.length || 0) + (yearStoreData?.length || 0);
       const revenueThisYear =
-        (yearOrdersData?.reduce((sum, o) => sum + (parseFloat(o.final_price) || 0), 0) || 0) +
-        (yearStoreData?.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) || 0);
+        (yearOrdersData?.reduce(
+          (sum, o) => sum + (parseFloat(o.final_price) || 0),
+          0
+        ) || 0) +
+        (yearStoreData?.reduce(
+          (sum, s) => sum + (parseFloat(s.price) || 0),
+          0
+        ) || 0);
 
       // All Time
       const { data: allOrdersData } = await supabase
@@ -166,10 +187,17 @@ export default function AdminDashboard() {
         .from("store_orders")
         .select("price");
 
-      const allCount = (allOrdersData?.length || 0) + (allStoreData?.length || 0);
+      const allCount =
+        (allOrdersData?.length || 0) + (allStoreData?.length || 0);
       const revenueAllTime =
-        (allOrdersData?.reduce((sum, o) => sum + (parseFloat(o.final_price) || 0), 0) || 0) +
-        (allStoreData?.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) || 0);
+        (allOrdersData?.reduce(
+          (sum, o) => sum + (parseFloat(o.final_price) || 0),
+          0
+        ) || 0) +
+        (allStoreData?.reduce(
+          (sum, s) => sum + (parseFloat(s.price) || 0),
+          0
+        ) || 0);
 
       // Monthly data for chart (last 12 months) - Orders with real revenue
       const monthlyData = [];
@@ -230,8 +258,8 @@ export default function AdminDashboard() {
         lastMonthCount > 0
           ? Math.round(((monthCount - lastMonthCount) / lastMonthCount) * 100)
           : monthCount > 0
-            ? 100
-            : 0;
+          ? 100
+          : 0;
 
       setOrderStats({
         thisWeek: weekCount,
@@ -353,7 +381,17 @@ export default function AdminDashboard() {
     tooltip: {
       shared: true,
       intersect: false,
-      custom: function ({ series, seriesIndex, dataPointIndex, w }: { series: any; seriesIndex: number; dataPointIndex: number; w: any }) {
+      custom: function ({
+        series,
+        seriesIndex,
+        dataPointIndex,
+        w,
+      }: {
+        series: any;
+        seriesIndex: number;
+        dataPointIndex: number;
+        w: any;
+      }) {
         const ordersCount = orderStats.monthlyData[dataPointIndex]?.count || 0;
         const ordersRevenue =
           orderStats.monthlyData[dataPointIndex]?.revenue || 0;
@@ -515,20 +553,22 @@ export default function AdminDashboard() {
           <div className="flex gap-1 p-1 bg-slate-100 rounded-lg mb-4">
             <button
               onClick={() => setTaskTab("in_progress")}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${taskTab === "in_progress"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-                }`}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                taskTab === "in_progress"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
             >
               Dikerjakan (
               {tasks.filter((t) => t.status === "in_progress").length})
             </button>
             <button
               onClick={() => setTaskTab("completed")}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${taskTab === "completed"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-                }`}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                taskTab === "completed"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
             >
               Selesai ({tasks.filter((t) => t.status === "completed").length})
             </button>
@@ -551,10 +591,11 @@ export default function AdminDashboard() {
                     className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors"
                   >
                     <div
-                      className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${task.status === "completed"
-                        ? "bg-emerald-500 border-emerald-500"
-                        : "border-slate-300 bg-white"
-                        }`}
+                      className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${
+                        task.status === "completed"
+                          ? "bg-emerald-500 border-emerald-500"
+                          : "border-slate-300 bg-white"
+                      }`}
                     >
                       {task.status === "completed" && (
                         <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />
@@ -562,10 +603,11 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-sm font-medium truncate ${task.status === "completed"
-                          ? "text-slate-500 line-through"
-                          : "text-slate-800"
-                          }`}
+                        className={`text-sm font-medium truncate ${
+                          task.status === "completed"
+                            ? "text-slate-500 line-through"
+                            : "text-slate-800"
+                        }`}
                       >
                         {task.package_details?.name || "Pesanan"}
                       </p>

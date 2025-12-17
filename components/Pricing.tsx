@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Service } from "@/types/service";
 import { supabase } from "@/lib/supabase";
+import LogoPathAnimation from "./LogoPathAnimation";
 
 import Link from "next/link";
 
@@ -54,8 +55,9 @@ export default function Pricing() {
 
   if (loading || !featuredService) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex flex-col justify-center items-center h-64 gap-4">
+        <LogoPathAnimation />
+        <p className="text-slate-600">Memuat layanan...</p>
       </div>
     );
   }
@@ -161,10 +163,11 @@ export default function Pricing() {
                   Pilih Paket
                 </Link>
                 <p
-                  className={`mt-4 text-sm ${plan.titleColor === "text-white"
-                    ? "text-white"
-                    : "text-slate-600"
-                    }`}
+                  className={`mt-4 text-sm ${
+                    plan.titleColor === "text-white"
+                      ? "text-white"
+                      : "text-slate-600"
+                  }`}
                 >
                   {plan.description}
                 </p>

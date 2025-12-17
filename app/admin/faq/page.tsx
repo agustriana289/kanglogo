@@ -1,7 +1,7 @@
 // app/admin/faq/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
@@ -82,9 +82,7 @@ export default function FAQManagementPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [pageDropdownOpen]);
 
-  useEffect(() => {
-    fetchFAQs();
-  }, []);
+
 
   useEffect(() => {
     // Filter FAQs based on search query, tab, and category
@@ -116,7 +114,7 @@ export default function FAQManagementPage() {
     setCurrentPage(1);
   }, [searchQuery, faqs, activeTab, selectedCategory]);
 
-  const fetchFAQs = async () => {
+  const fetchFAQs = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("faqs")
@@ -138,7 +136,11 @@ export default function FAQManagementPage() {
       showAlert("error", "Error", "Terjadi kesalahan saat memuat FAQ");
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchFAQs();
+  }, [fetchFAQs]);
 
   const handleAddFAQ = () => {
     setEditingFAQ(null);
@@ -258,8 +260,8 @@ export default function FAQManagementPage() {
             <button
               onClick={() => setActiveTab("all")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Semua ({stats.total})
@@ -267,8 +269,8 @@ export default function FAQManagementPage() {
             <button
               onClick={() => setActiveTab("featured")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "featured"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Featured ({stats.featured})
@@ -276,8 +278,8 @@ export default function FAQManagementPage() {
             <button
               onClick={() => setActiveTab("not-featured")}
               className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "not-featured"
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
             >
               Tidak Featured ({stats.notFeatured})

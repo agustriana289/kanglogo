@@ -41,7 +41,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
   // Add loading state
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentUrl, setCurrentUrl] = useState('');
+  const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
     setCurrentUrl(window.location.href);
@@ -202,9 +202,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center justify-center">
           <LogoPathAnimation />
-          <p className="mt-8 text-xl text-slate-600">
-            Memuat artikel...
-          </p>
+          <p className="mt-8 text-xl text-slate-600">Memuat artikel...</p>
         </div>
       </div>
     );
@@ -330,10 +328,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Bagikan artikel ini
             </h3>
-            <ShareButtons
-              url={currentUrl}
-              title={article.title}
-            />
+            <ShareButtons url={currentUrl} title={article.title} />
           </div>
 
           {/* Related Articles */}

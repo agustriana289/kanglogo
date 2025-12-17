@@ -1,8 +1,9 @@
 // components/Reasons.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import LogoPathAnimation from "./LogoPathAnimation";
 
 export default function Reasons() {
   const [content, setContent] = useState<any>({});
@@ -15,12 +16,12 @@ export default function Reasons() {
   const fetchContent = async () => {
     try {
       const { data, error } = await supabase
-        .from('landing_page_content')
-        .select('*')
-        .eq('section', 'reasons');
-      
+        .from("landing_page_content")
+        .select("*")
+        .eq("section", "reasons");
+
       if (error) {
-        console.error('Error fetching reasons content:', error);
+        console.error("Error fetching reasons content:", error);
       } else {
         const groupedContent = data?.reduce((acc: any, item: any) => {
           acc[item.key_name] = item.value;
@@ -30,7 +31,7 @@ export default function Reasons() {
       }
       setLoading(false);
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       setLoading(false);
     }
   };
@@ -39,7 +40,7 @@ export default function Reasons() {
     return (
       <section className="py-12 sm:py-24" id="reason">
         <div className="flex justify-center items-center h-32">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <LogoPathAnimation />
         </div>
       </section>
     );
@@ -68,10 +69,10 @@ export default function Reasons() {
               className="shadow-sm group relative w-full bg-white rounded-2xl p-4 transition-all duration-500 max-md:max-w-md max-md:mx-auto md:w-2/5 xl:p-7 xl:w-1/4"
             >
               <h4 className="text-xl font-semibold text-primary mb-3 capitalize transition-all duration-500 group-hover:text-primary/80">
-                {content[`reason${num}_title`] || ''}
+                {content[`reason${num}_title`] || ""}
               </h4>
               <p className="text-sm font-normal leading-7 text-slate-700 transition-all duration-500 leading-5 group-hover:text-slate-600">
-                {content[`reason${num}_desc`] || ''}
+                {content[`reason${num}_desc`] || ""}
               </p>
             </div>
           ))}

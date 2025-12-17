@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoLoading from "@/components/LogoLoading";
@@ -13,12 +13,9 @@ interface Category {
   description: string;
 }
 
-export default function EditCategoryPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function EditCategoryPage() {
+  const params = useParams();
+  const id = params?.id as string;
   const router = useRouter();
   const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);

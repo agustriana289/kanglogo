@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { Project } from "@/types/project";
@@ -114,9 +114,7 @@ export default function ProjectManagementPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+
 
   useEffect(() => {
     // Filter projects based on search query and type
@@ -150,7 +148,7 @@ export default function ProjectManagementPage() {
     }
   }, [formData.title, editingProject]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -168,7 +166,11 @@ export default function ProjectManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleAddProject = () => {
     setEditingProject(null);

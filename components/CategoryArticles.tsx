@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { ClockIcon, UserIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, UserIcon } from "@heroicons/react/24/outline";
 
 interface Article {
   id: number;
@@ -113,7 +113,8 @@ export default function CategoryArticles({
               </h4>
               <div className="flex gap-x-2 items-center text-xs">
                 <span className="text-gray-500 flex gap-1">
-                  <ClockIcon className="w-4 h-4" /> {formatDate(article.published_at)}
+                  <ClockIcon className="w-4 h-4" />{" "}
+                  {formatDate(article.published_at)}
                 </span>
                 <span className="text-gray-500 flex gap-1">
                   <UserIcon className="w-4 h-4" /> {article.author_name}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
@@ -40,11 +40,9 @@ export default function NavigasiPage() {
     const [tempSocialData, setTempSocialData] = useState({ name: "", url: "", icon_svg: "" });
     const { showAlert, showConfirm } = useAlert();
 
-    useEffect(() => {
-        fetchData();
-    }, []);
 
-    const fetchData = async () => {
+
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             // Fetch categories
@@ -69,17 +67,21 @@ export default function NavigasiPage() {
             const { data: socialData, error: socialError } = await supabase
                 .from("social_media")
                 .select("*")
-                .order("order_index", { ascending: true });
+                .order("id", { ascending: true });
 
             if (socialError) throw socialError;
             setSocialMedia(socialData || []);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error fetching data:", error);
-            showAlert("error", "Error", error.message || "Gagal memuat data");
+            showAlert("error", "Error", "Gagal memuat data navigasi");
         } finally {
             setLoading(false);
         }
-    };
+    }, [showAlert]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleAddLink = async () => {
         if (!newLink.label || !newLink.url || !newLink.category_id) {

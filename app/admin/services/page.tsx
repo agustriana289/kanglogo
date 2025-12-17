@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
@@ -216,11 +216,9 @@ export default function ServicesPage() {
     indexOfLastItem
   );
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
 
-  const fetchServices = async () => {
+
+  const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -246,7 +244,11 @@ export default function ServicesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const handleAddService = () => {
     setEditingService(null);

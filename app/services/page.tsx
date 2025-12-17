@@ -233,7 +233,9 @@ export default function ServicesPage() {
         </div>
 
         {/* FAQ Section - Added here */}
-        <PublicFAQ serviceTitle={selectedService.title} />
+        <div className="mt-16">
+          <PublicFAQ serviceTitle={selectedService.title} minimal={true} />
+        </div>
       </div>
     </section>
   );

@@ -19,7 +19,7 @@ interface LinkCategory {
   order_index: number;
 }
 
-interface Link {
+interface HeaderLink {
   id: number;
   category_id: number;
   label: string;
@@ -32,17 +32,8 @@ import Link from "next/link";
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [navLinks, setNavLinks] = useState<Link[]>([]);
+  const [navLinks, setNavLinks] = useState<HeaderLink[]>([]);
   const pathname = usePathname();
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  // Jangan tampilkan header di halaman admin dan login
-  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
-    return null;
-  }
 
   const fetchSettings = async () => {
     try {
@@ -89,11 +80,21 @@ export default function Header() {
     }
   };
 
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  // Jangan tampilkan header di halaman admin dan login
+  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
+    return null;
+  }
+
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
-    }`;
+  const waLink = `https://wa.me/${
+    settings?.website_phone?.replace(/\D/g, "") || ""
+  }`;
   const waDisplay = settings?.website_phone;
   const logoUrl = settings?.logo_url;
 
@@ -145,8 +146,9 @@ export default function Header() {
 
                 {/* Mobile Menu */}
                 <div
-                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${mobileMenuOpen ? "block" : "hidden"
-                    }`}
+                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${
+                    mobileMenuOpen ? "block" : "hidden"
+                  }`}
                   id="mobile-menu"
                 >
                   <div className="p-4 border-b">
@@ -187,15 +189,15 @@ export default function Header() {
                           >
                             {link.label}
                           </Link>
-
                         </li>
                       ))}
                     </ul>
                   </nav>
                 </div>
                 <div
-                  className={`menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden ${mobileMenuOpen ? "block" : "hidden"
-                    }`}
+                  className={`menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden ${
+                    mobileMenuOpen ? "block" : "hidden"
+                  }`}
                   id="menu-overlay"
                   onClick={closeMobileMenu}
                 ></div>

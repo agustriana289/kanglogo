@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import {
     Download,
     Copy,
@@ -46,12 +46,9 @@ interface StoreOrder {
     download_link?: string | null;
 }
 
-export default function StoreInvoiceDetailPage({
-    params,
-}: {
-    params: Promise<{ invoice_number: string }>;
-}) {
-    const { invoice_number } = use(params);
+export default function StoreInvoiceDetailPage() {
+    const params = useParams();
+    const invoice_number = params?.invoice_number as string;
     const router = useRouter();
     const invoiceRef = useRef<HTMLDivElement>(null);
     const [order, setOrder] = useState<StoreOrder | null>(null);
