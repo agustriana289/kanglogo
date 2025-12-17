@@ -11,6 +11,7 @@ import Sidebar from "./Sidebar";
 import React from "react";
 import LogoPathAnimation from "./LogoPathAnimation";
 import WidgetArea from "./WidgetArea";
+import Link from "next/link";
 
 interface Article {
   id: number;
@@ -221,12 +222,12 @@ export default function ArticleContent({ article }: ArticleContentProps) {
               <nav aria-label="Breadcrumb" className="mb-4">
                 <ol className="flex flex-wrap items-center space-x-2">
                   <li>
-                    <a
+                    <Link
                       href="/"
                       className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-full text-xs font-medium text-gray-700 transition-colors"
                     >
                       Home
-                    </a>
+                    </Link>
                   </li>
 
                   {/* Tampilkan kategori jika ada */}
@@ -247,12 +248,12 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                           </svg>
                         </li>
                         <li>
-                          <a
+                          <Link
                             href={`/category/${category.slug}`}
                             className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-full text-xs font-medium text-gray-700 transition-colors"
                           >
                             {category.name}
-                          </a>
+                          </Link>
                         </li>
                       </React.Fragment>
                     ))}
