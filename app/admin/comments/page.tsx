@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { createCommentNotification } from "@/lib/notifications";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -14,10 +14,8 @@ import {
   TrashIcon,
   ChatBubbleLeftIcon,
   FolderIcon,
-  ExclamationTriangleIcon,
   MagnifyingGlassIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { CheckIcon as CheckSolidIcon } from "@heroicons/react/24/solid";
 
@@ -33,64 +31,80 @@ interface Comment {
   created_at: string;
 }
 
-// Items per page
-const ITEMS_PER_PAGE = 20;
-
 export default function CommentsPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [filteredComments, setFilteredComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState<"all" | "approved" | "pending" | "rejected">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
   const { showAlert, showConfirm } = useAlert();
 
-  // Calculate total pages
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  // Stats
+  const stats = {
+    total: comments.length,
+    approved: comments.filter(c => c.status === "approved").length,
+    pending: comments.filter(c => c.status === "pending").length,
+    rejected: comments.filter(c => c.status === "rejected").length,
+  };
 
-  // Calculate the range of items to display
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentItems = filteredComments.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
+  // Pagination
+  const totalPages = Math.ceil(filteredComments.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredComments.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!pageDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen]);
 
   useEffect(() => {
     fetchComments();
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
-    // Filter comments based on search query
-    if (searchQuery.trim() === "") {
-      setFilteredComments(comments);
-    } else {
-      const filtered = comments.filter(
+    // Filter comments based on search query and tab
+    let filtered = comments;
+
+    // Filter by status tab
+    if (activeTab !== "all") {
+      filtered = filtered.filter(c => c.status === activeTab);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim() !== "") {
+      filtered = filtered.filter(
         (comment) =>
           comment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           comment.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
           comment.content.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredComments(filtered);
     }
-    // Reset to first page when search changes
+
+    setFilteredComments(filtered);
     setCurrentPage(1);
-  }, [searchQuery, comments]);
+  }, [searchQuery, comments, activeTab]);
 
   const fetchComments = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("comments")
         .select("*")
         .order("created_at", { ascending: false });
-
-      if (filter !== "all") {
-        query = query.eq("status", filter);
-      }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching comments:", error);
@@ -98,7 +112,6 @@ export default function CommentsPage() {
       } else {
         setComments(data || []);
         setFilteredComments(data || []);
-        setTotalItems(data?.length || 0);
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -120,42 +133,9 @@ export default function CommentsPage() {
         showAlert("error", "Gagal", "Gagal mengupdate status komentar");
       } else {
         showAlert("success", "Berhasil", "Status komentar berhasil diupdate");
+        fetchComments();
 
-        const updatedComments = comments.map((c) =>
-          c.id === commentId ? { ...c, status } : c
-        );
-        setComments(updatedComments);
-
-        // Update filtered comments if needed
-        if (searchQuery.trim() === "" && filter === "all") {
-          setFilteredComments(updatedComments);
-        } else {
-          // Reapply filters
-          let filtered = updatedComments;
-
-          if (filter !== "all") {
-            filtered = filtered.filter((c) => c.status === filter);
-          }
-
-          if (searchQuery.trim() !== "") {
-            filtered = filtered.filter(
-              (comment) =>
-                comment.name
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                comment.email
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                comment.content
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase())
-            );
-          }
-
-          setFilteredComments(filtered);
-        }
-
-        // INTEGRASI NOTIFIKASI: Buat notifikasi jika komentar disetujui
+        // Create notification if comment is approved
         if (status === "approved") {
           await createCommentNotification(commentId);
         }
@@ -188,39 +168,7 @@ export default function CommentsPage() {
         showAlert("error", "Gagal", "Gagal menghapus komentar");
       } else {
         showAlert("success", "Berhasil", "Komentar berhasil dihapus");
-
-        const updatedComments = comments.filter((c) => c.id !== commentId);
-        setComments(updatedComments);
-        setTotalItems(updatedComments.length);
-
-        // Update filtered comments if needed
-        if (searchQuery.trim() === "" && filter === "all") {
-          setFilteredComments(updatedComments);
-        } else {
-          // Reapply filters
-          let filtered = updatedComments;
-
-          if (filter !== "all") {
-            filtered = filtered.filter((c) => c.status === filter);
-          }
-
-          if (searchQuery.trim() !== "") {
-            filtered = filtered.filter(
-              (comment) =>
-                comment.name
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                comment.email
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                comment.content
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase())
-            );
-          }
-
-          setFilteredComments(filtered);
-        }
+        fetchComments();
       }
     } catch (error) {
       console.error("Error deleting comment:", error);
@@ -265,323 +213,302 @@ export default function CommentsPage() {
     }
   };
 
-  // Generate page numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const startPage = Math.max(1, currentPage - 2);
-      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (startPage > 1) {
-        pages.push(1);
-        if (startPage > 2) {
-          pages.push("...");
-        }
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push("...");
-        }
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki dengan Search */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Link
-                href="/admin/blog"
-                className="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
-              >
-                <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                Kembali Ke Blogs
-              </Link>
-              <Link
-                href="/admin/categories"
-                className="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
-              >
-                <FolderIcon className="w-4 h-4 mr-2" />
-                Kategori
-              </Link>
-            </div>
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Tabs */}
+          <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Semua ({stats.total})
+            </button>
+            <button
+              onClick={() => setActiveTab("approved")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "approved"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Disetujui ({stats.approved})
+            </button>
+            <button
+              onClick={() => setActiveTab("pending")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "pending"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Menunggu ({stats.pending})
+            </button>
+            <button
+              onClick={() => setActiveTab("rejected")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "rejected"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Ditolak ({stats.rejected})
+            </button>
+          </div>
 
-            <div className="relative w-full sm:w-auto">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
-              </div>
+          {/* Right: Search and Navigation */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Cari komentar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
               />
             </div>
+
+            {/* Navigation Links */}
+            <Link
+              href="/admin/blog"
+              className="inline-flex items-center justify-center px-4 py-3 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors text-sm font-medium"
+            >
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Blogs
+            </Link>
+            <Link
+              href="/admin/categories"
+              className="inline-flex items-center justify-center px-4 py-3 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors text-sm font-medium"
+            >
+              <FolderIcon className="w-4 h-4 mr-2" />
+              Kategori
+            </Link>
           </div>
         </div>
-
-        {/* Filter Section - Diperbaiki */}
-        <div className="flex flex-wrap gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "all"
-                ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-          >
-            Semua ({comments.length})
-          </button>
-          <button
-            onClick={() => setFilter("approved")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "approved"
-                ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-          >
-            Disetujui ({comments.filter((c) => c.status === "approved").length})
-          </button>
-          <button
-            onClick={() => setFilter("pending")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "pending"
-                ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-          >
-            Menunggu ({comments.filter((c) => c.status === "pending").length})
-          </button>
-          <button
-            onClick={() => setFilter("rejected")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === "rejected"
-                ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-          >
-            Ditolak ({comments.filter((c) => c.status === "rejected").length})
-          </button>
-        </div>
-
-        {/* Items Count */}
-        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          Menampilkan {indexOfFirstItem + 1}-
-          {Math.min(indexOfLastItem, filteredComments.length)} dari{" "}
-          {filteredComments.length} komentar
-        </div>
-
-        {currentItems.length === 0 ? (
-          <div className="text-center py-12">
-            <ChatBubbleLeftIcon className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              {searchQuery
-                ? "Tidak ada komentar yang ditemukan"
-                : "Tidak ada komentar"}
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {searchQuery
-                ? "Coba ubah kata kunci pencarian Anda."
-                : filter === "all"
-                  ? "Belum ada komentar yang dibuat."
-                  : `Tidak ada komentar dengan status "${filter === "approved"
-                    ? "Disetujui"
-                    : filter === "pending"
-                      ? "Menunggu"
-                      : "Ditolak"
-                  }".`}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {currentItems.map((comment) => (
-              <div
-                key={comment.id}
-                className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 bg-white dark:bg-slate-800 shadow-sm"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 mr-3">
-                      <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                          {comment.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900 dark:text-white">
-                        {comment.name}
-                      </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {comment.email}
-                      </p>
-                      {comment.website && (
-                        <a
-                          href={comment.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-500 hover:underline flex items-center"
-                        >
-                          {comment.website}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
-                        comment.status
-                      )}`}
-                    >
-                      <span className="mr-1">
-                        {getStatusIcon(comment.status)}
-                      </span>
-                      {comment.status === "approved"
-                        ? "Disetujui"
-                        : comment.status === "rejected"
-                          ? "Ditolak"
-                          : "Menunggu"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="ml-13">
-                  <p className="text-slate-700 dark:text-slate-300 mb-3">
-                    {comment.content}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 flex items-center">
-                    <ClockIcon className="h-3 w-3 mr-1" />
-                    {formatDate(comment.created_at)}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {comment.status !== "approved" && (
-                      <button
-                        onClick={() =>
-                          updateCommentStatus(comment.id, "approved")
-                        }
-                        className="inline-flex items-center px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors text-sm"
-                      >
-                        <CheckIcon className="h-4 w-4 mr-1" />
-                        Setujui
-                      </button>
-                    )}
-                    {comment.status !== "rejected" && (
-                      <button
-                        onClick={() =>
-                          updateCommentStatus(comment.id, "rejected")
-                        }
-                        className="inline-flex items-center px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors text-sm"
-                      >
-                        <XMarkIcon className="h-4 w-4 mr-1" />
-                        Tolak
-                      </button>
-                    )}
-                    {comment.status !== "pending" && (
-                      <button
-                        onClick={() =>
-                          updateCommentStatus(comment.id, "pending")
-                        }
-                        className="inline-flex items-center px-3 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm"
-                      >
-                        <ClockIcon className="h-4 w-4 mr-1" />
-                        Pending
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteComment(comment.id)}
-                      className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm"
-                    >
-                      <TrashIcon className="h-4 w-4 mr-1" />
-                      Hapus
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-slate-700 dark:text-slate-300">
-              Halaman {currentPage} dari {totalPages}
-            </div>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeftIcon className="h-5 w-5" />
-              </button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${currentPage === page
-                        ? "bg-primary text-white border-primary"
-                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                      }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRightIcon className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* Content */}
+      {currentItems.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+          <ChatBubbleLeftIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            {searchQuery
+              ? "Tidak ada komentar yang ditemukan"
+              : "Tidak ada komentar"}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {searchQuery
+              ? "Coba ubah kata kunci pencarian Anda."
+              : activeTab === "all"
+                ? "Belum ada komentar yang dibuat."
+                : `Tidak ada komentar dengan status "${activeTab === "approved"
+                  ? "Disetujui"
+                  : activeTab === "pending"
+                    ? "Menunggu"
+                    : "Ditolak"
+                }".`}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {currentItems.map((comment) => (
+            <div
+              key={comment.id}
+              className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-slate-800 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-start flex-1">
+                  <div className="flex-shrink-0 mr-3">
+                    <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                        {comment.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                      {comment.name}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {comment.email}
+                    </p>
+                    {comment.website && (
+                      <a
+                        href={comment.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-500 hover:underline"
+                      >
+                        {comment.website}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center ml-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
+                      comment.status
+                    )}`}
+                  >
+                    <span className="mr-1">
+                      {getStatusIcon(comment.status)}
+                    </span>
+                    {comment.status === "approved"
+                      ? "Disetujui"
+                      : comment.status === "rejected"
+                        ? "Ditolak"
+                        : "Menunggu"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="ml-13">
+                <p className="text-slate-700 dark:text-slate-300 mb-3">
+                  {comment.content}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 flex items-center">
+                  <ClockIcon className="h-3 w-3 mr-1" />
+                  {formatDate(comment.created_at)}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {comment.status !== "approved" && (
+                    <button
+                      onClick={() =>
+                        updateCommentStatus(comment.id, "approved")
+                      }
+                      className="inline-flex items-center px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors text-sm"
+                    >
+                      <CheckIcon className="h-4 w-4 mr-1" />
+                      Setujui
+                    </button>
+                  )}
+                  {comment.status !== "rejected" && (
+                    <button
+                      onClick={() =>
+                        updateCommentStatus(comment.id, "rejected")
+                      }
+                      className="inline-flex items-center px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors text-sm"
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-1" />
+                      Tolak
+                    </button>
+                  )}
+                  {comment.status !== "pending" && (
+                    <button
+                      onClick={() =>
+                        updateCommentStatus(comment.id, "pending")
+                      }
+                      className="inline-flex items-center px-3 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm"
+                    >
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      Pending
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteComment(comment.id)}
+                    className="inline-flex items-center px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm"
+                  >
+                    <TrashIcon className="h-4 w-4 mr-1" />
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filteredComments.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
+          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+            <ul className="flex -space-x-px text-sm gap-2">
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                >
+                  Sebelumnya
+                </button>
+              </li>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    (p >= currentPage - 1 && p <= currentPage + 1)
+                )
+                .map((page, idx) => (
+                  <li key={idx}>
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  </li>
+                ))}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                >
+                  Selanjutnya
+                </button>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Items Per Page - Custom Dropdown */}
+          <div className="hidden sm:inline relative" ref={pageDropdownRef}>
+            <button
+              onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+              className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+            >
+              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            {pageDropdownOpen && (
+              <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                {[10, 25, 50, 100].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setItemsPerPage(value);
+                      setPageDropdownOpen(false);
+                      setCurrentPage(1);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {value} halaman
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

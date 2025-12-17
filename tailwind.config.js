@@ -200,8 +200,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#4559F2",
-        secondary: "#fcd34d",
+        primary: "var(--color-primary)",
+        secondary: "var(--color-secondary)",
         success: require("tailwindcss/colors").green,
         warning: require("tailwindcss/colors").yellow,
         error: require("tailwindcss/colors").red,

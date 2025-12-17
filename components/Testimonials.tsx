@@ -2,18 +2,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Testimonial } from "@/types/testimonial";
+import { Testimonial, getAverageRating } from "@/types/testimonial";
 import { supabase } from "@/lib/supabase";
-import Image from "next/image";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Parallax } from "swiper/modules";
-import "swiper/css";
+import Link from "next/link";
+
+// Star rating display component
+const StarRating = ({ rating }: { rating: number }) => (
+  <div className="flex gap-0.5">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <svg
+        key={star}
+        className={`w-4 h-4 ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+      </svg>
+    ))}
+  </div>
+);
 
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTestimonial, setSelectedTestimonial] =
-    useState<Testimonial | null>(null);
 
   useEffect(() => {
     const fetchTestimonials = async () => {
@@ -21,7 +32,9 @@ export default function Testimonials() {
         const { data, error } = await supabase
           .from("testimonials")
           .select("*")
-          .order("created_at", { ascending: false });
+          .not("submitted_at", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(6); // Hanya tampilkan 6 testimoni di homepage
 
         if (error) throw error;
         setTestimonials(data || []);
@@ -35,25 +48,6 @@ export default function Testimonials() {
     fetchTestimonials();
   }, []);
 
-  // useEffect untuk memuat script pihak ketiga (EmbedSocial)
-  useEffect(() => {
-    const scriptId = "EmbedSocialHashtagScript";
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://embedsocial.com/cdn/ht.js";
-      document.head.appendChild(script);
-    }
-  }, []);
-
-  const openTestiModal = (testimonial: Testimonial) => {
-    setSelectedTestimonial(testimonial);
-  };
-
-  const closeTestiModal = () => {
-    setSelectedTestimonial(null);
-  };
-
   if (loading) {
     return (
       <section className="py-12 sm:py-24" id="testi">
@@ -65,116 +59,74 @@ export default function Testimonials() {
     );
   }
 
+  if (testimonials.length === 0) {
+    return null; // Sembunyikan jika tidak ada testimoni
+  }
+
   return (
     <section className="py-12 sm:py-24" id="testi">
-      <div className="mx-auto max-w-7xl relative">
-        <div className="text-center pb-16">
-          <h1 className="max-w-2xl mx-auto font-manrope font-bold text-4xl text-slate-700 sm:mb-5 md:text-6xl leading-tight">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center pb-12">
+          <h2 className="max-w-2xl mx-auto font-manrope font-bold text-3xl text-slate-700 sm:mb-5 md:text-5xl leading-tight">
             <span className="text-primary">Testimoni</span> Klien Kami
-          </h1>
-          <p className="sm:max-w-2xl sm:mx-auto text-base font-normal leading-7 text-slate-700 mb-9 px-8">
-            Berikut pendapat klien kami setelah merasakan layanan dari
-            Kanglogo.com.
+          </h2>
+          <p className="sm:max-w-2xl sm:mx-auto text-base font-normal leading-7 text-slate-600 mb-6">
+            Berikut pendapat klien kami setelah merasakan layanan dari KangLogo.com
           </p>
         </div>
 
-        <div className="relative w-full md:w-[1028px] mx-auto">
-          <Swiper
-            modules={[Autoplay, Parallax]}
-            parallax={true}
-            centeredSlides={true}
-            loop={true}
-            autoplay={{
-              delay: 2000,
-              disableOnInteraction: false,
-            }}
-            slidesPerView={1}
-            breakpoints={{
-              640: {
-                slidesPerView: 2,
-              },
-              1024: {
-                slidesPerView: 4,
-              },
-            }}
-            className="mySwiper !pb-12"
-          >
-            {testimonials.map((testimonial) => (
-              <SwiperSlide key={testimonial.id}>
-                <div
-                  className="px-2 cursor-pointer hover:scale-105 transition-transform duration-300"
-                  onClick={() => openTestiModal(testimonial)}
-                >
-                  <div className="relative w-full h-48 md:h-64">
-                    {testimonial.image_url ? (
-                      <Image
-                        src={testimonial.image_url}
-                        alt={testimonial.alt_text || "Testimoni"}
-                        fill
-                        style={{ objectFit: "cover" }}
-                        className="shadow-lg rounded-xl"
-                        sizes="(max-width: 768px) 33vw, (max-width: 1200px) 33vw, 33vw"
-                        loading="lazy"
-                        placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwAAhEDEQA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 rounded-xl">
-                        Tidak Ada Gambar
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+        {/* Grid Testimoni */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {testimonials.map((testimonial) => (
+            <div
+              key={testimonial.id}
+              className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6"
+            >
+              {/* Header: Rating */}
+              <div className="flex items-center justify-between mb-4">
+                <StarRating rating={Math.round(getAverageRating(testimonial))} />
+                {testimonial.is_featured && (
+                  <span className="inline-flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    Unggulan
+                  </span>
+                )}
+              </div>
+
+              {/* Review Text */}
+              <p className="text-gray-600 text-sm leading-relaxed line-clamp-4 mb-4">
+                "{testimonial.review_text}"
+              </p>
+
+              {/* Footer: Customer Info */}
+              <div className="pt-4 border-t border-gray-100">
+                <p className="font-semibold text-gray-900">
+                  {testimonial.customer_name || "Pelanggan"}
+                </p>
+                <p className="text-xs text-primary">
+                  {testimonial.service_name || testimonial.product_name || "Layanan KangLogo"}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="mx-auto max-w-6xl text-center mt-12">
-          <div
-            className="embedsocial-hashtag"
-            data-ref="beef8b23ea44a025ed412688a62a37d547eecb4c"
-          ></div>
+        {/* Link ke halaman semua testimoni */}
+        <div className="text-center mt-10">
+          <Link
+            href="/testimonials"
+            className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
+          >
+            Lihat Semua Testimoni
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
       </div>
-
-      {selectedTestimonial && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4"
-          onClick={closeTestiModal}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative max-w-4xl w-full h-auto md:h-[80vh]">
-            <button
-              className="absolute top-4 right-4 text-white text-3xl font-bold hover:text-slate-300 z-10"
-              onClick={closeTestiModal}
-              aria-label="Tutup modal testimoni"
-            >
-              &times;
-            </button>
-            <div className="relative w-full h-full">
-              {selectedTestimonial.image_url ? (
-                <Image
-                  src={selectedTestimonial.image_url}
-                  alt={selectedTestimonial.alt_text || "Testimoni"}
-                  fill
-                  style={{ objectFit: "contain" }}
-                  className="rounded-lg shadow-2xl"
-                  unoptimized
-                  sizes="100vw"
-                  placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwEAAhEDEEA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
-                />
-              ) : (
-                <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 rounded-lg">
-                  Tidak Ada Gambar
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

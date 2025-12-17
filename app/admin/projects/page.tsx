@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { Project } from "@/types/project";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import { uploadFile } from "@/lib/supabase-storage";
 import Link from "next/link";
 import {
@@ -19,6 +19,7 @@ import {
   MagnifyingGlassIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
   Squares2X2Icon,
   ListBulletIcon,
   BriefcaseIcon,
@@ -90,13 +91,28 @@ export default function ProjectManagementPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
+
   // Calculate total pages
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Calculate the range of items to display
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredProjects.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -330,38 +346,65 @@ export default function ProjectManagementPage() {
     });
   };
 
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push("...");
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
   const inputStyle =
     "bg-white dark:bg-slate-900 shadow-sm focus:border-blue-300 focus:ring-blue-500/10 dark:focus:border-blue-800 w-full rounded-lg border border-gray-300 py-2.5 px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30";
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <LogoLoading />
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
 
-      {/* Header Section */}
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
-              Daftar Proyek
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {totalItems} proyek ditemukan
-            </p>
-          </div>
+      {/* Header */}
+      <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 border border-slate-100">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Action Buttons */}
           <div className="flex items-center gap-2">
             <Link
               href="/admin/projects/batch"
               className="border border-primary text-primary hover:bg-primary hover:text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition"
             >
               <CloudArrowUpIcon className="w-5 h-5" />
-              Batch Upload
+              <span className="hidden sm:inline">Batch Upload</span>
             </Link>
             <button
               onClick={handleAddProject}
@@ -371,48 +414,54 @@ export default function ProjectManagementPage() {
               Tambah Proyek
             </button>
           </div>
-        </div>
 
-        {/* Filters & View Toggle */}
-        <div className="mt-6 flex flex-row gap-4 items-center justify-between">
-          <div className="relative w-full sm:max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Cari proyek atau klien..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 w-auto">
-            {/* Filter Type */}
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="hidden sm:block px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition text-gray-600 dark:text-gray-300"
-            >
-              <option value="">Semua Tipe</option>
-              {projectTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-
-            {/* View Toggle */}
-            <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg ml-auto sm:ml-0">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
+          {/* Right: Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari proyek..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
+              />
+            </div>
+            <div className="flex flex-row gap-3">
+              {/* Filter Type */}
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="h-11 px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-700"
               >
-                <Squares2X2Icon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
-              >
-                <ListBulletIcon className="w-5 h-5" />
-              </button>
+                <option value="">Semua Tipe</option>
+                {projectTypes.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+
+              {/* View Toggle */}
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-md transition ${viewMode === "grid"
+                    ? "bg-white shadow-sm text-primary"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
+                >
+                  <Squares2X2Icon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-md transition ${viewMode === "list"
+                    ? "bg-white shadow-sm text-primary"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
+                >
+                  <ListBulletIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -420,7 +469,7 @@ export default function ProjectManagementPage() {
 
       {/* Content Section */}
       {currentItems.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700">
           <BriefcaseIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Tidak ada proyek</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
@@ -481,17 +530,17 @@ export default function ProjectManagementPage() {
         </div>
       ) : (
         /* LIST VIEW */
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-primary text-white font-medium">
                 <tr>
-                  <th className="px-6 py-4">Proyek</th>
+                  <th className="px-6 py-4 rounded-tl-lg">Proyek</th>
                   <th className="px-6 py-4">Klien</th>
                   <th className="px-6 py-4">Tipe</th>
                   <th className="px-6 py-4">Tanggal Mulai</th>
                   <th className="px-6 py-4">Tanggal Selesai</th>
-                  <th className="px-6 py-4 text-right">Aksi</th>
+                  <th className="px-6 py-4 text-right rounded-tr-lg">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -530,18 +579,18 @@ export default function ProjectManagementPage() {
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {formatDate(project.end_date)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleEditProject(project)}
-                          className="text-gray-400 hover:text-blue-500 transition"
+                          className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
                           title="Edit"
                         >
                           <PencilIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDeleteProject(project.id)}
-                          className="text-gray-400 hover:text-red-500 transition"
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
                           title="Hapus"
                         >
                           <TrashIcon className="w-5 h-5" />
@@ -557,26 +606,79 @@ export default function ProjectManagementPage() {
       )}
 
       {/* Pagination */}
-      {totalItems > 0 && (
-        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 px-0 py-4 mt-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} dari {totalItems} proyek
-          </p>
-          <div className="flex gap-1">
+      {filteredProjects.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
+          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+            <ul className="flex -space-x-px text-sm gap-2">
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                >
+                  Sebelumnya
+                </button>
+              </li>
+              {getPageNumbers().map((page, idx) => (
+                <li key={idx}>
+                  {page === "..." ? (
+                    <span className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium shadow-xs font-medium leading-5 text-sm w-9 h-9 rounded-lg">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setCurrentPage(page as number)}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  )}
+                </li>
+              ))}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                >
+                  Selanjutnya
+                </button>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Items Per Page - Custom Dropdown */}
+          <div className="hidden sm:inline relative" ref={pageDropdownRef}>
             <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+              onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+              className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
             >
-              <ChevronLeftIcon className="w-5 h-5 text-gray-500" />
+              <span className="text-gray-700">{itemsPerPage} halaman</span>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
             </button>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
-            >
-              <ChevronRightIcon className="w-5 h-5 text-gray-500" />
-            </button>
+            {pageDropdownOpen && (
+              <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                {[12, 24, 48, 96].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setItemsPerPage(value);
+                      setPageDropdownOpen(false);
+                      setCurrentPage(1);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-gray-700"
+                      }`}
+                  >
+                    {value} halaman
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -13,7 +13,7 @@ import {
     Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import html2pdf from "html2pdf.js";
+// import html2pdf from "html2pdf.js"; (Removed for dynamic import)
 import LogoLoading from "@/components/LogoLoading";
 import InvoiceGate from "@/components/InvoiceGate";
 
@@ -123,6 +123,8 @@ export default function StoreInvoiceDetailPage({
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
             };
+
+            const html2pdf = (await import("html2pdf.js")).default;
             await html2pdf().set(options).from(invoiceRef.current).save();
         } catch (error) {
             console.error("Error downloading:", error);

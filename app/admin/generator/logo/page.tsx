@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { LogoAsset } from "@/types/logo-generator";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import {
     PlusIcon,
     PencilIcon,
@@ -12,13 +12,13 @@ import {
     MagnifyingGlassIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    ChevronDownIcon,
     XMarkIcon,
     PhotoIcon,
     CubeIcon,
 } from "@heroicons/react/24/outline";
 
-// Items per page
-const ITEMS_PER_PAGE = 12;
+
 
 export default function LogoGeneratorAdminPage() {
     const [assets, setAssets] = useState<LogoAsset[]>([]);
@@ -32,6 +32,9 @@ export default function LogoGeneratorAdminPage() {
 
     const [showModal, setShowModal] = useState(false);
     const [editingAsset, setEditingAsset] = useState<LogoAsset | null>(null);
+    const [itemsPerPage, setItemsPerPage] = useState(12);
+    const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+    const pageDropdownRef = useRef<HTMLDivElement>(null);
 
     const [formData, setFormData] = useState({
         nama_aset: "",
@@ -42,12 +45,26 @@ export default function LogoGeneratorAdminPage() {
     });
 
     // Calculate total pages
-    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     // Calculate the range of items to display
-    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredAssets.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        if (!pageDropdownOpen) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+                setPageDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [pageDropdownOpen]);
 
     useEffect(() => {
         fetchAssets();
@@ -210,47 +227,38 @@ export default function LogoGeneratorAdminPage() {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <LogoLoading />
+            <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+                <LogoPathAnimation />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+        <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
 
-            {/* Header Section */}
-            <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
-                            Generator Logo
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {totalItems} aset logo tersedia
-                        </p>
-                    </div>
-                    <button
-                        onClick={handleAddAsset}
-                        className="bg-primary hover:bg-primary/80 text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition shadow-sm"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        Tambah Aset
-                    </button>
-                </div>
-
-                {/* Filters */}
-                <div className="mt-6 flex flex-row gap-4 items-center justify-between">
-                    <div className="relative w-full sm:max-w-md">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            {/* Header  */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Left: Search */}
+                    <div className="relative">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Cari aset logo..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                            className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
                         />
                     </div>
+
+                    {/* Right: Add Button */}
+                    <button
+                        onClick={handleAddAsset}
+                        className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                        <PlusIcon className="h-5 w-5 mr-2" />
+                        Tambah Aset
+                    </button>
                 </div>
             </div>
 
@@ -308,26 +316,80 @@ export default function LogoGeneratorAdminPage() {
             )}
 
             {/* Pagination */}
-            {totalItems > 0 && (
-                <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 px-0 py-4 mt-6">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} dari {totalItems} aset
-                    </p>
-                    <div className="flex gap-1">
+            {filteredAssets.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
+                    <nav aria-label="Page navigation" className="flex items-center space-x-4">
+                        <ul className="flex -space-x-px text-sm gap-2">
+                            <li>
+                                <button
+                                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                                >
+                                    Sebelumnya
+                                </button>
+                            </li>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(
+                                    (p) =>
+                                        p === 1 ||
+                                        p === totalPages ||
+                                        (p >= currentPage - 1 && p <= currentPage + 1)
+                                )
+                                .map((page, idx) => (
+                                    <li key={idx}>
+                                        <button
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                                                ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                                                : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                                                }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    </li>
+                                ))}
+                            <li>
+                                <button
+                                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                    className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                                >
+                                    Selanjutnya
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    {/* Items Per Page - Custom Dropdown */}
+                    <div className="hidden sm:inline relative" ref={pageDropdownRef}>
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                            className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+                            onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+                            className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
                         >
-                            <ChevronLeftIcon className="w-5 h-5 text-gray-500" />
+                            <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
+                            <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
-                        >
-                            <ChevronRightIcon className="w-5 h-5 text-gray-500" />
-                        </button>
+                        {pageDropdownOpen && (
+                            <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                                {[12, 24, 48, 96].map((value) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => {
+                                            setItemsPerPage(value);
+                                            setPageDropdownOpen(false);
+                                            setCurrentPage(1);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                                            ? "bg-primary/10 text-primary font-medium"
+                                            : "text-gray-700 dark:text-gray-300"
+                                            }`}
+                                    >
+                                        {value} halaman
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -1,9 +1,11 @@
 // components/HtmlEditor.tsx
 'use client';
 
-import React, { useRef } from 'react';
-import ReactQuill from 'react-quill-new';
+import React from 'react';
+import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css'; // Impor style default
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 interface HtmlEditorProps {
     value: string;
@@ -12,8 +14,6 @@ interface HtmlEditorProps {
 }
 
 export default function HtmlEditor({ value, onChange, placeholder }: HtmlEditorProps) {
-    const quillRef = useRef<ReactQuill>(null);
-
     // Konfigurasi toolbar dan modul lainnya
     const modules = {
         toolbar: [
@@ -44,7 +44,6 @@ export default function HtmlEditor({ value, onChange, placeholder }: HtmlEditorP
     return (
         <div className="bg-white">
             <ReactQuill
-                ref={quillRef}
                 theme="snow"
                 value={value}
                 onChange={onChange}

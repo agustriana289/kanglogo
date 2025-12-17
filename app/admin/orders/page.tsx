@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
 import { Order } from "@/types/order";
 import { Service, ServicePackage } from "@/types/service";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import {
   EyeIcon,
   XMarkIcon,
@@ -24,11 +24,15 @@ import {
   ArrowTopRightOnSquareIcon,
   LinkIcon,
   FolderOpenIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { format, addDays, isBefore } from "date-fns";
 import { id } from "date-fns/locale";
-import { createOrderStatusNotification, createOrderDeletedNotification } from "@/lib/notifications";
+import {
+  createOrderStatusNotification,
+  createOrderDeletedNotification,
+} from "@/lib/notifications";
 
 // ... constants ...
 const statusOptions = [
@@ -70,7 +74,7 @@ const statusOptions = [
   },
 ];
 
-const ITEMS_PER_PAGE = 10;
+
 
 export default function OrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -91,6 +95,11 @@ export default function OrderManagementPage() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [bulkStatus, setBulkStatus] = useState(""); // For bulk action dropdown
   const [showMobileStats, setShowMobileStats] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const [bulkStatusDropdownOpen, setBulkStatusDropdownOpen] = useState(false);
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
+  const bulkStatusDropdownRef = useRef<HTMLDivElement>(null);
 
   // Stats
   const [stats, setStats] = useState({
@@ -112,6 +121,8 @@ export default function OrderManagementPage() {
   const [editedCreatedAt, setEditedCreatedAt] = useState("");
   const [editedPaymentDeadline, setEditedPaymentDeadline] = useState("");
   const [saving, setSaving] = useState(false);
+  const [requestingTestimonial, setRequestingTestimonial] = useState(false);
+  const [testimonialLink, setTestimonialLink] = useState<string | null>(null);
 
   // Create Order States
   const [newOrder, setNewOrder] = useState({
@@ -131,8 +142,12 @@ export default function OrderManagementPage() {
 
   // Services State
   const [services, setServices] = useState<Service[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(
+    null
+  );
+  const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(
+    null
+  );
 
   useEffect(() => {
     fetchOrders();
@@ -186,13 +201,18 @@ export default function OrderManagementPage() {
 
       // Hitung Penghasilan (status paid, accepted, completed, in_progress - asumsi uang masuk saat paid)
       // Kita gunakan status 'paid' dan status lanjutannya ('in_progress', 'completed', 'accepted')
-      if (["paid", "accepted", "in_progress", "completed"].includes(order.status)) {
+      if (
+        ["paid", "accepted", "in_progress", "completed"].includes(order.status)
+      ) {
         totalIncome += order.final_price;
 
         const orderDate = new Date(order.created_at);
 
         // Income This Month
-        if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
+        if (
+          orderDate.getMonth() === currentMonth &&
+          orderDate.getFullYear() === currentYear
+        ) {
           incomeThisMonth += order.final_price;
         }
 
@@ -215,7 +235,10 @@ export default function OrderManagementPage() {
   const filteredOrders = orders.filter((order) => {
     // Status Filter (Tab)
     if (filterStatus !== "Semua") {
-      if (filterStatus === "Belum Dibayar" && order.status !== "pending_payment")
+      if (
+        filterStatus === "Belum Dibayar" &&
+        order.status !== "pending_payment"
+      )
         return false;
       if (
         filterStatus === "Lunas" &&
@@ -256,7 +279,8 @@ export default function OrderManagementPage() {
 
   // Sorting Logic
   const sortedOrders = [...filteredOrders].sort((a, b) => {
-    const key = sortConfig.key === "customer" ? "customer_name" : sortConfig.key;
+    const key =
+      sortConfig.key === "customer" ? "customer_name" : sortConfig.key;
     const aValue = a[key];
     const bValue = b[key];
 
@@ -268,11 +292,28 @@ export default function OrderManagementPage() {
     return sortConfig.direction === "asc" ? comparison : -comparison;
   });
 
-  const totalPages = Math.ceil(sortedOrders.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
   const paginatedOrders = sortedOrders.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!pageDropdownOpen && !bulkStatusDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownOpen && pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+      if (bulkStatusDropdownOpen && bulkStatusDropdownRef.current && !bulkStatusDropdownRef.current.contains(event.target as Node)) {
+        setBulkStatusDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen, bulkStatusDropdownOpen]);
 
   const handleSort = (key: keyof Order | "customer") => {
     setSortConfig((current) => ({
@@ -301,8 +342,10 @@ export default function OrderManagementPage() {
     setFinalFileLink(order.final_file_link || "");
     setIsEditingFileLink(false);
     // Format dates for input type="date" (YYYY-MM-DD)
-    setEditedCreatedAt(order.created_at ? order.created_at.split('T')[0] : "");
-    setEditedPaymentDeadline(order.payment_deadline ? order.payment_deadline.split('T')[0] : "");
+    setEditedCreatedAt(order.created_at ? order.created_at.split("T")[0] : "");
+    setEditedPaymentDeadline(
+      order.payment_deadline ? order.payment_deadline.split("T")[0] : ""
+    );
     setShowDetailModal(true);
   };
 
@@ -315,8 +358,12 @@ export default function OrderManagementPage() {
         .update({
           status: editedStatus,
           final_file_link: finalFileLink || null,
-          created_at: editedCreatedAt ? new Date(editedCreatedAt).toISOString() : selectedOrder.created_at,
-          payment_deadline: editedPaymentDeadline ? new Date(editedPaymentDeadline).toISOString() : null,
+          created_at: editedCreatedAt
+            ? new Date(editedCreatedAt).toISOString()
+            : selectedOrder.created_at,
+          payment_deadline: editedPaymentDeadline
+            ? new Date(editedPaymentDeadline).toISOString()
+            : null,
         })
         .eq("id", selectedOrder.id);
 
@@ -340,7 +387,11 @@ export default function OrderManagementPage() {
 
   const handleCreateOrder = async () => {
     if (!newOrder.customer_name || !newOrder.final_price) {
-      showAlert("error", "Validasi Gagal", "Nama pelanggan dan total harga wajib diisi");
+      showAlert(
+        "error",
+        "Validasi Gagal",
+        "Nama pelanggan dan total harga wajib diisi"
+      );
       return;
     }
     setCreating(true);
@@ -360,17 +411,19 @@ export default function OrderManagementPage() {
         final_price: newOrder.final_price - newOrder.discount_amount,
         discount_code: newOrder.discount_code || null,
         discount_amount: newOrder.discount_amount || 0,
-        package_details: selectedPackage ? {
-          name: selectedPackage.name,
-          finalPrice: selectedPackage.finalPrice,
-          duration: selectedPackage.duration,
-          features: selectedPackage.features || [],
-        } : {
-          name: newOrder.package_name || "Custom Service",
-          finalPrice: String(newOrder.final_price),
-          duration: "7 hari",
-          features: [],
-        },
+        package_details: selectedPackage
+          ? {
+            name: selectedPackage.name,
+            finalPrice: selectedPackage.finalPrice,
+            duration: selectedPackage.duration,
+            features: selectedPackage.features || [],
+          }
+          : {
+            name: newOrder.package_name || "Custom Service",
+            finalPrice: String(newOrder.final_price),
+            duration: "7 hari",
+            features: [],
+          },
         payment_method: newOrder.payment_method,
         status: "pending_payment",
         created_at: new Date().toISOString(),
@@ -411,9 +464,15 @@ export default function OrderManagementPage() {
     if (selectedOrders.length === 0) return;
 
     // Check if all selected orders are cancelled
-    const nonCancelled = orders.filter(o => selectedOrders.includes(o.id) && o.status !== 'cancelled');
+    const nonCancelled = orders.filter(
+      (o) => selectedOrders.includes(o.id) && o.status !== "cancelled"
+    );
     if (nonCancelled.length > 0) {
-      showAlert("error", "Hapus Gagal", "Hanya pesanan dengan status 'Dibatalkan' yang dapat dihapus.");
+      showAlert(
+        "error",
+        "Hapus Gagal",
+        "Hanya pesanan dengan status 'Dibatalkan' yang dapat dihapus."
+      );
       return;
     }
 
@@ -428,10 +487,17 @@ export default function OrderManagementPage() {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.from('orders').delete().in('id', selectedOrders);
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .in("id", selectedOrders);
       if (error) throw error;
 
-      showAlert("success", "Berhasil", `${selectedOrders.length} pesanan berhasil dihapus`);
+      showAlert(
+        "success",
+        "Berhasil",
+        `${selectedOrders.length} pesanan berhasil dihapus`
+      );
       setSelectedOrders([]);
       fetchOrders();
     } catch (error) {
@@ -444,10 +510,17 @@ export default function OrderManagementPage() {
     if (!newStatus || selectedOrders.length === 0) return;
 
     try {
-      const { error } = await supabase.from('orders').update({ status: newStatus }).in('id', selectedOrders);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .in("id", selectedOrders);
       if (error) throw error;
 
-      showAlert("success", "Berhasil", `Status ${selectedOrders.length} pesanan berhasil diperbarui`);
+      showAlert(
+        "success",
+        "Berhasil",
+        `Status ${selectedOrders.length} pesanan berhasil diperbarui`
+      );
       setBulkStatus(""); // Reset select
       setSelectedOrders([]); // Optional: Keep selected or clear? Usually nice to clear.
       fetchOrders();
@@ -457,10 +530,61 @@ export default function OrderManagementPage() {
     }
   };
 
+  // Custom checkbox component with Heroicons (sama seperti di admin testimoni)
+  const CustomCheckbox = ({ checked, onChange, variant = "default" }: { checked: boolean; onChange: () => void; variant?: "default" | "header" }) => (
+    <button
+      onClick={onChange}
+      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
+        ? variant === "header"
+          ? "text-white"
+          : "text-primary"
+        : variant === "header"
+          ? "text-white/50 hover:text-white/80"
+          : "text-gray-300 hover:text-gray-400"
+        }`}
+    >
+      {checked ? (
+        <CheckCircleIcon className="w-5 h-5" />
+      ) : (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      )}
+    </button>
+  );
+
+  // Generate page numbers with ellipsis (sama seperti di admin testimoni)
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading)
     return (
-      <div className="p-8 flex justify-center">
-        <LogoLoading />
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+        <LogoPathAnimation />
       </div>
     );
 
@@ -468,167 +592,146 @@ export default function OrderManagementPage() {
     "bg-white dark:bg-slate-900 shadow-sm focus:border-blue-300 focus:ring-blue-500/10 dark:focus:border-blue-800 w-full rounded-lg border border-gray-300 py-2.5 px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30";
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
       {/* Overview Stats */}
-      {/* Overview Stats */}
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="sm:mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-gray-800 dark:text-white/90">
-              Ringkasan
-            </h2>
-            <button
-              onClick={() => setShowMobileStats(!showMobileStats)}
-              className="sm:hidden p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              {showMobileStats ? (
-                <ChevronUpIcon className="w-5 h-5" />
-              ) : (
-                <ChevronDownIcon className="w-5 h-5" />
-              )}
-            </button>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-brand-500 hover:bg-brand-600 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white transition bg-primary hover:bg-primary/80"
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span className="hidden sm:inline">Buat Invoice Baru</span>
-            <span className="sm:hidden">Baru</span>
-          </button>
-        </div>
-        <div
-          className={`${showMobileStats ? "grid" : "hidden"
-            } grid-cols-1 rounded-xl border border-gray-200 sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-y-0 dark:divide-gray-800 dark:border-gray-800`}
-        >
-          <div className="border-b p-5 sm:border-r lg:border-b-0">
-            <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Belum Dibayar
-            </p>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">Belum Dibayar</p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-2xl font-bold text-slate-800">
               {formatCurrency(stats.unpaid)}
-            </h3>
-          </div>
-          <div className="border-b p-5 lg:border-b-0">
-            <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Penghasilan Bulan Ini
             </p>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">
+            Penghasilan Bulan Ini
+          </p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-2xl font-bold text-slate-800">
               {formatCurrency(stats.incomeThisMonth)}
-            </h3>
-          </div>
-          <div className="border-b p-5 sm:border-r sm:border-b-0">
-            <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Penghasilan Tahun Ini
             </p>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">
+            Penghasilan Tahun Ini
+          </p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-2xl font-bold text-slate-800">
               {formatCurrency(stats.incomeThisYear)}
-            </h3>
-          </div>
-          <div className="p-5">
-            <p className="mb-1.5 text-sm text-gray-400 dark:text-gray-500">
-              Total Penghasilan
             </p>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">
+            Total Penghasilan
+          </p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-2xl font-bold text-slate-800">
               {formatCurrency(stats.totalIncome)}
-            </h3>
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800 flex-wrap gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              Daftar Invoice
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Semua transaksi pesanan Anda
-            </p>
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Tabs */}
+          <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
+            {["Semua", "Belum Dibayar", "Lunas"].map((status) => (
+              <button
+                key={status}
+                onClick={() => {
+                  setFilterStatus(status);
+                  setCurrentPage(1);
+                }}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === status
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+              >
+                {status}
+              </button>
+            ))}
           </div>
-          <div className="flex gap-3.5 flex-wrap">
-            {/* Filter Tabs */}
-            <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
-              {["Semua", "Belum Dibayar", "Lunas"].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => {
-                    setFilterStatus(status);
-                    setCurrentPage(1);
-                  }}
-                  className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === status
-                    ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                >
-                  {status}
-                </button>
-              ))}
+
+          {/* Right: Search, Filter, and Add Button */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari invoice, nama..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
+              />
             </div>
 
-            {/* Search & Filter Button */}
-            {/* Search & Filter Button */}
-            <div className="flex gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-initial">
-                <span className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                  <MagnifyingGlassIcon className="w-5 h-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Cari invoice, nama..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="dark:bg-slate-900 shadow-sm focus:border-blue-300 focus:ring-blue-500/10 dark:focus:border-blue-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-4 pl-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none xl:w-[300px] dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
-                />
-              </div>
-
-              <div className="relative">
-                <button
-                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                  className="shadow-sm flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-[11px] text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 h-11 sm:w-auto sm:px-4"
-                >
-                  <FunnelIcon className="w-5 h-5" />
-                  <span className="hidden sm:inline">Filter</span>
-                </button>
-                {showFilterDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right">
-                    <div className="mb-4">
-                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Paket
-                      </label>
-                      <input
-                        type="text"
-                        value={filterPackage}
-                        onChange={(e) => setFilterPackage(e.target.value)}
-                        placeholder="Filter paket..."
-                        className={inputStyle}
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Pelanggan
-                      </label>
-                      <input
-                        type="text"
-                        value={filterCustomer}
-                        onChange={(e) => setFilterCustomer(e.target.value)}
-                        placeholder="Filter pelanggan..."
-                        className={inputStyle}
-                      />
-                    </div>
-                    <button
-                      onClick={() => setShowFilterDropdown(false)}
-                      className="bg-primary hover:bg-primary/80 w-full h-10 rounded-lg text-sm font-medium text-white transition"
-                    >
-                      Terapkan Filter
-                    </button>
+            {/* Filter Button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className="h-11 flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
+              >
+                <FunnelIcon className="w-5 h-5" />
+                <span className="hidden sm:inline">Filter</span>
+              </button>
+              {showFilterDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right">
+                  <div className="mb-4">
+                    <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Paket
+                    </label>
+                    <input
+                      type="text"
+                      value={filterPackage}
+                      onChange={(e) => setFilterPackage(e.target.value)}
+                      placeholder="Filter paket..."
+                      className={inputStyle}
+                    />
                   </div>
-                )}
-              </div>
+                  <div className="mb-4">
+                    <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Pelanggan
+                    </label>
+                    <input
+                      type="text"
+                      value={filterCustomer}
+                      onChange={(e) => setFilterCustomer(e.target.value)}
+                      placeholder="Filter pelanggan..."
+                      className={inputStyle}
+                    />
+                  </div>
+                  <button
+                    onClick={() => setShowFilterDropdown(false)}
+                    className="bg-primary hover:bg-primary/80 w-full h-10 rounded-lg text-sm font-medium text-white transition"
+                  >
+                    Terapkan Filter
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Add Button */}
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              <span className="hidden sm:inline">Invoice Baru</span>
+              <span className="sm:hidden">Baru</span>
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-slate-100">
 
         {/* Bulk Actions Bar */}
         {selectedOrders.length > 0 && (
@@ -640,20 +743,37 @@ export default function OrderManagementPage() {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <select
-                className="text-sm border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500"
-                value={bulkStatus}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleBulkStatusChange(e.target.value);
-                  }
-                }}
-              >
-                <option value="">Ubah Status...</option>
-                {statusOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              {/* Custom Bulk Status Dropdown */}
+              <div className="relative" ref={bulkStatusDropdownRef}>
+                <button
+                  onClick={() => setBulkStatusDropdownOpen(!bulkStatusDropdownOpen)}
+                  className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-slate-800 dark:border-gray-700 dark:hover:bg-gray-700"
+                >
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {bulkStatus ? statusOptions.find(opt => opt.value === bulkStatus)?.label : "Ubah Status..."}
+                  </span>
+                  <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+                {bulkStatusDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-top-2 duration-150">
+                    {statusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setBulkStatus(option.value);
+                          handleBulkStatusChange(option.value);
+                          setBulkStatusDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors text-gray-700 dark:text-gray-300"
+                      >
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${option.bgClass} ${option.textClass}`}>
+                          {option.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleBulkDelete}
                 className="text-sm text-red-600 hover:text-red-700 bg-white border border-red-200 hover:bg-red-50 font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
@@ -730,66 +850,52 @@ export default function OrderManagementPage() {
           })}
         </div>
 
-
         {/* Desktop Table View */}
         <div className="hidden sm:block custom-scrollbar overflow-x-auto">
-          <table className="w-full table-auto text-left">
-            <thead className="bg-gray-50 dark:bg-slate-800">
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="p-4 whitespace-nowrap min-w-[200px]">
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-bg-primary focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 dark:ring-offset-slate-800"
-                        checked={
-                          selectedOrders.length === paginatedOrders.length &&
-                          paginatedOrders.length > 0
-                        }
-                        onChange={() => {
-                          if (selectedOrders.length === paginatedOrders.length)
-                            setSelectedOrders([]);
-                          else
-                            setSelectedOrders(paginatedOrders.map((o) => o.id));
-                        }}
-                      />
-                    </label>
-                    <span
-                      className="text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
-                      onClick={() => handleSort("invoice_number")}
-                    >
-                      No. Invoice
-                    </span>
-                  </div>
+          <table className="w-full table-auto text-left text-sm">
+            <thead className="bg-primary text-white font-medium">
+              <tr>
+                <th className="px-6 py-4 rounded-tl-lg">
+                  <CustomCheckbox
+                    checked={selectedOrders.length === paginatedOrders.length && paginatedOrders.length > 0}
+                    onChange={() => {
+                      if (selectedOrders.length === paginatedOrders.length)
+                        setSelectedOrders([]);
+                      else
+                        setSelectedOrders(paginatedOrders.map((o) => o.id));
+                    }}
+                    variant="header"
+                  />
                 </th>
+                <th className="px-6 py-4">No. Invoice</th>
                 <th
-                  className="p-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
+                  className="px-6 py-4 cursor-pointer"
                   onClick={() => handleSort("customer")}
                 >
                   Pelanggan
                 </th>
                 <th
-                  className="p-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
+                  className="px-6 py-4 cursor-pointer"
                   onClick={() => handleSort("created_at")}
                 >
                   Tanggal Dibuat
                 </th>
                 <th
-                  className="p-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
+                  className="px-6 py-4 cursor-pointer"
                   onClick={() => handleSort("payment_deadline")}
                 >
                   Jatuh Tempo
                 </th>
                 <th
-                  className="p-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
+                  className="px-6 py-4 cursor-pointer"
                   onClick={() => handleSort("final_price")}
                 >
                   Total
                 </th>
-                <th className="p-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-6 py-4">
                   Status
                 </th>
-                <th className="p-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 text-right">
+                <th className="px-6 py-4 text-right rounded-tr-lg">
                   Aksi
                 </th>
               </tr>
@@ -802,66 +908,67 @@ export default function OrderManagementPage() {
                 return (
                   <tr
                     key={order.id}
-                    className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition"
+                    className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedOrders.includes(order.id) ? "bg-primary/5" : ""
+                      }`}
                   >
-                    <td className="p-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-bg-primary focus:ring-blue-500 dark:border-gray-600 dark:bg-slate-700 dark:ring-offset-slate-800"
-                          checked={selectedOrders.includes(order.id)}
-                          onChange={() => {
-                            if (selectedOrders.includes(order.id))
-                              setSelectedOrders(
-                                selectedOrders.filter((id) => id !== order.id)
-                              );
-                            else setSelectedOrders([...selectedOrders, order.id]);
-                          }}
-                        />
-                        <span
-                          className="text-sm font-medium text-gray-900 dark:text-white hover:underline cursor-pointer"
-                          onClick={() => openDetailModal(order)}
-                        >
-                          {order.invoice_number}
-                        </span>
-                      </div>
+                    <td className="px-6 py-4">
+                      <CustomCheckbox
+                        checked={selectedOrders.includes(order.id)}
+                        onChange={() => {
+                          if (selectedOrders.includes(order.id))
+                            setSelectedOrders(
+                              selectedOrders.filter((id) => id !== order.id)
+                            );
+                          else
+                            setSelectedOrders([...selectedOrders, order.id]);
+                        }}
+                      />
                     </td>
-                    <td className="p-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    <td className="px-6 py-4">
+                      <span
+                        className="text-sm font-medium text-gray-900 dark:text-white hover:underline cursor-pointer"
+                        onClick={() => openDetailModal(order)}
+                      >
+                        {order.invoice_number}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                       {order.customer_name}
                     </td>
-                    <td className="p-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {formatDateSafe(order.created_at)}
                     </td>
-                    <td className="p-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {formatDateSafe(
                         order.payment_deadline || order.work_deadline
                       )}
                     </td>
-                    <td className="p-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                       {formatCurrency(order.final_price)}
                     </td>
-                    <td className="p-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusOpt.bgClass} ${statusOpt.textClass}`}
                       >
                         {statusOpt.label}
                       </span>
                     </td>
-                    <td className="p-4 whitespace-nowrap text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/order/${order.invoice_number}`}
                           target="_blank"
-                          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                          className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                          title="Buka Invoice"
                         >
-                          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                          Buka
+                          <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                         </Link>
                         <button
                           onClick={() => openDetailModal(order)}
-                          className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
+                          className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                          title="Detail"
                         >
-                          Detail
+                          <EyeIcon className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -873,222 +980,273 @@ export default function OrderManagementPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex flex-col items-center justify-between border-t border-gray-200 px-5 py-4 sm:flex-row dark:border-gray-800 gap-4">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Menampilkan{" "}
-            <span className="font-medium text-gray-900 dark:text-white">
-              {(currentPage - 1) * ITEMS_PER_PAGE + 1}
-            </span>{" "}
-            sampai{" "}
-            <span className="font-medium text-gray-900 dark:text-white">
-              {Math.min(currentPage * ITEMS_PER_PAGE, sortedOrders.length)}
-            </span>{" "}
-            dari{" "}
-            <span className="font-medium text-gray-900 dark:text-white">
-              {sortedOrders.length}
-            </span>
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-            >
-              <ChevronLeftIcon className="w-5 h-5" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(
-                (p) =>
-                  p === 1 ||
-                  p === totalPages ||
-                  (p >= currentPage - 1 && p <= currentPage + 1)
-              )
-              .map((page) => {
-                return (
+        {sortedOrders.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
+            <nav aria-label="Page navigation" className="flex items-center space-x-4">
+              <ul className="flex -space-x-px text-sm gap-2">
+                <li>
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`min-w-[40px] h-10 flex items-center justify-center rounded-lg text-sm font-medium transition ${currentPage === page
-                      ? "bg-primary text-white"
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                      }`}
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                   >
-                    {page}
+                    Sebelumnya
                   </button>
-                );
-              })}
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-            >
-              <ChevronRightIcon className="w-5 h-5" />
-            </button>
+                </li>
+                {getPageNumbers().map((page, idx) => (
+                  <li key={idx}>
+                    {page === "..." ? (
+                      <span className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium shadow-xs font-medium leading-5 text-sm w-9 h-9 rounded-lg">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setCurrentPage(page as number)}
+                        className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                            ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                            : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    )}
+                  </li>
+                ))}
+                <li>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                  >
+                    Selanjutnya
+                  </button>
+                </li>
+              </ul>
+            </nav>
+
+            {/* Items Per Page - Custom Dropdown */}
+            <div className="hidden sm:inline relative" ref={pageDropdownRef}>
+              <button
+                onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+                className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+              >
+                <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
+                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {pageDropdownOpen && (
+                <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                  {[10, 25, 50, 100].map((value) => (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        setItemsPerPage(value);
+                        setPageDropdownOpen(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                        }`}
+                    >
+                      {value} halaman
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div >
+        )}
+      </div>
 
       {/* Detail Modal */}
-      {
-        showDetailModal && selectedOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+      {showDetailModal && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Detail Pesanan
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {selectedOrder.invoice_number}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Detail Pesanan
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {selectedOrder.invoice_number}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                      <UserIcon className="w-4 h-4" /> Info Pelanggan
-                    </h4>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <p>
-                        <span className="text-gray-400">Nama:</span>{" "}
-                        {selectedOrder.customer_name}
-                      </p>
-                      <p>
-                        <span className="text-gray-400">Email:</span>{" "}
-                        {selectedOrder.customer_email}
-                      </p>
-                      <p>
-                        <span className="text-gray-400">WhatsApp:</span>{" "}
-                        {selectedOrder.customer_whatsapp}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                      <ShoppingBagIcon className="w-4 h-4" /> Info Paket
-                    </h4>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <p>
-                        <span className="text-gray-400">Paket:</span>{" "}
-                        {selectedOrder.package_details.name}
-                      </p>
-                      <p>
-                        <span className="text-gray-400">Total:</span>{" "}
-                        {formatCurrency(selectedOrder.final_price)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-                    Kelola Status
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4" /> Info Pelanggan
                   </h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Status
-                      </label>
-                      <select // This inputs was requested to be consistent
-                        className={inputStyle}
-                        value={editedStatus}
-                        onChange={(e) => setEditedStatus(e.target.value)}
-                      >
-                        {statusOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Link File Final
-                      </label>
-                      {isEditingFileLink ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            className={inputStyle}
-                            placeholder="https://drive.google.com/drive/folders/..."
-                            value={finalFileLink}
-                            onChange={(e) => setFinalFileLink(e.target.value)}
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingFileLink(false)}
-                            className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
-                          >
-                            OK
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div
-                            onClick={() => finalFileLink && window.open(`/file/o/${selectedOrder?.invoice_number}`, '_blank')}
-                            className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800' : ''}`}
-                          >
-                            {finalFileLink ? (
-                              <>
-                                <FolderOpenIcon className="w-4 h-4 text-primary flex-shrink-0" />
-                                <span className="text-sm text-gray-800 dark:text-white/90 truncate">
-                                  {finalFileLink}
-                                </span>
-                                <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              </>
-                            ) : (
-                              <span className="text-sm text-gray-400 dark:text-white/30">
-                                Belum ada link
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingFileLink(true)}
-                            className="p-2 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 flex-shrink-0"
-                            title="Edit Link"
-                          >
-                            <PencilSquareIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tanggal Dibuat
-                      </label>
-                      <input
-                        type="date"
-                        className={inputStyle}
-                        value={editedCreatedAt}
-                        onChange={(e) => setEditedCreatedAt(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Jatuh Tempo
-                      </label>
-                      <input
-                        type="date"
-                        className={inputStyle}
-                        value={editedPaymentDeadline}
-                        onChange={(e) => setEditedPaymentDeadline(e.target.value)}
-                      />
-                    </div>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <p>
+                      <span className="text-gray-400">Nama:</span>{" "}
+                      {selectedOrder.customer_name}
+                    </p>
+                    <p>
+                      <span className="text-gray-400">Email:</span>{" "}
+                      {selectedOrder.customer_email}
+                    </p>
+                    <p>
+                      <span className="text-gray-400">WhatsApp:</span>{" "}
+                      {selectedOrder.customer_whatsapp}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <ShoppingBagIcon className="w-4 h-4" /> Info Paket
+                  </h4>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <p>
+                      <span className="text-gray-400">Paket:</span>{" "}
+                      {selectedOrder.package_details.name}
+                    </p>
+                    <p>
+                      <span className="text-gray-400">Total:</span>{" "}
+                      {formatCurrency(selectedOrder.final_price)}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+                  Kelola Status
+                </h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Status
+                    </label>
+                    <select // This inputs was requested to be consistent
+                      className={inputStyle}
+                      value={editedStatus}
+                      onChange={(e) => setEditedStatus(e.target.value)}
+                    >
+                      {statusOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Link File Final
+                    </label>
+                    {isEditingFileLink ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className={inputStyle}
+                          placeholder="https://drive.google.com/drive/folders/..."
+                          value={finalFileLink}
+                          onChange={(e) => setFinalFileLink(e.target.value)}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingFileLink(false)}
+                          className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
+                        >
+                          OK
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div
+                          onClick={() =>
+                            finalFileLink &&
+                            window.open(
+                              `/file/o/${selectedOrder?.invoice_number}`,
+                              "_blank"
+                            )
+                          }
+                          className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink
+                            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
+                            : ""
+                            }`}
+                        >
+                          {finalFileLink ? (
+                            <>
+                              <FolderOpenIcon className="w-4 h-4 text-primary flex-shrink-0" />
+                              <span className="text-sm text-gray-800 dark:text-white/90 truncate">
+                                {finalFileLink}
+                              </span>
+                              <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-400 dark:text-white/30">
+                              Belum ada link
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingFileLink(true)}
+                          className="p-2 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 flex-shrink-0"
+                          title="Edit Link"
+                        >
+                          <PencilSquareIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tanggal Dibuat
+                    </label>
+                    <input
+                      type="date"
+                      className={inputStyle}
+                      value={editedCreatedAt}
+                      onChange={(e) => setEditedCreatedAt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Jatuh Tempo
+                    </label>
+                    <input
+                      type="date"
+                      className={inputStyle}
+                      value={editedPaymentDeadline}
+                      onChange={(e) => setEditedPaymentDeadline(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+              {/* Left side - Minta Testimoni for completed orders */}
+              <div>
+                {selectedOrder?.status === "completed" && (
+                  <button
+                    onClick={async () => {
+                      if (!selectedOrder) return;
+                      const link = `${window.location.origin}/review/${selectedOrder.invoice_number}`;
+                      await navigator.clipboard.writeText(link);
+                      showAlert("success", "Berhasil", "Link testimoni disalin!");
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                  >
+                    <ChatBubbleLeftEllipsisIcon className="w-4 h-4" />
+                    Minta Testimoni
+                  </button>
+                )}
+              </div>
+
+              {/* Right side - Action buttons */}
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-slate-700 dark:text-white dark:border-gray-600"
@@ -1105,8 +1263,12 @@ export default function OrderManagementPage() {
                 <button
                   onClick={async () => {
                     if (!selectedOrder) return;
-                    if (selectedOrder.status !== 'cancelled') {
-                      showAlert("error", "Gagal", "Hanya pesanan dengan status 'Dibatalkan' yang dapat dihapus");
+                    if (selectedOrder.status !== "cancelled") {
+                      showAlert(
+                        "error",
+                        "Gagal",
+                        "Hanya pesanan dengan status 'Dibatalkan' yang dapat dihapus"
+                      );
                       return;
                     }
 
@@ -1119,7 +1281,10 @@ export default function OrderManagementPage() {
                     if (!confirmed) return;
 
                     try {
-                      const { error } = await supabase.from('orders').delete().eq('id', selectedOrder.id);
+                      const { error } = await supabase
+                        .from("orders")
+                        .delete()
+                        .eq("id", selectedOrder.id);
                       if (error) throw error;
 
                       // Send delete notification
@@ -1128,7 +1293,11 @@ export default function OrderManagementPage() {
                         selectedOrder.customer_name
                       );
 
-                      showAlert("success", "Berhasil", "Pesanan berhasil dihapus");
+                      showAlert(
+                        "success",
+                        "Berhasil",
+                        "Pesanan berhasil dihapus"
+                      );
                       setShowDetailModal(false);
                       fetchOrders();
                     } catch (err) {
@@ -1144,216 +1313,244 @@ export default function OrderManagementPage() {
               </div>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Create Order Modal - with Styled Inputs */}
-      {
-        showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-xl">
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Buat Invoice Baru
-                </h3>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Buat Invoice Baru
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nama Pelanggan
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={newOrder.customer_name}
+                  onChange={(e) =>
+                    setNewOrder({ ...newOrder, customer_name: e.target.value })
+                  }
+                />
               </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Nama Pelanggan
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={newOrder.customer_name}
-                    onChange={(e) =>
-                      setNewOrder({ ...newOrder, customer_name: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    className={inputStyle}
-                    value={newOrder.customer_email}
-                    onChange={(e) =>
-                      setNewOrder({ ...newOrder, customer_email: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={newOrder.customer_whatsapp}
-                    onChange={(e) =>
-                      setNewOrder({ ...newOrder, customer_whatsapp: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Layanan
-                  </label>
-                  <select
-                    className={inputStyle}
-                    value={isCustomService ? "custom" : (selectedServiceId || "")}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "custom") {
-                        setIsCustomService(true);
-                        setSelectedServiceId(null);
-                        setSelectedPackage(null);
-                      } else {
-                        setIsCustomService(false);
-                        const sId = Number(val);
-                        setSelectedServiceId(sId || null);
-                        setSelectedPackage(null);
-                        setNewOrder({ ...newOrder, package_name: "", final_price: 0 });
-                      }
-                    }}
-                  >
-                    <option value="">Pilih Layanan</option>
-                    {services.map((svc) => (
-                      <option key={svc.id} value={svc.id}>
-                        {svc.title}
-                      </option>
-                    ))}
-                    <option value="custom">Custom (Layanan Khusus)</option>
-                  </select>
-                </div>
-                {isCustomService ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Nama Layanan/Paket Custom
-                      </label>
-                      <input
-                        type="text"
-                        className={inputStyle}
-                        placeholder="Masukkan nama layanan..."
-                        value={newOrder.package_name}
-                        onChange={(e) =>
-                          setNewOrder({ ...newOrder, package_name: e.target.value })
-                        }
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Paket
-                    </label>
-                    <select
-                      className={inputStyle}
-                      value={newOrder.package_name}
-                      onChange={(e) => {
-                        const pkgName = e.target.value;
-                        const selectedSvc = services.find(s => s.id === selectedServiceId);
-                        const pkg = selectedSvc?.packages?.find((p: ServicePackage) => p.name === pkgName);
-                        setSelectedPackage(pkg || null);
-                        setNewOrder({
-                          ...newOrder,
-                          package_name: pkgName,
-                          final_price: pkg ? parseInt(pkg.finalPrice.replace(/\D/g, '')) : 0,
-                        });
-                      }}
-                      disabled={!selectedServiceId}
-                    >
-                      <option value="">Pilih Paket</option>
-                      {selectedServiceId && services.find(s => s.id === selectedServiceId)?.packages?.map((pkg: ServicePackage, idx: number) => (
-                        <option key={idx} value={pkg.name}>
-                          {pkg.name} - {pkg.finalPrice}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Total Harga (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    className={inputStyle}
-                    value={newOrder.final_price}
-                    onChange={(e) =>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  className={inputStyle}
+                  value={newOrder.customer_email}
+                  onChange={(e) =>
+                    setNewOrder({ ...newOrder, customer_email: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  WhatsApp
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={newOrder.customer_whatsapp}
+                  onChange={(e) =>
+                    setNewOrder({
+                      ...newOrder,
+                      customer_whatsapp: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Layanan
+                </label>
+                <select
+                  className={inputStyle}
+                  value={isCustomService ? "custom" : selectedServiceId || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "custom") {
+                      setIsCustomService(true);
+                      setSelectedServiceId(null);
+                      setSelectedPackage(null);
+                    } else {
+                      setIsCustomService(false);
+                      const sId = Number(val);
+                      setSelectedServiceId(sId || null);
+                      setSelectedPackage(null);
                       setNewOrder({
                         ...newOrder,
-                        final_price: Number(e.target.value),
-                      })
+                        package_name: "",
+                        final_price: 0,
+                      });
                     }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                  }}
+                >
+                  <option value="">Pilih Layanan</option>
+                  {services.map((svc) => (
+                    <option key={svc.id} value={svc.id}>
+                      {svc.title}
+                    </option>
+                  ))}
+                  <option value="custom">Custom (Layanan Khusus)</option>
+                </select>
+              </div>
+              {isCustomService ? (
+                <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Kode Diskon
+                      Nama Layanan/Paket Custom
                     </label>
                     <input
                       type="text"
                       className={inputStyle}
-                      placeholder="Opsional"
-                      value={newOrder.discount_code}
+                      placeholder="Masukkan nama layanan..."
+                      value={newOrder.package_name}
                       onChange={(e) =>
-                        setNewOrder({ ...newOrder, discount_code: e.target.value })
+                        setNewOrder({
+                          ...newOrder,
+                          package_name: e.target.value,
+                        })
                       }
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Potongan (Rp)
-                    </label>
-                    <input
-                      type="number"
-                      className={inputStyle}
-                      placeholder="0"
-                      value={newOrder.discount_amount}
-                      onChange={(e) =>
-                        setNewOrder({ ...newOrder, discount_amount: Number(e.target.value) })
-                      }
-                    />
-                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Paket
+                  </label>
+                  <select
+                    className={inputStyle}
+                    value={newOrder.package_name}
+                    onChange={(e) => {
+                      const pkgName = e.target.value;
+                      const selectedSvc = services.find(
+                        (s) => s.id === selectedServiceId
+                      );
+                      const pkg = selectedSvc?.packages?.find(
+                        (p: ServicePackage) => p.name === pkgName
+                      );
+                      setSelectedPackage(pkg || null);
+                      setNewOrder({
+                        ...newOrder,
+                        package_name: pkgName,
+                        final_price: pkg
+                          ? parseInt(pkg.finalPrice.replace(/\D/g, ""))
+                          : 0,
+                      });
+                    }}
+                    disabled={!selectedServiceId}
+                  >
+                    <option value="">Pilih Paket</option>
+                    {selectedServiceId &&
+                      services
+                        .find((s) => s.id === selectedServiceId)
+                        ?.packages?.map((pkg: ServicePackage, idx: number) => (
+                          <option key={idx} value={pkg.name}>
+                            {pkg.name} - {pkg.finalPrice}
+                          </option>
+                        ))}
+                  </select>
                 </div>
-                {newOrder.discount_amount > 0 && (
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-sm">
-                    <span className="text-green-700 dark:text-green-400">
-                      Total Setelah Diskon: <strong>{formatCurrency(newOrder.final_price - newOrder.discount_amount)}</strong>
-                    </span>
-                  </div>
-                )}
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Total Harga (Rp)
+                </label>
+                <input
+                  type="number"
+                  className={inputStyle}
+                  value={newOrder.final_price}
+                  onChange={(e) =>
+                    setNewOrder({
+                      ...newOrder,
+                      final_price: Number(e.target.value),
+                    })
+                  }
+                />
               </div>
-              <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleCreateOrder}
-                  disabled={creating}
-                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50"
-                >
-                  {creating ? "Membuat..." : "Buat Invoice"}
-                </button>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Kode Diskon
+                  </label>
+                  <input
+                    type="text"
+                    className={inputStyle}
+                    placeholder="Opsional"
+                    value={newOrder.discount_code}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        discount_code: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Potongan (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    className={inputStyle}
+                    placeholder="0"
+                    value={newOrder.discount_amount}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        discount_amount: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
               </div>
+              {newOrder.discount_amount > 0 && (
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-sm">
+                  <span className="text-green-700 dark:text-green-400">
+                    Total Setelah Diskon:{" "}
+                    <strong>
+                      {formatCurrency(
+                        newOrder.final_price - newOrder.discount_amount
+                      )}
+                    </strong>
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreateOrder}
+                disabled={creating}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50"
+              >
+                {creating ? "Membuat..." : "Buat Invoice"}
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Success Modal */}
       {showSuccessModal && (
@@ -1382,7 +1579,9 @@ export default function OrderManagementPage() {
                 <button
                   onClick={() => {
                     setShowSuccessModal(false);
-                    const order = orders.find(o => o.invoice_number === createdInvoice);
+                    const order = orders.find(
+                      (o) => o.invoice_number === createdInvoice
+                    );
                     if (order) openDetailModal(order);
                   }}
                   className="flex-1 px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
@@ -1394,6 +1593,6 @@ export default function OrderManagementPage() {
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 }

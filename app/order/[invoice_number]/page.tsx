@@ -15,7 +15,7 @@ import {
 import { Order } from "@/types/order";
 import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
-import html2pdf from "html2pdf.js";
+// import html2pdf from "html2pdf.js"; (Removed for dynamic import)
 import LogoLoading from "@/components/LogoLoading";
 import InvoiceGate from "@/components/InvoiceGate";
 
@@ -147,6 +147,8 @@ export default function InvoiceDetailPage({
           },
         };
 
+
+        const html2pdf = (await import("html2pdf.js")).default;
         await html2pdf().set(options).from(invoiceRef.current).save();
       }
     } catch (error) {

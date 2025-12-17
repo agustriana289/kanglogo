@@ -92,7 +92,13 @@ export default function EditPageForm() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
           <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
+import LogoPathAnimation from "@/components/LogoPathAnimation";
+
+// ... existing code ...
+
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+        <LogoPathAnimation />
+      </div>
             <p className="mt-4 text-slate-600 dark:text-slate-400">
               Sedang memuat...
             </p>

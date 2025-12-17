@@ -53,25 +53,13 @@ export default function NewWidgetPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Tambah Widget Baru
-          </h1>
-          <Link
-            href="/admin/widgets"
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-          >
-            Batal
-          </Link>
-        </div>
-
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Judul Widget
             </label>
@@ -81,7 +69,7 @@ export default function NewWidgetPage() {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-800 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               required
             />
           </div>
@@ -89,7 +77,7 @@ export default function NewWidgetPage() {
           <div>
             <label
               htmlFor="position"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Posisi
             </label>
@@ -98,7 +86,7 @@ export default function NewWidgetPage() {
               name="position"
               value={formData.position}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-800 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
             >
               <option value="header">Header</option>
               <option value="footer">Footer</option>
@@ -117,7 +105,7 @@ export default function NewWidgetPage() {
           <div>
             <label
               htmlFor="content"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Konten (HTML)
             </label>
@@ -127,16 +115,22 @@ export default function NewWidgetPage() {
               rows={10}
               value={formData.content}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-800 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="Anda bisa menggunakan tag HTML di sini. Contoh: &lt;p&gt;Teks paragraf&lt;/p&gt; atau &lt;ul&gt;&lt;li&gt;Daftar&lt;/li&gt;&lt;/ul&gt;"
               required
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Anda dapat menggunakan tag HTML untuk memformat konten.
             </p>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Link
+              href="/admin/widgets"
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              Batal
+            </Link>
             <button
               type="submit"
               disabled={submitting}
@@ -147,8 +141,6 @@ export default function NewWidgetPage() {
           </div>
         </form>
       </div>
-
-
     </div>
   );
 }

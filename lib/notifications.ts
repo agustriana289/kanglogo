@@ -193,7 +193,7 @@ export async function createStorePurchaseNotification(
     const { error: notificationError } = await supabase
       .from("notifications")
       .insert({
-        type: "store",
+        type: "purchase",
         title: "Pembelian Toko Baru",
         message: `${customerName} membeli "${assetName}" (${orderNumber})`,
         link: `/admin/orders?tab=store`,

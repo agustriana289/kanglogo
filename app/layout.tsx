@@ -1,6 +1,5 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
-import "react-quill-new/dist/quill.snow.css";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +10,7 @@ import RootLayoutClient from "./RootLayoutClient";
 import PublicNotificationPopup from "@/components/PublicNotificationPopup";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 import JsonLd from "@/components/JsonLd";
+import Script from "next/script";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -81,8 +81,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return metadata;
 }
 
-import Script from "next/script";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -130,6 +128,14 @@ export default function RootLayout({
       <body
         className={`${inter.className} font-sans antialiased bg-slate-100 m-0 p-0`}
       >
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            :root {
+              --color-primary: #4559F2;
+              --color-secondary: #fcd34d;
+            }
+          `
+        }} />
         <JsonLd data={organizationData} />
         <JsonLd data={websiteData} />
         <RootLayoutClient />

@@ -1,7 +1,7 @@
 // app/store/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MarketplaceAsset } from "@/types/marketplace";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -9,20 +9,21 @@ import Image from "next/image";
 import {
   StarIcon,
   GiftIcon,
-  CurrencyDollarIcon,
-  ShieldCheckIcon,
   MagnifyingGlassIcon,
-  XMarkIcon,
-  FunnelIcon,
+  ChevronDownIcon,
   TagIcon,
+  CurrencyDollarIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import WidgetArea from "@/components/WidgetArea";
 
 // Tambahkan interface untuk memperluas MarketplaceAsset dengan tags
 interface AssetWithTags extends MarketplaceAsset {
   tags: string[];
 }
+
+const ITEMS_PER_PAGE = 12;
 
 export default function MarketplacePage() {
   const [assets, setAssets] = useState<AssetWithTags[]>([]);
@@ -34,11 +35,44 @@ export default function MarketplacePage() {
   const [selectedType, setSelectedType] = useState("Semua");
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("Semua");
-  const [showFilters, setShowFilters] = useState(false);
+
+  // Dropdown states
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const [priceDropdownOpen, setPriceDropdownOpen] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+
+  // Refs for click outside detection
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const priceDropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9; // 3x3 grid
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    if (!categoryDropdownOpen && !typeDropdownOpen && !priceDropdownOpen && !tagDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownOpen && categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setCategoryDropdownOpen(false);
+      }
+      if (typeDropdownOpen && typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
+        setTypeDropdownOpen(false);
+      }
+      if (priceDropdownOpen && priceDropdownRef.current && !priceDropdownRef.current.contains(event.target as Node)) {
+        setPriceDropdownOpen(false);
+      }
+      if (tagDropdownOpen && tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setTagDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [categoryDropdownOpen, typeDropdownOpen, priceDropdownOpen, tagDropdownOpen]);
 
   useEffect(() => {
     fetchAssets();
@@ -136,6 +170,7 @@ export default function MarketplacePage() {
     }
 
     setFilteredAssets(filtered);
+    setCurrentPage(1);
   };
 
   const formatCurrency = (amount: number) => {
@@ -146,474 +181,338 @@ export default function MarketplacePage() {
     }).format(amount);
   };
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedCategory("Semua");
-    setSelectedType("Semua");
-    setSelectedTag("");
-    setSelectedPrice("Semua");
-    setCurrentPage(1); // Reset to page 1 when clearing filters
-  };
-
   // Pagination calculation
-  const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedAssets = filteredAssets.slice(startIndex, endIndex);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedType, selectedTag, selectedPrice]);
-
-  const hasActiveFilters =
-    searchQuery ||
-    selectedCategory !== "Semua" ||
-    selectedType !== "Semua" ||
-    selectedTag ||
-    selectedPrice !== "Semua";
+  const totalPages = Math.ceil(filteredAssets.length / ITEMS_PER_PAGE);
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredAssets.slice(indexOfFirstItem, indexOfLastItem);
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Jelajahi logo, ikon, dan aset grafis berkualitas tinggi untuk proyek
-            Anda.
-          </p>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <section className="py-16 bg-slate-100">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h1 className="font-manrope font-bold text-4xl text-slate-700 mb-5 md:text-6xl leading-tight">
+    <main className="min-h-screen py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali ke Beranda
+          </Link>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
             <span className="text-primary">Marketplace</span> Aset Digital
           </h1>
-          <p className="text-base font-normal leading-7 text-slate-700">
-            Jelajahi logo, ikon, dan aset grafis berkualitas tinggi untuk proyek
-            Anda.
+          <p className="text-slate-600 max-w-xl mx-auto">
+            Jelajahi logo, ikon, dan aset grafis berkualitas tinggi untuk proyek Anda
           </p>
         </div>
 
         <WidgetArea position="marketplace_header" />
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar with filters */}
-          <div className="lg:w-1/4">
-            <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Filter</h2>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Reset
-                  </button>
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari aset..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {/* Category Filter - Custom Dropdown */}
+              <div className="relative" ref={categoryDropdownRef}>
+                <button
+                  onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                  className="h-10 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                >
+                  <Squares2X2Icon className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-700">{selectedCategory === "Semua" ? "Kategori" : selectedCategory}</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${categoryDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+                {categoryDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
+                    {["Semua", "Logo", "Icon", "Illustration"].map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => {
+                          setSelectedCategory(option);
+                          setCategoryDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${selectedCategory === option
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
+                          }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {/* Search */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Pencarian
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Cari aset..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                </div>
+              {/* Type Filter - Custom Dropdown */}
+              <div className="relative" ref={typeDropdownRef}>
+                <button
+                  onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
+                  className="h-10 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                >
+                  <StarIcon className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-700">{selectedType === "Semua" ? "Jenis" : selectedType}</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${typeDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+                {typeDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
+                    {["Semua", "Premium", "Freebies"].map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => {
+                          setSelectedType(option);
+                          setTypeDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${selectedType === option
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
+                          }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Category Filter */}
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-slate-700 mb-2">
-                  Kategori
-                </h3>
-                <div className="space-y-2">
-                  {["Semua", "Logo", "Icon", "Illustration"].map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
-                        ? "bg-primary text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
+              {/* Price Filter - Custom Dropdown */}
+              <div className="relative" ref={priceDropdownRef}>
+                <button
+                  onClick={() => setPriceDropdownOpen(!priceDropdownOpen)}
+                  className="h-10 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                >
+                  <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-700">{selectedPrice === "Semua" ? "Harga" : selectedPrice}</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${priceDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+                {priceDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
+                    {[
+                      { value: "Semua", label: "Semua Harga" },
+                      { value: "Gratis", label: "Gratis" },
+                      { value: "< Rp 100.000", label: "< Rp 100.000" },
+                      { value: "Rp 100.000 - Rp 500.000", label: "Rp 100rb - Rp 500rb" },
+                      { value: "Rp 500.000 - Rp 1.000.000", label: "Rp 500rb - Rp 1jt" },
+                      { value: "> Rp 1.000.000", label: "> Rp 1.000.000" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSelectedPrice(option.value);
+                          setPriceDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${selectedPrice === option.value
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
+                          }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Type Filter */}
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-slate-700 mb-2">
-                  Jenis
-                </h3>
-                <div className="space-y-2">
-                  {["Semua", "Premium", "Freebies"].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setSelectedType(type)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
-                        ? "bg-primary text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Filter */}
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-slate-700 mb-2">
-                  Rentang Harga
-                </h3>
-                <div className="space-y-2">
-                  {["Semua", "Gratis", "< Rp 100.000", "Rp 100.000 - Rp 500.000", "Rp 500.000 - Rp 1.000.000", "> Rp 1.000.000"].map((price) => (
-                    <button
-                      key={price}
-                      onClick={() => setSelectedPrice(price)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedPrice === price
-                        ? "bg-primary text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                    >
-                      {price}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tag Filter */}
+              {/* Tag Filter - Custom Dropdown */}
               {tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-700 mb-2">
-                    Tags
-                  </h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                    {tags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() =>
-                          setSelectedTag(selectedTag === tag ? "" : tag)
-                        }
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Main content */}
-          <div className="lg:w-3/4">
-            {/* Mobile filter toggle */}
-            <div className="lg:hidden mb-6">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-white rounded-lg shadow-md"
-              >
-                <FunnelIcon className="h-5 w-5 mr-2" />
-                Filter
-                {hasActiveFilters && (
-                  <span className="ml-2 px-2 py-1 bg-primary text-white text-xs rounded-full">
-                    Active
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Mobile filters */}
-            {showFilters && (
-              <div className="lg:hidden mb-6 bg-white rounded-xl shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Filter
-                  </h2>
+                <div className="relative" ref={tagDropdownRef}>
                   <button
-                    onClick={() => setShowFilters(false)}
-                    className="text-slate-400 hover:text-slate-600"
+                    onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                    className="h-10 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   >
-                    <XMarkIcon className="h-6 w-6" />
+                    <TagIcon className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-700">{selectedTag || "Tag"}</span>
+                    <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${tagDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
-                </div>
-
-                {/* Search */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Pencarian
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="Cari aset..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                  </div>
-                </div>
-
-                {/* Category Filter */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-700 mb-2">
-                    Kategori
-                  </h3>
-                  <div className="space-y-2">
-                    {["Semua", "Logo", "Icon", "Template", "Font"].map(
-                      (category) => (
-                        <button
-                          key={category}
-                          onClick={() => setSelectedCategory(category)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedCategory === category
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
-                        >
-                          {category}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                <WidgetArea position="marketplace_sidebar" />
-
-                {/* Type Filter */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-700 mb-2">
-                    Jenis
-                  </h3>
-                  <div className="space-y-2">
-                    {["Semua", "Premium", "Freebies"].map((type) => (
+                  {tagDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-48 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
                       <button
-                        key={type}
-                        onClick={() => setSelectedType(type)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        onClick={() => {
+                          setSelectedTag("");
+                          setTagDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg transition-colors ${selectedTag === ""
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
                           }`}
                       >
-                        {type}
+                        Semua Tag
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tag Filter */}
-                {tags.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-medium text-slate-700 mb-2">
-                      Tags
-                    </h3>
-                    <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                       {tags.map((tag) => (
                         <button
                           key={tag}
-                          onClick={() =>
-                            setSelectedTag(selectedTag === tag ? "" : tag)
-                          }
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${selectedTag === tag
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          onClick={() => {
+                            setSelectedTag(tag);
+                            setTagDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 last:rounded-b-lg transition-colors ${selectedTag === tag
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-gray-700"
                             }`}
                         >
                           {tag}
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="w-full py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300"
-                  >
-                    Reset Filter
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Results count */}
-            <div className="mb-6 flex justify-between items-center">
-              <p className="text-slate-600">
-                Menampilkan {filteredAssets.length} dari {assets.length} aset
-              </p>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Hapus Filter
-                </button>
+                  )}
+                </div>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Asset Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {paginatedAssets.map((asset) => (
-                <div
-                  key={asset.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden group animate-fadeIn"
-                >
-                  <Link href={`/store/${asset.slug}`}>
-                    <div className="relative w-full h-64">
-                      {asset.image_url ? (
-                        <Image
-                          src={asset.image_url}
-                          alt={asset.nama_aset}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          className="transition-transform duration-300 group-hover:scale-105"
-                          unoptimized
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500">
-                          Tidak Ada Gambar
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${asset.jenis === "premium"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                            }`}
-                        >
-                          {asset.jenis === "premium" ? (
-                            <StarIcon className="h-4 w-4 mr-1" />
-                          ) : (
-                            <GiftIcon className="h-4 w-4 mr-1" />
-                          )}
-                          {asset.jenis === "premium" ? "Premium" : "Freebies"}
-                        </span>
-                      </div>
+        {/* Stats */}
+        <p className="text-sm text-gray-500 mb-4">
+          Menampilkan {currentItems.length} dari {filteredAssets.length} aset
+        </p>
+
+        {/* Assets Grid */}
+        {currentItems.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">Tidak ada aset yang ditemukan</h3>
+            <p className="text-gray-500">Coba ubah filter pencarian Anda</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {currentItems.map((asset, index) => (
+              <Link
+                key={asset.id}
+                href={`/store/${asset.slug}`}
+                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
+              >
+                {/* Image */}
+                <div className="relative w-full h-48">
+                  {asset.image_url ? (
+                    <Image
+                      src={asset.image_url}
+                      alt={asset.nama_aset}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      className="transition-transform duration-300 hover:scale-105"
+                      unoptimized
+                      loading={index < 4 ? "eager" : "lazy"}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 text-sm">
+                      Tidak Ada Gambar
                     </div>
-                  </Link>
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">
-                      {asset.nama_aset}
-                    </h3>
+                  )}
+                  {/* Badge */}
+                  <div className="absolute top-2 right-2">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${asset.jenis === "premium"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                        }`}
+                    >
+                      {asset.jenis === "premium" ? (
+                        <StarIcon className="h-3 w-3 mr-1" />
+                      ) : (
+                        <GiftIcon className="h-3 w-3 mr-1" />
+                      )}
+                      {asset.jenis === "premium" ? "Premium" : "Free"}
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {asset.kategori_aset}
-                      </span>
-                      <div className="flex items-center">
-                        {asset.jenis === "premium" ? (
-                          <span className="text-lg font-bold text-primary">
-                            {formatCurrency(asset.harga_aset)}
-                          </span>
-                        ) : (
-                          <span className="text-lg font-bold text-green-600">
-                            Gratis
-                          </span>
-                        )}
-                      </div>
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {asset.nama_aset}
+                  </h3>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600">
+                      {asset.kategori_aset}
+                    </span>
+                    <div className="flex items-center">
+                      {asset.jenis === "premium" ? (
+                        <span className="text-sm font-bold text-primary">
+                          {formatCurrency(asset.harga_aset)}
+                        </span>
+                      ) : (
+                        <span className="text-sm font-bold text-green-600">
+                          Gratis
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex justify-center">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Sebelumnya
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (pageNum) => (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`px-4 py-2 rounded-md text-sm font-medium ${pageNum === currentPage
-                          ? "bg-primary text-white"
-                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                          }`}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  )}
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Selanjutnya
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {filteredAssets.length === 0 && (
-              <div className="text-center py-12">
-                <div className="mx-auto h-12 w-12 text-slate-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mt-2 text-sm font-medium text-slate-900">
-                  Tidak ada aset yang ditemukan
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Coba ubah filter atau kata kunci pencarian Anda.
-                </p>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-                  >
-                    Hapus Filter
-                  </button>
-                )}
-              </div>
-            )}
-
-            <WidgetArea position="marketplace_footer" />
+              </Link>
+            ))}
           </div>
-        </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav aria-label="Page navigation" className="flex justify-center mt-10">
+            <ul className="flex -space-x-px text-sm">
+              {/* Previous Button */}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center text-gray-600 bg-white box-border border border-gray-200 hover:bg-gray-50 hover:text-gray-900 font-medium rounded-s-lg text-sm px-3 h-10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+              </li>
+
+              {/* Page Numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <li key={page}>
+                  <button
+                    onClick={() => setCurrentPage(page)}
+                    aria-current={currentPage === page ? "page" : undefined}
+                    className={`flex items-center justify-center box-border border font-medium text-sm w-10 h-10 focus:outline-none transition-colors ${currentPage === page
+                      ? "text-primary bg-gray-100 border-gray-200 hover:text-primary"
+                      : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                  >
+                    {page}
+                  </button>
+                </li>
+              ))}
+
+              {/* Next Button */}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center justify-center text-gray-600 bg-white box-border border border-gray-200 hover:bg-gray-50 hover:text-gray-900 font-medium rounded-e-lg text-sm px-3 h-10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        )}
+
+        <WidgetArea position="marketplace_footer" />
       </div>
-    </section>
+    </main>
   );
 }

@@ -297,8 +297,72 @@ export default function StoreFileManagerPage({
                             </div>
                         </div>
 
-                        {/* Table */}
-                        <div className="max-w-full overflow-x-auto">
+                        {/* Mobile Card View */}
+                        <div className="block sm:hidden space-y-3 px-6 pb-4">
+                            {files.length === 0 ? (
+                                <div className="text-center text-gray-500 dark:text-gray-400 py-8 border-t border-gray-100 dark:border-gray-800">
+                                    Folder ini kosong
+                                </div>
+                            ) : (
+                                files.map((file) => (
+                                    <div
+                                        key={file.id}
+                                        className={`bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm ${file.isFolder ? "cursor-pointer active:scale-95 transition-transform" : ""}`}
+                                        onClick={() => file.isFolder && navigateToFolder(file)}
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className="shrink-0 p-2.5 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                                                    <FileTypeIcon category={file.category} className="w-6 h-6" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h3 className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                                                        {file.name}
+                                                    </h3>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                        {file.category} • {file.isFolder ? "-" : file.size}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800 mt-3">
+                                            <span className="text-[10px] text-gray-400">
+                                                {formatDate(file.modifiedTime)}
+                                            </span>
+
+                                            {!file.isFolder && (
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.open(file.viewLink, "_blank");
+                                                        }}
+                                                        className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white bg-gray-100 dark:bg-slate-700 rounded-lg transition"
+                                                        title="Lihat"
+                                                    >
+                                                        <EyeIcon className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDownload(file);
+                                                        }}
+                                                        className="p-2 text-white bg-primary hover:bg-primary/90 rounded-lg shadow-sm shadow-primary/30 transition"
+                                                        title="Download"
+                                                    >
+                                                        <ArrowDownTrayIcon className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden sm:block max-w-full overflow-x-auto">
                             <div className="min-w-[800px]">
                                 {/* Table Header */}
                                 <div className="grid grid-cols-12 border-t border-gray-200 px-6 py-3 dark:border-gray-800">

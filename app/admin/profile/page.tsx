@@ -3,25 +3,29 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import {
     UserCircleIcon,
     EnvelopeIcon,
     KeyIcon,
-    CheckCircleIcon,
+    PencilIcon,
+    CheckIcon,
+    XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [editingField, setEditingField] = useState<string | null>(null);
     const { showAlert } = useAlert();
 
     // Form states
     const [email, setEmail] = useState("");
-    const [currentPassword, setCurrentPassword] = useState("");
+    const [tempEmail, setTempEmail] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPasswordFields, setShowPasswordFields] = useState(false);
 
     useEffect(() => {
         fetchUser();
@@ -30,11 +34,15 @@ export default function ProfilePage() {
     const fetchUser = async () => {
         setLoading(true);
         try {
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const {
+                data: { user },
+                error,
+            } = await supabase.auth.getUser();
             if (error) throw error;
             if (user) {
                 setUser(user);
                 setEmail(user.email || "");
+                setTempEmail(user.email || "");
             }
         } catch (error) {
             console.error("Error fetching user:", error);
@@ -44,18 +52,36 @@ export default function ProfilePage() {
         }
     };
 
-    const handleUpdateEmail = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email) {
+    const handleEditField = (field: string) => {
+        setEditingField(field);
+        if (field === "email") {
+            setTempEmail(email);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingField(null);
+        setTempEmail(email);
+    };
+
+    const handleSaveEmail = async () => {
+        if (!tempEmail) {
             showAlert("error", "Validasi", "Email tidak boleh kosong");
             return;
         }
 
         setSaving(true);
         try {
-            const { error } = await supabase.auth.updateUser({ email });
+            const { error } = await supabase.auth.updateUser({ email: tempEmail });
             if (error) throw error;
-            showAlert("success", "Berhasil", "Email berhasil diperbarui. Silakan cek email Anda untuk konfirmasi.");
+
+            setEmail(tempEmail);
+            setEditingField(null);
+            showAlert(
+                "success",
+                "Berhasil",
+                "Email berhasil diperbarui. Silakan cek email Anda untuk konfirmasi."
+            );
         } catch (error: any) {
             console.error("Error updating email:", error);
             showAlert("error", "Gagal", error.message || "Gagal memperbarui email");
@@ -64,9 +90,7 @@ export default function ProfilePage() {
         }
     };
 
-    const handleUpdatePassword = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleUpdatePassword = async () => {
         if (!newPassword || !confirmPassword) {
             showAlert("error", "Validasi", "Semua field password harus diisi");
             return;
@@ -88,9 +112,9 @@ export default function ProfilePage() {
             if (error) throw error;
 
             showAlert("success", "Berhasil", "Password berhasil diperbarui");
-            setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
+            setShowPasswordFields(false);
         } catch (error: any) {
             console.error("Error updating password:", error);
             showAlert("error", "Gagal", error.message || "Gagal memperbarui password");
@@ -101,138 +125,211 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className="p-8 flex justify-center">
-                <LogoLoading />
+            <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+                <LogoPathAnimation />
             </div>
         );
     }
 
-    const inputStyle =
-        "bg-white dark:bg-slate-900 shadow-sm focus:border-blue-300 focus:ring-blue-500/10 dark:focus:border-blue-800 w-full rounded-lg border border-gray-300 py-2.5 px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30";
-
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
-            <div className="max-w-3xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                            <UserCircleIcon className="w-10 h-10 text-primary" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Profile Admin</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
-                        </div>
-                    </div>
-                </div>
+        <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
 
-                {/* Update Email */}
-                <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                    <div className="flex items-center gap-3 mb-6">
-                        <EnvelopeIcon className="w-5 h-5 text-primary" />
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ubah Email</h2>
-                    </div>
-                    <form onSubmit={handleUpdateEmail} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Email Baru
-                            </label>
-                            <input
-                                type="email"
-                                className={inputStyle}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@example.com"
-                            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Contact Details / Profile Info */}
+                <div className="bg-white rounded-lg shadow-sm border border-slate-100">
+                    {/* Header */}
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">Informasi Profil</h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Informasi akun Anda disediakan di bawah ini.
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {saving ? "Menyimpan..." : (
-                                    <>
-                                        <CheckCircleIcon className="w-4 h-4" />
-                                        Simpan Email
-                                    </>
+                    </div>
+
+                    {/* Body - Details List */}
+                    <div className="p-6 space-y-4">
+                        {/* Email */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-500">Email</p>
+                                {editingField === "email" ? (
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <input
+                                            type="email"
+                                            value={tempEmail}
+                                            onChange={(e) => setTempEmail(e.target.value)}
+                                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                            autoFocus
+                                        />
+                                        <button
+                                            onClick={handleSaveEmail}
+                                            disabled={saving}
+                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                            title="Simpan"
+                                        >
+                                            <CheckIcon className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={handleCancelEdit}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                            title="Batal"
+                                        >
+                                            <XMarkIcon className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-900 mt-1">{email}</p>
                                 )}
-                            </button>
+                            </div>
+                            {editingField !== "email" && (
+                                <button
+                                    onClick={() => handleEditField("email")}
+                                    className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition ml-2"
+                                    title="Edit Email"
+                                >
+                                    <PencilIcon className="w-5 h-5" />
+                                </button>
+                            )}
                         </div>
-                    </form>
-                </div>
 
-                {/* Update Password */}
-                <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                    <div className="flex items-center gap-3 mb-6">
-                        <KeyIcon className="w-5 h-5 text-primary" />
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ubah Password</h2>
+                        {/* User ID */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-500">ID Pengguna</p>
+                                <p className="text-sm text-gray-900 mt-1 font-mono truncate">
+                                    {user?.id}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Created At */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-500">Akun Dibuat</p>
+                                <p className="text-sm text-gray-900 mt-1">
+                                    {user?.created_at
+                                        ? new Date(user.created_at).toLocaleDateString("id-ID", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                        })
+                                        : "-"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Last Sign In */}
+                        <div className="flex items-center justify-between py-3">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-500">Terakhir Login</p>
+                                <p className="text-sm text-gray-900 mt-1">
+                                    {user?.last_sign_in_at
+                                        ? new Date(user.last_sign_in_at).toLocaleDateString("id-ID", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })
+                                        : "-"}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <form onSubmit={handleUpdatePassword} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Password Baru
-                            </label>
-                            <input
-                                type="password"
-                                className={inputStyle}
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Konfirmasi Password Baru
-                            </label>
-                            <input
-                                type="password"
-                                className={inputStyle}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {saving ? "Menyimpan..." : (
-                                    <>
-                                        <CheckCircleIcon className="w-4 h-4" />
-                                        Ubah Password
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </form>
                 </div>
 
-                {/* Account Info */}
-                <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informasi Akun</h2>
-                    <div className="space-y-3 text-sm">
-                        <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-gray-500 dark:text-gray-400">ID Pengguna</span>
-                            <span className="text-gray-900 dark:text-white font-mono text-xs">{user?.id}</span>
+                {/* Security Settings */}
+                <div className="bg-white rounded-lg shadow-sm border border-slate-100">
+                    {/* Header */}
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">Keamanan</h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Kelola password dan keamanan akun Anda.
+                                </p>
+                            </div>
+                            {!showPasswordFields && (
+                                <button
+                                    onClick={() => setShowPasswordFields(true)}
+                                    className="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition"
+                                >
+                                    Ubah Password
+                                </button>
+                            )}
                         </div>
-                        <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-gray-500 dark:text-gray-400">Terakhir Login</span>
-                            <span className="text-gray-900 dark:text-white">
-                                {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("id-ID") : "-"}
-                            </span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                            <span className="text-gray-500 dark:text-gray-400">Akun Dibuat</span>
-                            <span className="text-gray-900 dark:text-white">
-                                {user?.created_at ? new Date(user.created_at).toLocaleString("id-ID") : "-"}
-                            </span>
-                        </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-6">
+                        {showPasswordFields ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Password Baru
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                        placeholder="Minimal 6 karakter"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Konfirmasi Password Baru
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                        placeholder="Ketik ulang password baru"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3 pt-2">
+                                    <button
+                                        onClick={handleUpdatePassword}
+                                        disabled={saving}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition flex items-center gap-2"
+                                    >
+                                        {saving ? (
+                                            "Menyimpan..."
+                                        ) : (
+                                            <>
+                                                <CheckIcon className="w-4 h-4" />
+                                                Simpan Password
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowPasswordFields(false);
+                                            setNewPassword("");
+                                            setConfirmPassword("");
+                                        }}
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                                    >
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <KeyIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                                <p className="text-sm text-gray-500">
+                                    Klik tombol "Ubah Password" untuk mengubah password Anda.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
+
         </div>
     );
 }

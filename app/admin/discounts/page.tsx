@@ -1,51 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Discount, DiscountType } from "@/types/discount";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import { useAlert } from "@/components/providers/AlertProvider";
 import {
   PlusIcon,
-  EditIcon,
+  PencilIcon,
   TrashIcon,
   TagIcon,
-  PercentIcon,
-  DollarSignIcon,
+  MagnifyingGlassIcon,
+  ChevronDownIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  SearchIcon, // Diperbaiki dari MagnifyingGlassIcon
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 // Interface untuk layanan
 interface Service {
   id: number;
   title: string;
 }
-
-// Opsi untuk tipe diskon
-const discountTypeOptions: {
-  value: DiscountType;
-  label: string;
-  icon: React.ReactNode;
-}[] = [
-    {
-      value: "percentage",
-      label: "Persentase (%)",
-      icon: <PercentIcon size={16} />,
-    },
-    {
-      value: "fixed_amount",
-      label: "Nominal Tetap (Rp)",
-      icon: <DollarSignIcon size={16} />,
-    },
-  ];
-
-// Items per page
-const ITEMS_PER_PAGE = 20;
 
 export default function DiscountManagementPage() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
@@ -57,8 +34,13 @@ export default function DiscountManagementPage() {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "active" | "inactive" | "scheduled" | "expired">("all");
+
   const { showAlert, showConfirm } = useAlert();
+
   const [formData, setFormData] = useState<Partial<Discount>>({
     code: "",
     description: "",
@@ -72,16 +54,34 @@ export default function DiscountManagementPage() {
     is_active: true,
   });
 
-  // Calculate total pages
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  // Stats
+  const stats = {
+    total: discounts.length,
+    active: discounts.filter(d => getDiscountStatus(d).key === "active").length,
+    inactive: discounts.filter(d => !d.is_active).length,
+    scheduled: discounts.filter(d => getDiscountStatus(d).key === "scheduled").length,
+    expired: discounts.filter(d => getDiscountStatus(d).key === "expired").length,
+  };
 
-  // Calculate the range of items to display
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentItems = filteredDiscounts.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
+  // Pagination
+  const totalPages = Math.ceil(filteredDiscounts.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredDiscounts.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!pageDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen]);
 
   useEffect(() => {
     fetchDiscounts();
@@ -89,26 +89,33 @@ export default function DiscountManagementPage() {
   }, []);
 
   useEffect(() => {
-    // Filter discounts based on search query
-    if (searchQuery.trim() === "") {
-      setFilteredDiscounts(discounts);
-    } else {
-      const filtered = discounts.filter(
-        (discount) =>
-          (discount.code &&
-            discount.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (discount.description &&
-            discount.description
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase())) ||
-          (discount.type &&
-            discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      setFilteredDiscounts(filtered);
+    // Filter discounts based on search query and tab
+    let filtered = discounts;
+
+    // Filter by status tab
+    if (activeTab === "active") {
+      filtered = filtered.filter(d => getDiscountStatus(d).key === "active");
+    } else if (activeTab === "inactive") {
+      filtered = filtered.filter(d => !d.is_active);
+    } else if (activeTab === "scheduled") {
+      filtered = filtered.filter(d => getDiscountStatus(d).key === "scheduled");
+    } else if (activeTab === "expired") {
+      filtered = filtered.filter(d => getDiscountStatus(d).key === "expired");
     }
-    // Reset to first page when search changes
+
+    // Filter by search query
+    if (searchQuery.trim() !== "") {
+      filtered = filtered.filter(
+        (discount) =>
+          (discount.code && discount.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (discount.description && discount.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (discount.type && discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    setFilteredDiscounts(filtered);
     setCurrentPage(1);
-  }, [searchQuery, discounts]);
+  }, [searchQuery, discounts, activeTab]);
 
   const fetchDiscounts = async () => {
     const { data, error } = await supabase
@@ -119,7 +126,6 @@ export default function DiscountManagementPage() {
     else {
       setDiscounts(data || []);
       setFilteredDiscounts(data || []);
-      setTotalItems(data?.length || 0);
     }
     setLoading(false);
   };
@@ -195,8 +201,6 @@ export default function DiscountManagementPage() {
 
       if (error) throw error;
 
-      if (error) throw error;
-
       showAlert("success", "Berhasil", "Diskon berhasil disimpan!");
       fetchDiscounts();
       closeModal();
@@ -226,603 +230,599 @@ export default function DiscountManagementPage() {
       showAlert("error", "Gagal", "Gagal menonaktifkan diskon.");
     } else {
       showAlert("success", "Berhasil", "Diskon berhasil dinonaktifkan.");
-
-      const updatedDiscounts = discounts.map((d) =>
-        d.id === id ? { ...d, is_active: false } : d
-      );
-      setDiscounts(updatedDiscounts);
-
-      // Update filtered discounts if needed
-      if (searchQuery.trim() === "") {
-        setFilteredDiscounts(updatedDiscounts);
-      } else {
-        // Reapply filters
-        const filtered = updatedDiscounts.filter(
-          (discount) =>
-            (discount.code &&
-              discount.code
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase())) ||
-            (discount.description &&
-              discount.description
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase())) ||
-            (discount.type &&
-              discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-        setFilteredDiscounts(filtered);
-      }
+      fetchDiscounts();
     }
   };
 
-  const getDiscountStatus = (discount: Discount) => {
+  function getDiscountStatus(discount: Discount) {
     const now = new Date();
     const startDate = discount.starts_at ? new Date(discount.starts_at) : null;
     const endDate = discount.expires_at ? new Date(discount.expires_at) : null;
 
     if (!discount.is_active)
       return {
+        key: "inactive" as const,
         label: "Non-aktif",
-        color:
-          "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
-        icon: <XCircleIcon size={14} />,
+        color: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
+        icon: <XCircleIcon className="w-4 h-4" />,
       };
     if (startDate && now < startDate)
       return {
+        key: "scheduled" as const,
         label: "Terjadwal",
-        color:
-          "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-        icon: <ClockIcon size={14} />,
+        color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+        icon: <ClockIcon className="w-4 h-4" />,
       };
     if (endDate && now > endDate)
       return {
+        key: "expired" as const,
         label: "Kadaluarsa",
         color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-        icon: <XCircleIcon size={14} />,
+        icon: <XCircleIcon className="w-4 h-4" />,
       };
     return {
+      key: "active" as const,
       label: "Aktif",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      icon: <CheckCircleIcon size={14} />,
+      color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      icon: <CheckCircleIcon className="w-4 h-4" />,
     };
-  };
-
-  // Generate page numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const startPage = Math.max(1, currentPage - 2);
-      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (startPage > 1) {
-        pages.push(1);
-        if (startPage > 2) {
-          pages.push("...");
-        }
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push("...");
-        }
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki dengan Search */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Tabs */}
+          <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
             <button
-              onClick={() => openModal()}
-              className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              onClick={() => setActiveTab("all")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
             >
-              <PlusIcon size={20} className="mr-2" />
-              Tambah Diskon
+              Semua ({stats.total})
             </button>
+            <button
+              onClick={() => setActiveTab("active")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "active"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Aktif ({stats.active})
+            </button>
+            <button
+              onClick={() => setActiveTab("scheduled")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "scheduled"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Terjadwal ({stats.scheduled})
+            </button>
+            <button
+              onClick={() => setActiveTab("expired")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "expired"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Kadaluarsa ({stats.expired})
+            </button>
+            <button
+              onClick={() => setActiveTab("inactive")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "inactive"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Non-aktif ({stats.inactive})
+            </button>
+          </div>
 
-            <div className="relative w-full sm:w-auto">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-slate-400" />
-              </div>
+          {/* Right: Search and Add Button */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Cari diskon..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
               />
             </div>
+
+            {/* Add Button */}
+            <button
+              onClick={() => openModal()}
+              className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Tambah Diskon
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Items Count */}
-        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          Menampilkan {indexOfFirstItem + 1}-
-          {Math.min(indexOfLastItem, filteredDiscounts.length)} dari{" "}
-          {filteredDiscounts.length} diskon
+      {/* Content */}
+      {currentItems.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+          <TagIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            {searchQuery ? "Tidak ada diskon yang ditemukan" : "Tidak ada diskon"}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {searchQuery
+              ? "Coba ubah kata kunci pencarian Anda."
+              : "Belum ada diskon yang dibuat."}
+          </p>
         </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-primary text-white font-medium">
+                  <tr>
+                    <th className="px-6 py-4 rounded-tl-lg">Kode</th>
+                    <th className="px-6 py-4">Deskripsi</th>
+                    <th className="px-6 py-4">Nilai</th>
+                    <th className="px-6 py-4">Berlaku Untuk</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right rounded-tr-lg">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {currentItems.map((discount) => {
+                    const status = getDiscountStatus(discount);
+                    return (
+                      <tr
+                        key={discount.id}
+                        className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition"
+                      >
+                        <td className="px-6 py-4">
+                          {discount.code ? (
+                            <span className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                              <TagIcon className="w-4 h-4 text-gray-400" />
+                              {discount.code}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 dark:text-gray-400 italic">
+                              Otomatis
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
+                          {discount.description || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
+                          {discount.type === "percentage"
+                            ? `${discount.value}%`
+                            : `Rp ${discount.value.toLocaleString("id-ID")}`}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
+                          {discount.service_id
+                            ? services.find((s) => s.id === discount.service_id)?.title
+                            : "Semua Layanan"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex gap-1 items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}
+                          >
+                            {status.icon} {status.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openModal(discount)}
+                              className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                              title="Edit"
+                            >
+                              <PencilIcon className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(discount.id)}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                              title="Nonaktifkan"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-600">
-            <thead className="bg-slate-50 dark:bg-slate-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Kode
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Deskripsi
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Nilai
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Berlaku Untuk
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {currentItems.map((discount) => {
-                const status = getDiscountStatus(discount);
-                return (
-                  <tr
-                    key={discount.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
-                      {discount.code ? (
-                        <span className="flex items-center gap-1">
-                          <TagIcon size={16} /> {discount.code}
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 dark:text-slate-400 italic">
-                          Otomatis
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      {discount.description || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      {discount.type === "percentage"
-                        ? `${discount.value}%`
-                        : `Rp ${discount.value.toLocaleString("id-ID")}`}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                      {discount.service_id
-                        ? services.find((s) => s.id === discount.service_id)
-                          ?.title
-                        : "Semua Layanan"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {currentItems.map((discount) => {
+              const status = getDiscountStatus(discount);
+              return (
+                <div
+                  key={discount.id}
+                  className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+                >
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        {discount.code ? (
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                            <TagIcon className="w-5 h-5 text-gray-400" />
+                            {discount.code}
+                          </h3>
+                        ) : (
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white italic">
+                            Otomatis
+                          </h3>
+                        )}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          {discount.description || "-"}
+                        </p>
+                      </div>
                       <span
-                        className={`inline-flex gap-1 items-center px-2 py-1 rounded-full text-xs font-medium ${status.color}`}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color} ml-2`}
                       >
                         {status.icon} {status.label}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openModal(discount)}
-                          className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(discount.id)}
-                          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                        >
-                          <TrashIcon size={16} className="mr-1" />
-                          Nonaktifkan
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
 
-        {/* Mobile Card View */}
-        <div className="md:hidden space-y-4">
-          {currentItems.map((discount) => {
-            const status = getDiscountStatus(discount);
-            return (
-              <div
-                key={discount.id}
-                className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    {discount.code ? (
-                      <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center">
-                        <TagIcon size={16} className="mr-2" />
-                        {discount.code}
-                      </h3>
-                    ) : (
-                      <h3 className="text-lg font-medium text-slate-900 dark:text-white italic">
-                        Otomatis
-                      </h3>
-                    )}
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      {discount.description || "-"}
-                    </p>
+                    <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                      <p>
+                        <span className="font-medium">Nilai:</span>{" "}
+                        {discount.type === "percentage"
+                          ? `${discount.value}%`
+                          : `Rp ${discount.value.toLocaleString("id-ID")}`}
+                      </p>
+                      <p>
+                        <span className="font-medium">Berlaku Untuk:</span>{" "}
+                        {discount.service_id
+                          ? services.find((s) => s.id === discount.service_id)?.title
+                          : "Semua Layanan"}
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <button
+                        onClick={() => openModal(discount)}
+                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                        title="Edit"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(discount.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                        title="Nonaktifkan"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}
-                  >
-                    {status.icon} {status.label}
-                  </span>
                 </div>
-                <div className="space-y-2 text-sm text-slate-500 dark:text-slate-400 mb-3">
-                  <p>
-                    <span className="font-medium">Nilai:</span>{" "}
-                    {discount.type === "percentage"
-                      ? `${discount.value}%`
-                      : `Rp ${discount.value.toLocaleString("id-ID")}`}
-                  </p>
-                  <p>
-                    <span className="font-medium">Berlaku Untuk:</span>{" "}
-                    {discount.service_id
-                      ? services.find((s) => s.id === discount.service_id)
-                        ?.title
-                      : "Semua Layanan"}
-                  </p>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => openModal(discount)}
-                    className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(discount.id)}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                  >
-                    <TrashIcon size={16} className="mr-1" />
-                    Nonaktifkan
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-        {/* Empty State */}
-        {currentItems.length === 0 && (
-          <div className="text-center py-12">
-            <TagIcon className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              {searchQuery
-                ? "Tidak ada diskon yang ditemukan"
-                : "Tidak ada diskon"}
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {searchQuery
-                ? "Coba ubah kata kunci pencarian Anda."
-                : "Belum ada diskon yang dibuat."}
-            </p>
-            {!searchQuery && (
-              <div className="mt-6">
+      {/* Pagination */}
+      {filteredDiscounts.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
+          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+            <ul className="flex -space-x-px text-sm gap-2">
+              <li>
                 <button
-                  onClick={() => openModal()}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
-                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                  Tambah Diskon Baru
+                  Sebelumnya
                 </button>
+              </li>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    (p >= currentPage - 1 && p <= currentPage + 1)
+                )
+                .map((page, idx) => (
+                  <li key={idx}>
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  </li>
+                ))}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                >
+                  Selanjutnya
+                </button>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Items Per Page - Custom Dropdown */}
+          <div className="hidden sm:inline relative" ref={pageDropdownRef}>
+            <button
+              onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+              className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+            >
+              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            {pageDropdownOpen && (
+              <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                {[10, 25, 50, 100].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setItemsPerPage(value);
+                      setPageDropdownOpen(false);
+                      setCurrentPage(1);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {value} halaman
+                  </button>
+                ))}
               </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-slate-700 dark:text-slate-300">
-              Halaman {currentPage} dari {totalPages}
-            </div>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeftIcon className="h-5 w-5" />
-              </button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${currentPage === page
-                      ? "bg-primary text-white border-primary"
-                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                      }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRightIcon className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal for Create/Edit Discount - Diperbaiki */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-700 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      {/* Modal for Create/Edit Discount */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl shadow-xl my-8">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 {editingDiscount ? "Edit Diskon" : "Tambah Diskon Baru"}
-              </h2>
-              <div className="space-y-4">
-                {/* Tipe Diskon */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Tipe Diskon
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="discount_type"
-                        className="mr-2"
-                        checked={!formData.is_automatic}
-                        onChange={() =>
-                          setFormData({ ...formData, is_automatic: false })
-                        }
-                      />
-                      Manual (Masukkan Kode)
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="discount_type"
-                        className="mr-2"
-                        checked={!!formData.is_automatic}
-                        onChange={() =>
-                          setFormData({ ...formData, is_automatic: true })
-                        }
-                      />
-                      Otomatis
-                    </label>
-                  </div>
-                </div>
+              </h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
 
-                {/* Kode Diskon */}
-                {!formData.is_automatic && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Kode Diskon
-                    </label>
+            <div className="p-6 space-y-4 max-h-[calc(90vh-200px)] overflow-y-auto">
+              {/* Tipe Diskon */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipe Diskon
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
                     <input
-                      type="text"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.code || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          code: e.target.value.toUpperCase(),
-                        })
+                      type="radio"
+                      name="discount_type"
+                      className="mr-2"
+                      checked={!formData.is_automatic}
+                      onChange={() =>
+                        setFormData({ ...formData, is_automatic: false })
                       }
-                      placeholder="contoh: PROMOHEMAT"
                     />
-                  </div>
-                )}
+                    Manual (Masukkan Kode)
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="discount_type"
+                      className="mr-2"
+                      checked={!!formData.is_automatic}
+                      onChange={() =>
+                        setFormData({ ...formData, is_automatic: true })
+                      }
+                    />
+                    Otomatis
+                  </label>
+                </div>
+              </div>
 
-                {/* Deskripsi */}
+              {/* Kode Diskon */}
+              {!formData.is_automatic && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Deskripsi (Opsional)
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Kode Diskon
                   </label>
                   <input
                     type="text"
-                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                    value={formData.description || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    placeholder="Diskon untuk promo akhir tahun"
-                  />
-                </div>
-
-                {/* Nilai & Tipe Nilai */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Tipe Nilai
-                    </label>
-                    <select
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.type}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          type: e.target.value as DiscountType,
-                        })
-                      }
-                    >
-                      {discountTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Nilai
-                    </label>
-                    <input
-                      type="number"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.value || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          value: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Berlaku Untuk */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Berlaku Untuk
-                  </label>
-                  <select
-                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                    value={formData.service_id || "all"}
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    value={formData.code || ""}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        service_id:
-                          e.target.value === "all"
-                            ? null
-                            : parseInt(e.target.value),
+                        code: e.target.value.toUpperCase(),
+                      })
+                    }
+                    placeholder="contoh: PROMOHEMAT"
+                  />
+                </div>
+              )}
+
+              {/* Deskripsi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Deskripsi (Opsional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Diskon untuk promo akhir tahun"
+                />
+              </div>
+
+              {/* Nilai & Tipe Nilai */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tipe Nilai
+                  </label>
+                  <select
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    value={formData.type}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        type: e.target.value as DiscountType,
                       })
                     }
                   >
-                    <option value="all">Semua Layanan</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.title}
-                      </option>
-                    ))}
+                    <option value="percentage">Persentase (%)</option>
+                    <option value="fixed_amount">Nominal Tetap (Rp)</option>
                   </select>
                 </div>
-
-                {/* Durasi */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Tanggal Mulai
-                    </label>
-                    <input
-                      type="datetime-local"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.starts_at || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, starts_at: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Tanggal Berakhir
-                    </label>
-                    <input
-                      type="datetime-local"
-                      className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                      value={formData.expires_at || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, expires_at: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Batas Pemakaian */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Batas Pemakaian (Opsional)
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nilai
                   </label>
                   <input
                     type="number"
-                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm p-2 border dark:bg-slate-800 dark:text-white"
-                    value={formData.usage_limit || ""}
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    value={formData.value || ""}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        usage_limit: parseInt(e.target.value) || null,
+                        value: parseFloat(e.target.value) || 0,
                       })
                     }
-                    placeholder="Kosongkan untuk tidak terbatas"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-600">
-                <button
-                  onClick={closeModal}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500"
-                  disabled={saving}
+              {/* Berlaku Untuk */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Berlaku Untuk
+                </label>
+                <select
+                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  value={formData.service_id || "all"}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      service_id:
+                        e.target.value === "all"
+                          ? null
+                          : parseInt(e.target.value),
+                    })
+                  }
                 >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:bg-slate-400"
-                >
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
+                  <option value="all">Semua Layanan</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Durasi */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tanggal Mulai
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    value={formData.starts_at || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, starts_at: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tanggal Berakhir
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    value={formData.expires_at || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, expires_at: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Batas Pemakaian */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Batas Pemakaian (Opsional)
+                </label>
+                <input
+                  type="number"
+                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  value={formData.usage_limit || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      usage_limit: parseInt(e.target.value) || null,
+                    })
+                  }
+                  placeholder="Kosongkan untuk tidak terbatas"
+                />
               </div>
             </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500"
+                disabled={saving}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {saving ? "Menyimpan..." : "Simpan"}
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

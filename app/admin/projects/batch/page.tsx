@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
-import LogoLoading from "@/components/LogoLoading";
 import { uploadFile } from "@/lib/supabase-storage";
 import Link from "next/link";
 import {
@@ -431,8 +430,8 @@ export default function BatchUploadPage() {
             <div className="mb-6">
                 <div
                     className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors cursor-pointer ${isDragging
-                            ? "border-primary bg-primary/5"
-                            : "border-gray-300 dark:border-gray-700 hover:border-primary bg-white dark:bg-white/[0.03]"
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-300 dark:border-gray-700 hover:border-primary bg-white dark:bg-white/[0.03]"
                         }`}
                     onClick={() => fileInputRef.current?.click()}
                     onDragEnter={handleDragEnter}
@@ -472,12 +471,12 @@ export default function BatchUploadPage() {
                         <div
                             key={fileItem.id}
                             className={`rounded-xl border p-4 transition ${fileItem.status === "success"
-                                    ? "border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
-                                    : fileItem.status === "error"
-                                        ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
-                                        : fileItem.status === "uploading"
-                                            ? "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20"
-                                            : "border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.03]"
+                                ? "border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
+                                : fileItem.status === "error"
+                                    ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
+                                    : fileItem.status === "uploading"
+                                        ? "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20"
+                                        : "border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.03]"
                                 }`}
                         >
                             <div className="flex flex-col lg:flex-row gap-4">

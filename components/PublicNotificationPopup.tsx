@@ -20,8 +20,8 @@ export default function PublicNotificationPopup() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
 
-    // Only show on public pages
-    const isPublicPage = !pathname.startsWith("/admin") && !pathname.startsWith("/login");
+    // Filter out admin, login, and dashboard pages
+    const isPublicPage = !pathname.startsWith("/admin") && !pathname.startsWith("/login") && !pathname.startsWith("/dashboard");
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("id-ID", {
@@ -187,9 +187,6 @@ export default function PublicNotificationPopup() {
         return firstName.substring(0, Math.min(firstName.length - 1, 4)) + "***";
     };
 
-    // Debug: log when component renders
-    console.log("PublicNotificationPopup render:", { isPublicPage, purchasesCount: purchases.length, isVisible });
-
     if (!isPublicPage || purchases.length === 0) return null;
 
     const currentPurchase = purchases[currentIndex];
@@ -242,6 +239,6 @@ export default function PublicNotificationPopup() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

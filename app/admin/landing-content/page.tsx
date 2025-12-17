@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { uploadFile } from "@/lib/supabase-storage";
 import { PencilIcon } from "@heroicons/react/24/outline";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import { StarIcon as StarSolid } from "@heroicons/react/24/solid";
 
 export default function LandingContentPage() {
@@ -339,92 +339,91 @@ export default function LandingContentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
-        {/* Tab Navigation - Responsive */}
-        <div className="flex gap-1 sm:gap-2 mb-6 border-b border-gray-200 px-5 pt-4 dark:border-gray-800 overflow-x-auto">
-          <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "hero"
-              ? "text-primary border-b-2 border-primary"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-              }`}
-            onClick={() => setActiveTab("hero")}
-          >
-            Hero
-          </button>
-          <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "featured"
-              ? "text-primary border-b-2 border-primary"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-              }`}
-            onClick={() => setActiveTab("featured")}
-          >
-            Featured
-          </button>
-          <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "reasons"
-              ? "text-primary border-b-2 border-primary"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-              }`}
-            onClick={() => setActiveTab("reasons")}
-          >
-            Reasons
-          </button>
-          <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "steps"
-              ? "text-primary border-b-2 border-primary"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-              }`}
-            onClick={() => setActiveTab("steps")}
-          >
-            Steps
-          </button>
-          <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "video"
-              ? "text-primary border-b-2 border-primary"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-              }`}
-            onClick={() => setActiveTab("video")}
-          >
-            Video
-          </button>
-          <button
-            className={`py-2 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap rounded-t-lg transition-colors ${activeTab === "call_to_action"
-              ? "text-primary border-b-2 border-primary"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-              }`}
-            onClick={() => setActiveTab("call_to_action")}
-          >
-            CTA
-          </button>
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      {/* Notification */}
+      {notification.show && (
+        <div
+          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${notification.type === "success"
+            ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
+            : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
+            }`}
+        >
+          {notification.message}
         </div>
+      )}
 
-        {/* Notification */}
-        {notification.show && (
-          <div
-            className={`mb-4 p-4 rounded-lg ${notification.type === "success"
-              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
-              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300"
-              }`}
-          >
-            {notification.message}
+      {/* Header with Tabs */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex items-center overflow-x-auto">
+          {/* Tabs */}
+          <div className="flex h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">
+            <button
+              onClick={() => setActiveTab("hero")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all whitespace-nowrap ${activeTab === "hero"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Hero
+            </button>
+            <button
+              onClick={() => setActiveTab("featured")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all whitespace-nowrap ${activeTab === "featured"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Featured
+            </button>
+            <button
+              onClick={() => setActiveTab("reasons")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all whitespace-nowrap ${activeTab === "reasons"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Reasons
+            </button>
+            <button
+              onClick={() => setActiveTab("steps")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all whitespace-nowrap ${activeTab === "steps"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Steps
+            </button>
+            <button
+              onClick={() => setActiveTab("video")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all whitespace-nowrap ${activeTab === "video"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              Video
+            </button>
+            <button
+              onClick={() => setActiveTab("call_to_action")}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all whitespace-nowrap ${activeTab === "call_to_action"
+                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+            >
+              CTA
+            </button>
           </div>
-        )}
+        </div>
+      </div>
 
+      {/* Content Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
         {/* Hero Section Tab */}
         {activeTab === "hero" && (
           <div className="p-6 space-y-6">
@@ -494,7 +493,7 @@ export default function LandingContentPage() {
               </div>
             </div>
 
-            {/* Content Fields - Button Only */}
+            {/* Content Fields - Icon Only Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               <div className="flex items-stretch justify-between p-4 bg-slate-50 dark:bg-slate-600 rounded-lg gap-3">
                 <div className="flex-1 min-w-0">
@@ -509,10 +508,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_title", "Hero Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit Hero Title"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -529,10 +528,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_subtitle", "Hero Subtitle")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit Hero Subtitle"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -553,10 +552,10 @@ export default function LandingContentPage() {
                       "Hero Description"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit Hero Description"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -573,10 +572,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button1_text", "Button Text 1")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit Button Text 1"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -593,10 +592,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button1_url", "Button URL 1")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -613,10 +612,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button2_text", "Button Text 2")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -633,10 +632,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_button2_url", "Button URL 2")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -651,10 +650,10 @@ export default function LandingContentPage() {
                 </div>
                 <button
                   onClick={() => openEditModal("hero", "hero_rating", "Rating")}
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -671,10 +670,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_rating_count", "Rating Count")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -691,10 +690,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("hero", "hero_rating_text", "Rating Text")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -753,10 +752,10 @@ export default function LandingContentPage() {
                       "Featured Title"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -778,10 +777,10 @@ export default function LandingContentPage() {
                       "Subtitle Featured"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -804,10 +803,10 @@ export default function LandingContentPage() {
                     "Featured Description"
                   )
                 }
-                className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                title="Edit"
               >
-                <PencilIcon className="h-4 w-4 mr-1" />
-                Edit
+                <PencilIcon className="h-5 w-5" />
               </button>
             </div>
 
@@ -840,10 +839,10 @@ export default function LandingContentPage() {
                             `Icon ${num}`
                           )
                         }
-                        className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                        title="Edit"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />
-                        Edit
+                        <PencilIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
@@ -865,10 +864,10 @@ export default function LandingContentPage() {
                           `Judul ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                      title="Edit"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -889,10 +888,10 @@ export default function LandingContentPage() {
                           `Description ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                      title="Edit"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
@@ -919,10 +918,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("reasons", "reasons_title", "Reasons Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -944,10 +943,10 @@ export default function LandingContentPage() {
                       "Subtitle Reasons"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -974,10 +973,10 @@ export default function LandingContentPage() {
                           `Reason Title ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                      title="Edit"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -998,10 +997,10 @@ export default function LandingContentPage() {
                           `Reason Description ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                      title="Edit"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
@@ -1040,10 +1039,10 @@ export default function LandingContentPage() {
                             `Icon Step ${num}`
                           )
                         }
-                        className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                        title="Edit"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />
-                        Edit
+                        <PencilIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
@@ -1065,10 +1064,10 @@ export default function LandingContentPage() {
                           `Step Title ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                      title="Edit"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1088,10 +1087,10 @@ export default function LandingContentPage() {
                           `Step Description ${num}`
                         )
                       }
-                      className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                      title="Edit"
                     >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
@@ -1118,10 +1117,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("video", "video_title", "Video Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1139,10 +1138,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("video", "video_url", "YouTube Video URL")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1164,10 +1163,10 @@ export default function LandingContentPage() {
                       "Video Description"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -1192,10 +1191,10 @@ export default function LandingContentPage() {
                   onClick={() =>
                     openEditModal("call_to_action", "cta_title", "CTA Title")
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1218,10 +1217,10 @@ export default function LandingContentPage() {
                       "CTA Description"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1244,10 +1243,10 @@ export default function LandingContentPage() {
                       "CTA Button 1 Text"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1270,10 +1269,10 @@ export default function LandingContentPage() {
                       "CTA Button 1 URL"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1296,10 +1295,10 @@ export default function LandingContentPage() {
                       "CTA Button 2 Text"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1322,10 +1321,10 @@ export default function LandingContentPage() {
                       "CTA Button 2 URL"
                     )
                   }
-                  className="inline-flex items-center px-3 py-1.5 bg-slate-200 text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit"
                 >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
+                  <PencilIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -1399,3 +1398,4 @@ export default function LandingContentPage() {
     </div>
   );
 }
+

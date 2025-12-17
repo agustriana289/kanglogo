@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useAlert } from "@/components/providers/AlertProvider";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import {
   ArrowLeftIcon,
   PlusIcon,
   PencilIcon,
   TrashIcon,
   FolderIcon,
-  ExclamationTriangleIcon,
   MagnifyingGlassIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
 interface Category {
@@ -25,28 +23,36 @@ interface Category {
   created_at: string;
 }
 
-// Items per page
-const ITEMS_PER_PAGE = 20;
-
 export default function CategoriesManagementPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
   const { showAlert, showConfirm } = useAlert();
 
-  // Calculate total pages
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  // Pagination
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredCategories.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Calculate the range of items to display
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentItems = filteredCategories.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!pageDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen]);
 
   useEffect(() => {
     fetchCategories();
@@ -68,7 +74,6 @@ export default function CategoriesManagementPage() {
       );
       setFilteredCategories(filtered);
     }
-    // Reset to first page when search changes
     setCurrentPage(1);
   }, [searchQuery, categories]);
 
@@ -86,7 +91,6 @@ export default function CategoriesManagementPage() {
       } else {
         setCategories(data || []);
         setFilteredCategories(data || []);
-        setTotalItems(data?.length || 0);
       }
 
       setLoading(false);
@@ -117,30 +121,8 @@ export default function CategoriesManagementPage() {
         console.error("Error deleting category:", error);
         showAlert("error", "Gagal", "Gagal menghapus kategori");
       } else {
-        const updatedCategories = categories.filter(
-          (c) => c.id !== category.id
-        );
-        setCategories(updatedCategories);
-        setTotalItems(updatedCategories.length);
-
-        // Update filtered categories if needed
-        if (searchQuery.trim() === "") {
-          setFilteredCategories(updatedCategories);
-        } else {
-          // Reapply filters
-          const filtered = updatedCategories.filter(
-            (c) =>
-              c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              c.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              (c.description &&
-                c.description
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()))
-          );
-          setFilteredCategories(filtered);
-        }
-
         showAlert("success", "Berhasil", "Kategori berhasil dihapus");
+        fetchCategories();
       }
     } catch (error) {
       console.error("Error deleting category:", error);
@@ -157,297 +139,268 @@ export default function CategoriesManagementPage() {
     });
   };
 
-  // Generate page numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const startPage = Math.max(1, currentPage - 2);
-      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (startPage > 1) {
-        pages.push(1);
-        if (startPage > 2) {
-          pages.push("...");
-        }
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push("...");
-        }
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 md:p-6">
-      <div className="bg-white dark:bg-slate-700 rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
-        {/* Header Section - Diperbaiki dengan Search */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Link
-                href="/admin/blog"
-                className="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
-              >
-                <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                Kembali Ke Blogs
-              </Link>
-              <Link
-                href="/admin/categories/new"
-                className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              >
-                <PlusIcon className="w-5 h-5 mr-2" />
-                Tambah Kategori
-              </Link>
-            </div>
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Navigation */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link
+              href="/admin/blog"
+              className="inline-flex items-center justify-center px-4 py-3 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors text-sm font-medium"
+            >
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Blogs
+            </Link>
+          </div>
 
-            <div className="relative w-full sm:w-auto">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
-              </div>
+          {/* Right: Search and Add Button */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                className="block w-full sm:w-64 pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Cari kategori..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
               />
             </div>
+
+            {/* Add Button */}
+            <Link
+              href="/admin/categories/new"
+              className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Tambah Kategori
+            </Link>
           </div>
         </div>
+      </div>
 
-        {/* Items Count */}
-        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          Menampilkan {indexOfFirstItem + 1}-
-          {Math.min(indexOfLastItem, filteredCategories.length)} dari{" "}
-          {filteredCategories.length} kategori
+      {/* Content */}
+      {currentItems.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+          <FolderIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            {searchQuery
+              ? "Tidak ada kategori yang ditemukan"
+              : "Tidak ada kategori"}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {searchQuery
+              ? "Coba ubah kata kunci pencarian Anda."
+              : "Belum ada kategori yang dibuat."}
+          </p>
         </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-primary text-white font-medium">
+                  <tr>
+                    <th className="px-6 py-4 rounded-tl-lg">Nama Kategori</th>
+                    <th className="px-6 py-4">Slug</th>
+                    <th className="px-6 py-4">Deskripsi</th>
+                    <th className="px-6 py-4">Tanggal Dibuat</th>
+                    <th className="px-6 py-4 text-right rounded-tr-lg">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {currentItems.map((category) => (
+                    <tr
+                      key={category.id}
+                      className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <FolderIcon className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {category.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400">
+                          {category.slug}
+                        </code>
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
+                        <div className="max-w-xs truncate">
+                          {category.description || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
+                        {formatDate(category.created_at)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/categories/edit/${category.id}`}
+                            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                            title="Edit"
+                          >
+                            <PencilIcon className="w-5 h-5" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(category)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                            title="Hapus"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-        {/* Categories List - Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-600">
-            <thead className="bg-slate-50 dark:bg-slate-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Nama Kategori
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Deskripsi
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Tanggal Dibuat
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-700 divide-y divide-slate-200 dark:divide-slate-600">
-              {currentItems.map((category) => (
-                <tr key={category.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FolderIcon className="h-5 w-5 text-slate-400 mr-3" />
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {currentItems.map((category) => (
+              <div
+                key={category.id}
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+              >
+                <div className="p-4">
+                  <div className="flex items-start mb-3">
+                    <FolderIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                         {category.name}
-                      </div>
+                      </h3>
+                      <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400 mt-1 inline-block">
+                        {category.slug}
+                      </code>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                    <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">
-                      {category.slug}
-                    </code>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-300">
-                    <div className="max-w-xs truncate">
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <p className="mb-2">
+                      <span className="font-medium">Deskripsi:</span>{" "}
                       {category.description || "-"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
-                    {formatDate(category.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/admin/categories/edit/${category.id}`}
-                        className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(category)}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                      >
-                        <TrashIcon className="h-4 w-4 mr-1" />
-                        Hapus
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Categories List - Mobile Card View */}
-        <div className="md:hidden space-y-4">
-          {currentItems.map((category) => (
-            <div
-              key={category.id}
-              className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-600"
-            >
-              <div className="flex items-start mb-3">
-                <FolderIcon className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">
-                    {category.name}
-                  </h3>
-                  <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400 mt-1 inline-block">
-                    {category.slug}
-                  </code>
+                    </p>
+                    <p>
+                      <span className="font-medium">Dibuat:</span>{" "}
+                      {formatDate(category.created_at)}
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <Link
+                      href={`/admin/categories/edit/${category.id}`}
+                      className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                      title="Edit"
+                    >
+                      <PencilIcon className="w-5 h-5" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(category)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                      title="Hapus"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 mb-3">
-                <p className="mb-2">
-                  <span className="font-medium">Deskripsi:</span>{" "}
-                  {category.description || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Dibuat:</span>{" "}
-                  {formatDate(category.created_at)}
-                </p>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Link
-                  href={`/admin/categories/edit/${category.id}`}
-                  className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDelete(category)}
-                  className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <TrashIcon className="h-4 w-4 mr-1" />
-                  Hapus
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
+      )}
 
-        {/* Empty State */}
-        {currentItems.length === 0 && (
-          <div className="text-center py-12">
-            <FolderIcon className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-              {searchQuery
-                ? "Tidak ada kategori yang ditemukan"
-                : "Tidak ada kategori"}
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {searchQuery
-                ? "Coba ubah kata kunci pencarian Anda."
-                : "Belum ada kategori yang dibuat."}
-            </p>
-            {!searchQuery && (
-              <div className="mt-6">
-                <Link
-                  href="/admin/categories/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+      {/* Pagination */}
+      {filteredCategories.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
+          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+            <ul className="flex -space-x-px text-sm gap-2">
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
-                  <PlusIcon className="-ml-1 mr-2 h-4 w-4" />
-                  Tambah Kategori Baru
-                </Link>
+                  Sebelumnya
+                </button>
+              </li>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    (p >= currentPage - 1 && p <= currentPage + 1)
+                )
+                .map((page, idx) => (
+                  <li key={idx}>
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  </li>
+                ))}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                >
+                  Selanjutnya
+                </button>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Items Per Page - Custom Dropdown */}
+          <div className="hidden sm:inline relative" ref={pageDropdownRef}>
+            <button
+              onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+              className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+            >
+              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            {pageDropdownOpen && (
+              <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                {[10, 25, 50, 100].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setItemsPerPage(value);
+                      setPageDropdownOpen(false);
+                      setCurrentPage(1);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {value} halaman
+                  </button>
+                ))}
               </div>
             )}
           </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-slate-700 dark:text-slate-300">
-              Halaman {currentPage} dari {totalPages}
-            </div>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeftIcon className="h-5 w-5" />
-              </button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="px-3 py-2 text-slate-500 dark:text-slate-400"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    className={`px-3 py-2 rounded-md border ${currentPage === page
-                      ? "bg-primary text-white border-primary"
-                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                      }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRightIcon className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-
+        </div>
+      )}
     </div>
   );
 }

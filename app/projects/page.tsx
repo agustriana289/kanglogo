@@ -1,38 +1,67 @@
 // app/projects/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Project } from "@/types/project";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 import {
   MagnifyingGlassIcon,
-  XMarkIcon,
-  FunnelIcon,
-  UserIcon,
+  ChevronDownIcon,
   TagIcon,
   CalendarIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import WidgetArea from "@/components/WidgetArea";
+
+const ITEMS_PER_PAGE = 12;
 
 export default function AllProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [owners, setOwners] = useState<string[]>([]);
-  const [years, setYears] = useState<string[]>([]); // Tambahkan state untuk tahun
+  const [years, setYears] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("Semua");
   const [selectedOwner, setSelectedOwner] = useState("Semua");
-  const [selectedYear, setSelectedYear] = useState("Semua"); // Tambahkan state untuk tahun yang dipilih
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedYear, setSelectedYear] = useState("Semua");
+
+  // Dropdown states
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const [ownerDropdownOpen, setOwnerDropdownOpen] = useState(false);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+
+  // Refs for click outside detection
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const ownerDropdownRef = useRef<HTMLDivElement>(null);
+  const yearDropdownRef = useRef<HTMLDivElement>(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9; // 3x3 grid
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    if (!typeDropdownOpen && !ownerDropdownOpen && !yearDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (typeDropdownOpen && typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
+        setTypeDropdownOpen(false);
+      }
+      if (ownerDropdownOpen && ownerDropdownRef.current && !ownerDropdownRef.current.contains(event.target as Node)) {
+        setOwnerDropdownOpen(false);
+      }
+      if (yearDropdownOpen && yearDropdownRef.current && !yearDropdownRef.current.contains(event.target as Node)) {
+        setYearDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [typeDropdownOpen, ownerDropdownOpen, yearDropdownOpen]);
 
   useEffect(() => {
     fetchProjects();
@@ -40,7 +69,7 @@ export default function AllProjectsPage() {
 
   useEffect(() => {
     filterProjects();
-  }, [projects, searchQuery, selectedType, selectedOwner, selectedYear]); // Tambahkan selectedYear ke dependency
+  }, [projects, searchQuery, selectedType, selectedOwner, selectedYear]);
 
   const fetchProjects = async () => {
     try {
@@ -124,479 +153,276 @@ export default function AllProjectsPage() {
     }
 
     setFilteredProjects(filtered);
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedType("Semua");
-    setSelectedOwner("Semua");
-    setSelectedYear("Semua");
-    setCurrentPage(1); // Reset to page 1
+    setCurrentPage(1);
   };
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedType, selectedOwner, selectedYear]);
-
-  const hasActiveFilters =
-    searchQuery ||
-    selectedType !== "Semua" ||
-    selectedOwner !== "Semua" ||
-    selectedYear !== "Semua";
+  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredProjects.slice(indexOfFirstItem, indexOfLastItem);
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Jelajahi karya-karya terbaik yang telah kami hasilkan.
-          </p>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }
 
   return (
-    <section className="py-16 bg-slate-100">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h1 className="font-manrope font-bold text-4xl text-slate-700 mb-5 md:text-6xl leading-tight">
+    <main className="min-h-screen bg-slate-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali ke Beranda
+          </Link>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
             Semua <span className="text-primary">Proyek</span>
           </h1>
-          <p className="text-base font-normal leading-7 text-slate-700">
-            Jelajahi karya-karya terbaik yang telah kami hasilkan.
+          <p className="text-slate-600 max-w-xl mx-auto">
+            Jelajahi karya-karya terbaik yang telah kami hasilkan
           </p>
         </div>
 
         <WidgetArea position="proyek_header" />
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar with filters */}
-          <div className="lg:w-1/4">
-            <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Filter</h2>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari proyek..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full"
+              />
+            </div>
 
-              {/* Search */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Pencarian
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Cari proyek..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                </div>
-              </div>
-
-              {/* Type Filter */}
+            <div className="flex flex-wrap gap-3">
+              {/* Type Filter - Custom Dropdown */}
               {types.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-700 mb-2">
-                    Tipe Proyek
-                  </h3>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setSelectedType("Semua")}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === "Semua"
-                        ? "bg-primary text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                    >
-                      Semua
-                    </button>
-                    {types.map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setSelectedType(type)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Year Filter - Tambahkan filter tahun */}
-              {years.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-700 mb-2">
-                    Tahun
-                  </h3>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setSelectedYear("Semua")}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === "Semua"
-                        ? "bg-primary text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                    >
-                      Semua
-                    </button>
-                    {years.map((year) => (
-                      <button
-                        key={year}
-                        onClick={() => setSelectedYear(year)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === year
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
-                      >
-                        {year}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <WidgetArea position="proyek_sidebar" />
-            </div>
-          </div>
-
-          {/* Main content */}
-          <div className="lg:w-3/4">
-            {/* Mobile filter toggle */}
-            <div className="lg:hidden mb-6">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-white rounded-lg shadow-md"
-              >
-                <FunnelIcon className="h-5 w-5 mr-2" />
-                Filter
-                {hasActiveFilters && (
-                  <span className="ml-2 px-2 py-1 bg-primary text-white text-xs rounded-full">
-                    Active
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Mobile filters */}
-            {showFilters && (
-              <div className="lg:hidden mb-6 bg-white rounded-xl shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Filter
-                  </h2>
+                <div className="relative" ref={typeDropdownRef}>
                   <button
-                    onClick={() => setShowFilters(false)}
-                    className="text-slate-400 hover:text-slate-600"
+                    onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
+                    className="h-10 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   >
-                    <XMarkIcon className="h-6 w-6" />
+                    <TagIcon className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-700">{selectedType === "Semua" ? "Tipe" : selectedType}</span>
+                    <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${typeDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
-                </div>
-
-                {/* Search */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Pencarian
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="Cari proyek..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-                  </div>
-                </div>
-
-                {/* Type Filter */}
-                {types.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-medium text-slate-700 mb-2">
-                      Tipe Proyek
-                    </h3>
-                    <div className="space-y-2">
+                  {typeDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
                       <button
-                        onClick={() => setSelectedType("Semua")}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === "Semua"
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        onClick={() => {
+                          setSelectedType("Semua");
+                          setTypeDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg transition-colors ${selectedType === "Semua"
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
                           }`}
                       >
-                        Semua
+                        Semua Tipe
                       </button>
                       {types.map((type) => (
                         <button
                           key={type}
-                          onClick={() => setSelectedType(type)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedType === type
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          onClick={() => {
+                            setSelectedType(type);
+                            setTypeDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 last:rounded-b-lg transition-colors ${selectedType === type
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-gray-700"
                             }`}
                         >
                           {type}
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {/* Year Filter - Tambahkan filter tahun untuk mobile */}
-                {years.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-medium text-slate-700 mb-2">
-                      Tahun
-                    </h3>
-                    <div className="space-y-2">
+              {/* Year Filter - Custom Dropdown */}
+              {years.length > 0 && (
+                <div className="relative" ref={yearDropdownRef}>
+                  <button
+                    onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
+                    className="h-10 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                  >
+                    <CalendarIcon className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-700">{selectedYear === "Semua" ? "Tahun" : selectedYear}</span>
+                    <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${yearDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {yearDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-36 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
                       <button
-                        onClick={() => setSelectedYear("Semua")}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === "Semua"
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        onClick={() => {
+                          setSelectedYear("Semua");
+                          setYearDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg transition-colors ${selectedYear === "Semua"
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
                           }`}
                       >
-                        Semua
+                        Semua Tahun
                       </button>
                       {years.map((year) => (
                         <button
                           key={year}
-                          onClick={() => setSelectedYear(year)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedYear === year
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          onClick={() => {
+                            setSelectedYear(year);
+                            setYearDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 last:rounded-b-lg transition-colors ${selectedYear === year
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-gray-700"
                             }`}
                         >
                           {year}
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Owner Filter */}
-                {owners.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-medium text-slate-700 mb-2">
-                      Owner
-                    </h3>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => setSelectedOwner("Semua")}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedOwner === "Semua"
-                          ? "bg-primary text-white"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
-                      >
-                        Semua
-                      </button>
-                      {owners.map((owner) => (
-                        <button
-                          key={owner}
-                          onClick={() => setSelectedOwner(owner)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedOwner === owner
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
-                        >
-                          {owner}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="w-full py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300"
-                  >
-                    Reset Filter
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Results count */}
-            <div className="mb-6 flex justify-between items-center">
-              <p className="text-slate-600">
-                Menampilkan {filteredProjects.length} dari {projects.length}{" "}
-                proyek
-              </p>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Hapus Filter
-                </button>
+                  )}
+                </div>
               )}
             </div>
-
-            {/* Project Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {paginatedProjects.map((project) => (
-                <div
-                  key={project.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden group animate-fadeIn"
-                >
-                  <Link href={`/projects/${project.slug}`}>
-                    <div className="relative w-full h-64">
-                      {project.image_url ? (
-                        <Image
-                          src={project.image_url}
-                          alt={project.title}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          className="transition-transform duration-300 group-hover:scale-105"
-                          unoptimized
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500">
-                          Tidak Ada Gambar
-                        </div>
-                      )}
-                      {/* Badge tipe di pojok kanan atas */}
-                      {project.type && (
-                        <div className="absolute top-2 right-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            <TagIcon className="h-3 w-3 mr-1" />
-                            {project.type}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">
-                      {project.title}
-                    </h3>
-
-                    <div className="flex items-center justify-between mb-4">
-                      {/* Tahun */}
-                      {project.start_date && (
-                        <span className="inline-flex items-center text-sm text-slate-600">
-                          <CalendarIcon className="h-4 w-4 mr-1" />
-                          {new Date(project.start_date).getFullYear()}
-                        </span>
-                      )}
-                      {/* Owner atau link detail */}
-                      <Link
-                        href={`/projects/${project.slug}`}
-                        className="text-primary font-semibold text-sm hover:underline"
-                      >
-                        Lihat Detail →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex justify-center">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Sebelumnya
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (pageNum) => (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`px-4 py-2 rounded-md text-sm font-medium ${pageNum === currentPage
-                          ? "bg-primary text-white"
-                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                          }`}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  )}
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Selanjutnya
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {filteredProjects.length === 0 && (
-              <div className="text-center py-12">
-                <div className="mx-auto h-12 w-12 text-slate-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mt-2 text-sm font-medium text-slate-900">
-                  Tidak ada proyek yang ditemukan
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Coba ubah filter atau kata kunci pencarian Anda.
-                </p>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-                  >
-                    Hapus Filter
-                  </button>
-                )}
-              </div>
-            )}
-
-            <WidgetArea position="proyek_footer" />
           </div>
         </div>
+
+        {/* Stats */}
+        <p className="text-sm text-gray-500 mb-4">
+          Menampilkan {currentItems.length} dari {filteredProjects.length} proyek
+        </p>
+
+        {/* Projects Grid */}
+        {currentItems.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">Tidak ada proyek yang ditemukan</h3>
+            <p className="text-gray-500">Coba ubah filter pencarian Anda</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {currentItems.map((project, index) => (
+              <Link
+                key={project.id}
+                href={`/projects/${project.slug}`}
+                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
+              >
+                {/* Image */}
+                <div className="relative w-full h-48">
+                  {project.image_url ? (
+                    <Image
+                      src={project.image_url}
+                      alt={project.title}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      className="transition-transform duration-300 hover:scale-105"
+                      unoptimized
+                      loading={index < 4 ? "eager" : "lazy"}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500 text-sm">
+                      Tidak Ada Gambar
+                    </div>
+                  )}
+                  {/* Badge Type */}
+                  {project.type && (
+                    <div className="absolute top-2 right-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <TagIcon className="h-3 w-3 mr-1" />
+                        {project.type}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {project.title}
+                  </h3>
+
+                  <div className="flex items-center justify-between">
+                    {/* Year */}
+                    {project.start_date && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1">
+                        <CalendarIcon className="h-3 w-3" />
+                        {new Date(project.start_date).getFullYear()}
+                      </span>
+                    )}
+                    {/* Link Detail */}
+                    <span className="text-xs text-primary font-medium hover:underline">
+                      Lihat Detail →
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav aria-label="Page navigation" className="flex justify-center mt-10">
+            <ul className="flex -space-x-px text-sm">
+              {/* Previous Button */}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center text-gray-600 bg-white box-border border border-gray-200 hover:bg-gray-50 hover:text-gray-900 font-medium rounded-s-lg text-sm px-3 h-10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+              </li>
+
+              {/* Page Numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <li key={page}>
+                  <button
+                    onClick={() => setCurrentPage(page)}
+                    aria-current={currentPage === page ? "page" : undefined}
+                    className={`flex items-center justify-center box-border border font-medium text-sm w-10 h-10 focus:outline-none transition-colors ${currentPage === page
+                      ? "text-primary bg-gray-100 border-gray-200 hover:text-primary"
+                      : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                  >
+                    {page}
+                  </button>
+                </li>
+              ))}
+
+              {/* Next Button */}
+              <li>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center justify-center text-gray-600 bg-white box-border border border-gray-200 hover:bg-gray-50 hover:text-gray-900 font-medium rounded-e-lg text-sm px-3 h-10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        )}
+
+        <WidgetArea position="proyek_footer" />
       </div>
-    </section>
+    </main>
   );
 }
