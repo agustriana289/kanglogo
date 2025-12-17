@@ -11,6 +11,7 @@ interface Article {
   title: string;
   slug: string;
   published_at: string;
+  author_name?: string;
 }
 
 interface CategoryArticlesProps {
