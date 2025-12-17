@@ -31,20 +31,6 @@ const nextConfig = {
         hostname: "*.supabase.co",
       },
     ],
-    // Optimize image handling
-    formats: ["image/avif", "image/webp"],
-  },
-
-  // ESLint Configuration
-  eslint: {
-    // Allow build to pass with warnings for now
-    ignoreDuringBuilds: true,
-  },
-
-  // Experimental features for better performance
-  experimental: {
-    // Optimize CSS
-    optimizeCss: true,
   },
 };
 module.exports = withBundleAnalyzer(withPWA(nextConfig));

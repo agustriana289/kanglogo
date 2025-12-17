@@ -353,7 +353,7 @@ export default function AdminDashboard() {
     tooltip: {
       shared: true,
       intersect: false,
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }: { series: any; seriesIndex: number; dataPointIndex: number; w: any }) {
         const ordersCount = orderStats.monthlyData[dataPointIndex]?.count || 0;
         const ordersRevenue =
           orderStats.monthlyData[dataPointIndex]?.revenue || 0;
