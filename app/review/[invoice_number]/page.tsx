@@ -240,38 +240,38 @@ export default function SubmitTestimonialPage() {
     }
   };
 
-  // Star rating component - memoized to prevent unnecessary re-renders
-  const StarRating = useCallback(
-    memo(
-      ({
-        value,
-        onChange,
-      }: {
-        value: number;
-        onChange: (val: number) => void;
-      }) => (
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => onChange(star)}
-              className="focus:outline-none transition-transform hover:scale-110"
-            >
-              <Star
-                size={32}
-                className={`${star <= value
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "fill-gray-200 text-gray-200"
-                  } transition-colors`}
-              />
-            </button>
-          ))}
-        </div>
-      )
-    ),
-    []
+  const StarRatingComponent = memo(
+    ({
+      value,
+      onChange,
+    }: {
+      value: number;
+      onChange: (val: number) => void;
+    }) => (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className="focus:outline-none transition-transform hover:scale-110"
+          >
+            <Star
+              size={32}
+              className={`${star <= value
+                ? "fill-yellow-400 text-yellow-400"
+                : "fill-gray-200 text-gray-200"
+                } transition-colors`}
+            />
+          </button>
+        ))}
+      </div>
+    )
   );
+
+  StarRatingComponent.displayName = "StarRating";
+
+  const StarRating = useCallback(StarRatingComponent, []);
 
   if (loading) {
     return (
