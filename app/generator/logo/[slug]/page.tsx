@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { LogoAsset, LogoFont } from "@/types/logo-generator";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import Image from "next/image";
 import TrakteerWidget from "@/components/TrakteerWidget";
 import {
@@ -260,8 +260,8 @@ export default function LogoGeneratorDetailPage() {
 
     if (loading || !asset) {
         return (
-            <div className="fixed inset-0 bg-slate-100 flex items-center justify-center z-50">
-                <LogoLoading size="xl" />
+            <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+                <LogoPathAnimation />
             </div>
         );
     }

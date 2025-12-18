@@ -52,6 +52,7 @@ export default function AdminHeader({
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -234,10 +235,13 @@ export default function AdminHeader({
                 <div className="flex items-center gap-2">
                     {/* Mobile Search Button */}
                     <button
-                        onClick={() => router.push("/admin/search")}
-                        className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                        className={`md:hidden p-2 rounded-lg transition-colors ${isMobileSearchOpen
+                            ? "bg-slate-100 dark:bg-slate-700 text-primary"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                            }`}
                     >
-                        <MagnifyingGlassIcon className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                        <MagnifyingGlassIcon className="w-5 h-5" />
                     </button>
 
                     {/* Notifications */}
@@ -431,6 +435,29 @@ export default function AdminHeader({
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Search Bar Floating */}
+            {isMobileSearchOpen && (
+                <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 shadow-lg animate-in slide-in-from-top-2 duration-200 z-20">
+                    <form onSubmit={(e) => {
+                        handleSearch(e);
+                        setIsMobileSearchOpen(false);
+                    }}>
+                        <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <input
+                                autoFocus
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari pesanan, projek, layanan..."
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white"
+                            />
+                        </div>
+                    </form>
+                </div>
+            )}
+
         </header>
     );
 }

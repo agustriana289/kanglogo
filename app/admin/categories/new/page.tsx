@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAlert } from "@/components/providers/AlertProvider";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 
 export default function NewCategoryPage() {
   const router = useRouter();
@@ -72,15 +72,8 @@ export default function NewCategoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <LogoLoading size="lg" />
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Sedang memuat...
-            </p>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }

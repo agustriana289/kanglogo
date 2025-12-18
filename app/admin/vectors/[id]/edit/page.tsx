@@ -110,11 +110,10 @@ export default function EditVectorPage() {
         {/* Notification */}
         {notification.show && (
           <div
-            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-              notification.type === "success"
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${notification.type === "success"
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
-            }`}
+              }`}
           >
             {notification.message}
           </div>
@@ -198,6 +197,24 @@ export default function EditVectorPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       File ID saat ini: {formData.file_id || "Tidak tersedia"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SVG Code (Manual Thumbnail)
+                    </label>
+                    <textarea
+                      name="svg_content"
+                      rows={6}
+                      value={formData.svg_content || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-xs"
+                      placeholder="<svg>...</svg>"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Masukkan kode SVG lengkap untuk menampilkan thumbnail secara manual.
+                      Jika diisi, ini akan diprioritaskan daripada preview Google Drive.
                     </p>
                   </div>
 

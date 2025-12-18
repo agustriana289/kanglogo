@@ -6,7 +6,7 @@ import { Service } from "@/types/service";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import PublicFAQ from "@/components/PublicFAQ";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -52,13 +52,8 @@ export default function ServicesPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Dipercaya oleh ratusan klien lokal hingga internasional.
-          </p>
-        </div>
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <LogoPathAnimation />
       </div>
     );
   }
@@ -110,11 +105,10 @@ export default function ServicesPage() {
             <button
               key={service.id}
               onClick={() => handleServiceClick(service)}
-              className={`px-6 py-3 rounded-full text-base font-medium transition-all ${
-                selectedService.id === service.id
+              className={`px-6 py-3 rounded-full text-base font-medium transition-all ${selectedService.id === service.id
                   ? "bg-primary text-white"
                   : "bg-white text-slate-700 hover:bg-slate-200"
-              }`}
+                }`}
             >
               {service.title}
             </button>

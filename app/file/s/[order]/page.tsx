@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import InvoiceGate from "@/components/InvoiceGate";
 import {
     FolderIcon,
@@ -230,8 +230,8 @@ export default function StoreFileManagerPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                <LogoLoading size="xl" />
+            <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+                <LogoPathAnimation />
             </div>
         );
     }

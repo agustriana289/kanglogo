@@ -1,358 +1,281 @@
-// app/order/[invoice_number]/confirm/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Order } from "@/types/order";
+import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
 import { uploadToImgBB } from "@/lib/imgbb-upload";
-import { Upload, Link as LinkIcon, X } from "lucide-react";
-import LogoLoading from "@/components/LogoLoading";
+import {
+  Upload,
+  CheckCircle,
+  ArrowLeft,
+  Image as ImageIcon,
+  MessageCircle,
+  CreditCard,
+  FileText,
+  User,
+  ExternalLink
+} from "lucide-react";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 
 export default function ConfirmPaymentPage() {
   const params = useParams();
   const invoice_number = params?.invoice_number as string;
   const router = useRouter();
+
   const [order, setOrder] = useState<Order | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [waNumber, setWaNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  // Method selection
-  const [proofMethod, setProofMethod] = useState<"file" | "url">("file");
-
-  // File upload states
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string>("");
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  // URL input state
-  const [proofUrl, setProofUrl] = useState("");
-
-  // Message
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      // Fetch Order with Service Title for informative display
+      const { data: orderData, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("*, services(title)")
         .eq("invoice_number", invoice_number)
         .single();
 
-      if (error || !data || data.status !== "pending_payment") {
-        router.push(`/order/${invoice_number}`); // Redirect jika bukan status pending
+      if (error || !orderData || orderData.status !== "pending_payment") {
+        router.push(`/order/${invoice_number}`);
         return;
       }
-      setOrder(data);
+      setOrder(orderData);
+
+      // Fetch Payment Method
+      if (orderData.payment_method_id) {
+        const { data: pm } = await supabase.from("payment_methods").select("*").eq("id", orderData.payment_method_id).single();
+        if (pm) setPaymentMethod(pm);
+      } else if (orderData.payment_method) {
+        // Fallback search by name
+        const { data: pm } = await supabase.from("payment_methods")
+          .select("*")
+          .or(`name.ilike.%${orderData.payment_method}%,type.ilike.%${orderData.payment_method}%`)
+          .limit(1)
+          .maybeSingle();
+        if (pm) setPaymentMethod(pm);
+      }
+
+      // Fetch WA number from settings
+      const { data: settings } = await supabase.from("website_settings").select("website_phone").single();
+      if (settings?.website_phone) {
+        setWaNumber(settings.website_phone.replace(/[^0-9]/g, "").startsWith("0")
+          ? "62" + settings.website_phone.replace(/[^0-9]/g, "").slice(1)
+          : settings.website_phone.replace(/[^0-9]/g, ""));
+      }
+
       setLoading(false);
     };
 
-    fetchOrder();
+    fetchData();
   }, [invoice_number, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("Ukuran file maksimal 5MB");
       return;
     }
 
-    // Validate file type
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "application/pdf",
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      return;
-    }
-
     setProofFile(file);
-
-    // Create preview for images only
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFilePreview(reader.result as string);
-      };
+      reader.onloadend = () => setFilePreview(reader.result as string);
       reader.readAsDataURL(file);
     } else {
       setFilePreview("");
     }
   };
 
-  const removeFile = () => {
-    setProofFile(null);
-    setFilePreview("");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validation
-    if (proofMethod === "file" && !proofFile) {
-      alert("Silakan pilih file bukti pembayaran.");
-      return;
-    }
-    if (proofMethod === "url" && !proofUrl) {
-      alert("Silakan masukkan URL bukti pembayaran.");
-      return;
-    }
+    if (!proofFile) return alert("Silakan unggah bukti pembayaran.");
 
     setSubmitting(true);
-    setUploadProgress(0);
-
     try {
-      let finalProofUrl = "";
-
-      // Upload file to ImgBB if method is file
-      if (proofMethod === "file" && proofFile) {
-        setUploadProgress(30);
-
-        const { url: uploadedUrl, error: uploadError } = await uploadToImgBB(
-          proofFile
-        );
-
-        if (uploadError) {
-          throw new Error("Gagal mengupload file: " + uploadError);
-        }
-
-        finalProofUrl = uploadedUrl;
-        setUploadProgress(80);
-      } else {
-        // Use URL directly
-        finalProofUrl = proofUrl;
-      }
-
-      // Update order status and proof URL
-      const updateData: any = {
-        status: "paid",
-        proof_of_payment_url: finalProofUrl,
-      };
+      const { url: uploadedUrl, error: uploadError } = await uploadToImgBB(proofFile);
+      if (uploadError) throw new Error("Gagal upload: " + uploadError);
 
       const { error: updateError } = await supabase
         .from("orders")
-        .update(updateData)
+        .update({ status: "paid", proof_of_payment_url: uploadedUrl })
         .eq("id", order!.id);
 
       if (updateError) throw updateError;
 
-      // Create log "paid"
+      // Log activity
       await supabase.from("order_logs").insert({
         order_id: order!.id,
         status: "paid",
-        notes: message || `Bukti pembayaran: ${finalProofUrl}`,
+        notes: `Konfirmasi pembayaran via web. Bukti: ${uploadedUrl}`
       });
 
-      setUploadProgress(100);
-
-      alert("Konfirmasi pembayaran berhasil! Kami akan segera memeriksanya.");
-      router.push(`/order/${invoice_number}`);
+      setSuccess(true);
     } catch (error: any) {
-      console.error("Error confirming payment:", error);
-      alert(error.message || "Gagal mengirim konfirmasi. Silakan coba lagi.");
+      console.error(error);
+      alert("Gagal mengirim konfirmasi. Coba lagi.");
     } finally {
       setSubmitting(false);
-      setUploadProgress(0);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Konfirmasi Pembayaran anda.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="fixed inset-0 flex items-center justify-center bg-white"><LogoPathAnimation /></div>;
+
+  const waLink = `https://wa.me/${waNumber}?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20invoice%20%23${order?.invoice_number}.%20Mohon%20untuk%20segera%20diproses.`;
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto max-w-2xl px-4">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          Konfirmasi Pembayaran
-        </h1>
+    <div className="min-h-screen bg-slate-100 py-12 px-4 font-sans">
+      <div className="max-w-xl mx-auto">
+        <button
+          onClick={() => router.push(`/order/${invoice_number}`)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors mb-6 font-medium"
+        >
+          <ArrowLeft size={18} /> Kembali ke Invoice
+        </button>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Method Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Metode Konfirmasi
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setProofMethod("file")}
-                className={`p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${proofMethod === "file"
-                  ? "border-blue-600 bg-blue-50 text-blue-700"
-                  : "border-gray-300 hover:border-gray-400"
-                  }`}
-              >
-                <Upload size={20} />
-                Upload File
-              </button>
-              <button
-                type="button"
-                onClick={() => setProofMethod("url")}
-                className={`p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${proofMethod === "url"
-                  ? "border-blue-600 bg-blue-50 text-blue-700"
-                  : "border-gray-300 hover:border-gray-400"
-                  }`}
-              >
-                <LinkIcon size={20} />
-                Input URL
-              </button>
-            </div>
-          </div>
-
-          {/* File Upload */}
-          {proofMethod === "file" && (
-            <div>
-              <label
-                htmlFor="proofFile"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Upload Bukti Pembayaran
-              </label>
-              <p className="text-sm text-gray-500 mb-2">
-                Format: JPG, PNG, atau PDF. Maksimal 5MB. File akan diupload ke
-                ImgBB.
-              </p>
-
-              {!proofFile ? (
-                <div className="mt-1">
-                  <label
-                    htmlFor="proofFile"
-                    className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
-                  >
-                    <div className="space-y-1 text-center">
-                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <span className="relative font-medium text-blue-600 hover:text-blue-500">
-                          Klik untuk upload file
-                        </span>
-                        <p className="pl-1">atau drag and drop</p>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        JPG, PNG, PDF maksimal 5MB
-                      </p>
-                    </div>
-                  </label>
-                  <input
-                    id="proofFile"
-                    name="proofFile"
-                    type="file"
-                    className="sr-only"
-                    accept="image/jpeg,image/png,image/jpg,application/pdf"
-                    onChange={handleFileChange}
-                  />
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
+          {!success ? (
+            <>
+              {/* Previous structure layout liked by user */}
+              <div className="bg-primary px-10 py-10 text-white relative">
+                <div className="relative z-10">
+                  <h1 className="text-2xl font-bold mb-1">Konfirmasi Pembayaran</h1>
+                  <p className="text-white/70 text-sm">Unggah bukti transfer untuk memproses pesanan Anda</p>
                 </div>
-              ) : (
-                <div className="mt-2 border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {proofFile.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {(proofFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                  <CreditCard size={80} />
+                </div>
+              </div>
+
+              <div className="p-10 space-y-8">
+                {/* Summary Section - Optimized Aesthetics based on Testimonial Form */}
+                <div className="bg-slate-50 rounded-2xl p-7 space-y-4 border border-slate-200">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center group">
+                      <span className="text-slate-500 flex items-center gap-2 font-medium"><FileText size={14} /> Nomor Invoice</span>
+                      <span className="text-slate-800 font-bold font-mono bg-white px-2 py-0.5 rounded border border-slate-200 group-hover:border-primary/30 transition-colors">#{order?.invoice_number}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={removeFile}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <X size={20} />
-                    </button>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 flex items-center gap-2 font-medium"><ImageIcon size={14} /> Nama Layanan</span>
+                      <span className="text-slate-800 font-bold text-right max-w-[200px] break-words">
+                        {(order as any)?.services?.title ? `${(order as any).services.title} (${order?.package_details?.name})` : order?.package_details?.name}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 flex items-center gap-2 font-medium"><User size={14} /> Nama Pelanggan</span>
+                      <span className="text-slate-800 font-bold text-right">{order?.customer_name}</span>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-200 flex justify-between items-end mt-2">
+                      <span className="text-slate-800 font-bold">Nominal Bayar</span>
+                      <span className="text-3xl font-black text-primary leading-none">Rp {order?.final_price.toLocaleString("id-ID")}</span>
+                    </div>
                   </div>
 
-                  {/* Preview for images */}
-                  {filePreview && (
-                    <div className="mt-3">
-                      <img
-                        src={filePreview}
-                        alt="Preview"
-                        className="max-h-48 rounded border"
-                      />
+                  {paymentMethod && (
+                    <div className="mt-6 pt-5 border-t border-slate-200">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Rekening Tujuan</p>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">{paymentMethod.name}</p>
+                          <p className="text-lg font-black text-slate-800 font-mono tracking-wider">{paymentMethod.account_number}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Atas Nama</p>
+                          <p className="text-xs font-bold text-slate-600 uppercase italic">{paymentMethod.holder_name}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
+
+                {/* Upload Section - Matching Testimonial Form aesthetics */}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Unggah Screenshot Bukti</label>
+                    <label className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer group ${proofFile ? "bg-primary/5 border-primary/30" : "bg-slate-50 border-slate-200 hover:border-primary/30"
+                      }`}>
+                      <input type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
+                      {!proofFile ? (
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 mx-auto mb-4 group-hover:scale-110 group-hover:shadow-md transition-all">
+                            <Upload className="text-primary" size={28} />
+                          </div>
+                          <p className="text-slate-700 font-bold">Pilih file bukti bayar</p>
+                          <p className="text-slate-400 text-xs mt-1">Format JPG, PNG (Maks. 5MB)</p>
+                        </div>
+                      ) : (
+                        <div className="text-center w-full">
+                          {filePreview ? (
+                            <img src={filePreview} alt="Preview" className="max-h-56 rounded-xl border border-slate-200 mx-auto mb-4 shadow-sm" />
+                          ) : (
+                            <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 mx-auto mb-4">
+                              <ImageIcon className="text-primary" size={28} />
+                            </div>
+                          )}
+                          <p className="text-primary font-bold break-all px-4">{proofFile.name}</p>
+                          <p className="text-slate-400 text-xs mt-1">Klik untuk mengganti screenshot</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!proofFile || submitting}
+                    className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-primary/95 transition-all shadow-lg shadow-primary/20 disabled:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 active:scale-[0.98]"
+                  >
+                    {submitting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        <span>Mengirim...</span>
+                      </div>
+                    ) : "Kirim Konfirmasi"}
+                  </button>
+                </form>
+              </div>
+            </>
+          ) : (
+            <div className="p-16 text-center space-y-8 animate-in fade-in zoom-in duration-500">
+              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner shadow-green-200/50 text-green-600">
+                <CheckCircle size={48} />
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-3xl font-bold text-slate-800">Pembayaran Terkirim!</h2>
+                <p className="text-slate-500 leading-relaxed max-w-[340px] mx-auto">Terima kasih! Bukti pembayaran Anda telah kami terima dan akan segera diproses oleh tim admin kami.</p>
+              </div>
+
+              <div className="pt-4 space-y-4">
+                <a
+                  href={waLink}
+                  target="_blank"
+                  className="w-full bg-[#25D366] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#22c35e] transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-3 active:scale-[0.98]"
+                >
+                  <MessageCircle size={26} fill="white" /> Konfirmasi via WhatsApp
+                </a>
+
+                <button
+                  onClick={() => router.push(`/order/${invoice_number}`)}
+                  className="w-full bg-slate-100 text-slate-700 py-4 rounded-xl font-bold text-lg hover:bg-slate-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <ExternalLink size={20} /> Kembali ke Invoice
+                </button>
+              </div>
             </div>
           )}
-
-          {/* URL Input */}
-          {proofMethod === "url" && (
-            <div>
-              <label
-                htmlFor="proofUrl"
-                className="block text-sm font-medium text-gray-700"
-              >
-                URL Bukti Pembayaran
-              </label>
-              <p className="text-sm text-gray-500 mb-2">
-                Upload screenshot ke hosting gambar (Imgur, Google Drive, dll)
-                lalu masukkan URL-nya.
-              </p>
-              <input
-                type="url"
-                id="proofUrl"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:border-blue-500 focus:ring-blue-500"
-                value={proofUrl}
-                onChange={(e) => setProofUrl(e.target.value)}
-                placeholder="https://example.com/bukti-transfer.jpg"
-              />
-            </div>
-          )}
-
-          {/* Message (Optional) */}
-          <div>
-            <label
-              htmlFor="message"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Catatan (Opsional)
-            </label>
-            <textarea
-              id="message"
-              rows={4}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:border-blue-500 focus:ring-blue-500"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Tambahkan catatan jika diperlukan..."
-            />
-          </div>
-
-          {/* Progress Bar */}
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {submitting ? "Mengirim..." : "Kirim Konfirmasi"}
-          </button>
-        </form>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

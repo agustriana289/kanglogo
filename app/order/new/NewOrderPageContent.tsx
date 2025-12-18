@@ -7,7 +7,7 @@ import { Service, ServicePackage } from "@/types/service";
 import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
 import { Discount } from "@/types/discount";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 
 export default function NewOrderPageContent() {
   const searchParams = useSearchParams();
@@ -255,13 +255,8 @@ export default function NewOrderPageContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Pembelian Jasa
-          </p>
-        </div>
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
+        <LogoPathAnimation />
       </div>
     );
   }

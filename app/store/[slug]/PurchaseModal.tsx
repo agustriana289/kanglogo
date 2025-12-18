@@ -417,7 +417,7 @@ export default function PurchaseModal({ asset, isOpen, onClose }: PurchaseModalP
                         <button
                             onClick={() => {
                                 onClose();
-                                router.push(`/store/invoice/${orderNumber}`);
+                                router.push(`/store/${orderNumber}`);
                             }}
                             className="w-full py-3 px-4 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
                         >

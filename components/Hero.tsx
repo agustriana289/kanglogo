@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import LogoLoading from "./LogoLoading";
+import LogoPathAnimation from "./LogoPathAnimation";
 import NextImage from "next/image";
 
 // Definisikan tipe untuk data yang akan digunakan
@@ -88,13 +88,8 @@ export default function Hero() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center">
-          <LogoLoading size="xl" />
-          <p className="mt-8 text-xl text-slate-600 dark:text-slate-400">
-            Selamat Datang di KangLogo..com
-          </p>
-        </div>
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <LogoPathAnimation />
       </div>
     );
   }

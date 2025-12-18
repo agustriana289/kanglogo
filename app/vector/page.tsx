@@ -202,6 +202,7 @@ export default function VectorPage() {
                                     <VectorPreview
                                         fileId={vector.file_id}
                                         name={vector.name}
+                                        svgContent={vector.svg_content}
                                         className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
                                     />
                                     {/* Category Badge */}

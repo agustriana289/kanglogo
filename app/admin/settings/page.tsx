@@ -116,7 +116,7 @@ export default function WebsiteSettingsPage() {
 
     if (loading) {
         return (
-            <div className="fixed inset-0 z-50 flex justify-center items-center bg-white dark:bg-slate-900">
+            <div className="fixed inset-0 z-50 flex justify-center items-center bg-white">
                 <LogoPathAnimation />
             </div>
         );

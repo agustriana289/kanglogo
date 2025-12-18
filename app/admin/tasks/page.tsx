@@ -333,10 +333,10 @@ export default function TaskManagementPage() {
               <button
                 key={tab.key}
                 onClick={() => setSelectedTaskGroup(tab.key as any)}
-                className={`text - sm h - 10 rounded - md px - 3 py - 2 font - medium transition - all ${selectedTaskGroup === tab.key
-                  ? "shadow-sm text-gray-900 bg-white"
-                  : "text-gray-500 hover:text-gray-900"
-                  } `}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${selectedTaskGroup === tab.key
+                    ? "shadow-sm text-gray-900 bg-white"
+                    : "text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -371,7 +371,7 @@ export default function TaskManagementPage() {
                         dateFilter === "30days" ? "30 hari terakhir" :
                           dateFilter === "thisMonth" ? "Bulan ini" : dateFilter}
                 </span>
-                <ChevronDownIcon className={`w - 4 h - 4 text - gray - 400 transition - transform ${dateDropdownOpen ? "rotate-180" : ""} `} />
+                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${dateDropdownOpen ? "rotate-180" : ""}`} />
               </button>
               {dateDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -388,10 +388,10 @@ export default function TaskManagementPage() {
                         setDateFilter(option.value);
                         setDateDropdownOpen(false);
                       }}
-                      className={`w - full text - left px - 3 py - 2 text - sm hover: bg - gray - 100 first: rounded - t - lg last: rounded - b - lg transition - colors ${dateFilter === option.value
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700"
-                        } `}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${dateFilter === option.value
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
+                        }`}
                     >
                       {option.label}
                     </button>
@@ -411,10 +411,10 @@ export default function TaskManagementPage() {
             <button
               key={tab.key}
               onClick={() => setSelectedTaskGroup(tab.key as any)}
-              className={`flex - 1 text - sm py - 2.5 px - 3 rounded - md font - medium transition - all ${selectedTaskGroup === tab.key
-                ? "shadow-sm text-white bg-primary"
-                : "text-gray-500 hover:text-gray-900"
-                } `}
+              className={`flex-1 text-sm py-2.5 px-3 rounded-md font-medium transition-all ${selectedTaskGroup === tab.key
+                  ? "shadow-sm text-white bg-primary"
+                  : "text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab.label}
             </button>
@@ -587,16 +587,16 @@ function TaskListCard({
         {/* Functional Checkbox */}
         <button
           onClick={() => toggleTaskStatus(task.id, task.status)}
-          className={`mt - 0.5 flex - shrink - 0 ${task.status === STATUS_COMPLETED
-            ? "text-green-500"
-            : "text-slate-400 hover:text-primary"
-            } `}
+          className={`mt-0.5 flex-shrink-0 ${task.status === STATUS_COMPLETED
+              ? "text-green-500"
+              : "text-slate-400 hover:text-primary"
+            }`}
         >
           <div
-            className={`w - 5 h - 5 rounded border flex items - center justify - center transition - colors ${task.status === STATUS_COMPLETED
-              ? "bg-green-500 border-green-500"
-              : "border-gray-300 hover:border-primary bg-white"
-              } `}
+            className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.status === STATUS_COMPLETED
+                ? "bg-green-500 border-green-500"
+                : "border-gray-300 hover:border-primary bg-white"
+              }`}
           >
             {task.status === STATUS_COMPLETED && (
               <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />
@@ -606,10 +606,10 @@ function TaskListCard({
 
         <div className="flex-1 min-w-0">
           <p
-            className={`text - sm font - medium ${task.status === STATUS_COMPLETED
-              ? "text-slate-500 line-through"
-              : "text-slate-800"
-              } `}
+            className={`text-sm font-medium ${task.status === STATUS_COMPLETED
+                ? "text-slate-500 line-through"
+                : "text-slate-800"
+              }`}
           >
             {displayTitle}
           </p>

@@ -18,6 +18,7 @@ export default function NewVectorPage() {
     google_drive_link: "",
     description: "",
     is_published: true,
+    svg_content: "",
   });
 
   const [notification, setNotification] = useState({
@@ -102,8 +103,8 @@ export default function NewVectorPage() {
         {notification.show && (
           <div
             className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${notification.type === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
               }`}
           >
             {notification.message}
@@ -196,6 +197,24 @@ export default function NewVectorPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       Pastikan file sudah di-set ke &quot;Anyone with the link can
                       view&quot;
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SVG Code (Manual Thumbnail)
+                    </label>
+                    <textarea
+                      name="svg_content"
+                      rows={6}
+                      value={formData.svg_content || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-xs"
+                      placeholder="<svg>...</svg>"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Masukkan kode SVG lengkap untuk menampilkan thumbnail secara manual.
+                      Jika diisi, ini akan diprioritaskan daripada preview Google Drive.
                     </p>
                   </div>
 

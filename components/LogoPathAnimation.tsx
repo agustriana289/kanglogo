@@ -1,9 +1,14 @@
 'use client';
 
-const LogoPathAnimation = () => {
+interface LogoPathAnimationProps {
+    className?: string;
+}
+
+const LogoPathAnimation = ({ className = "w-24 h-24" }: LogoPathAnimationProps) => {
     return (
         <svg
-            className="w-24 h-24"
+            className={className}
+
             id="Layer_1"
             data-name="Layer 1"
             xmlns="http://www.w3.org/2000/svg"

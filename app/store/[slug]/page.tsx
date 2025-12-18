@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { headers } from "next/headers"; // Tambahkan import ini
+import { headers } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import { MarketplaceAsset } from "@/types/marketplace";
 
@@ -17,6 +17,7 @@ import AssetActions from "./AssetActions";
 
 import ShareButtons from "./ShareButtons";
 import JsonLd from "@/components/JsonLd";
+import InvoiceView from "@/components/store/InvoiceView";
 
 export const revalidate = 0;
 
@@ -42,30 +43,24 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Fungsi kecil untuk mengubah newline menjadi <br />
-const formatMultiLine = (text: string | null | undefined) => {
-  if (!text) return null;
-  return text.split("\n").map((line, index) => (
-    <span key={index}>
-      {line}
-      {index < text.split("\n").length - 1 && <br />}
-    </span>
-  ));
-};
-
 export default async function AssetDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  // --- LOGIC BARU: Cek apakah slug adalah Invoice Number ---
+  if (slug.startsWith("STR-")) {
+    return <InvoiceView invoiceNumber={slug} />;
+  }
+  // --- AKHIR LOGIC BARU ---
+
   const asset = await getAsset(slug);
 
-  // --- TAMBAHKAN BAGIAN INI ---
   const requestHeaders = await headers();
   const host = requestHeaders.get("host");
   const url = `https://${host}/store/${slug}`;
-  // --- AKHIR TAMBAHAN ---
 
   // Product Schema - untuk rich snippets dengan gambar dan harga
   const productSchema = {
@@ -191,9 +186,7 @@ export default async function AssetDetailPage({
 
               <AssetActions asset={asset} />
 
-              {/* --- PERUBAHAN KRUSIAL ADA DI SINI --- */}
               <ShareButtons title={asset.nama_aset} url={url} />
-              {/* --- AKHIR PERUBAHAN --- */}
             </div>
           </div>
           <WidgetArea position="marketplace_footer" />

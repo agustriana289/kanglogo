@@ -58,6 +58,7 @@ export default function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [dateFilter, setDateFilter] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc"); // Default newest
   const { showAlert, showConfirm } = useAlert();
 
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
@@ -74,10 +75,12 @@ export default function ServicesPage() {
 
   // Dropdown states
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
 
   // Refs for click outside detection
   const dateDropdownRef = useRef<HTMLDivElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
 
   // Modal State
@@ -136,11 +139,14 @@ export default function ServicesPage() {
 
   // Close dropdowns when clicking outside
   useEffect(() => {
-    if (!dateDropdownOpen && !pageDropdownOpen) return;
+    if (!dateDropdownOpen && !pageDropdownOpen && !sortDropdownOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dateDropdownOpen && dateDropdownRef.current && !dateDropdownRef.current.contains(event.target as Node)) {
         setDateDropdownOpen(false);
+      }
+      if (sortDropdownOpen && sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+        setSortDropdownOpen(false);
       }
       if (pageDropdownOpen && pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
         setPageDropdownOpen(false);
@@ -149,7 +155,7 @@ export default function ServicesPage() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dateDropdownOpen, pageDropdownOpen]);
+  }, [dateDropdownOpen, pageDropdownOpen, sortDropdownOpen]);
 
   // Filter services
   useEffect(() => {
@@ -224,8 +230,7 @@ export default function ServicesPage() {
       const { data, error } = await supabase
         .from("services")
         .select("*")
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: sortOrder === "asc" });
 
       if (error) throw error;
       const all = data || [];
@@ -244,7 +249,7 @@ export default function ServicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [showAlert]);
+  }, [showAlert, sortOrder]);
 
   useEffect(() => {
     fetchServices();
@@ -599,7 +604,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-slate-100 p-3 sm:p-6 lg:p-8 font-sans">
 
       {/* Header */}
       <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 border border-slate-100">
@@ -638,34 +643,38 @@ export default function ServicesPage() {
             </div>
 
             {/* Right: Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
               {/* Search */}
-              <div className="relative">
+              <div className="relative w-full">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Cari layanan..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
+                  className="pl-9 pr-4 py-2.5 sm:py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-64"
                 />
               </div>
-              <div className="flex flex-row gap-3">
+
+              {/* Filter Controls Grid */}
+              <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3">
                 {/* Date Filter */}
-                <div className="relative" ref={dateDropdownRef}>
+                <div className="relative col-span-1" ref={dateDropdownRef}>
                   <button
                     onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
-                    className="h-11 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                    className="h-10 sm:h-11 w-full flex items-center justify-between gap-2 px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   >
-                    <CalendarIcon className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">
-                      {dateFilter === "" ? "Semua Tanggal" :
-                        dateFilter === "today" ? "Hari ini" :
-                          dateFilter === "7days" ? "7 hari terakhir" :
-                            dateFilter === "30days" ? "30 hari terakhir" :
-                              dateFilter === "thisMonth" ? "Bulan ini" : dateFilter}
-                    </span>
-                    <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${dateDropdownOpen ? "rotate-180" : ""}`} />
+                    <div className="flex items-center gap-2 truncate">
+                      <CalendarIcon className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="text-gray-700 truncate">
+                        {dateFilter === "" ? "Semua Tanggal" :
+                          dateFilter === "today" ? "Hari ini" :
+                            dateFilter === "7days" ? "7 hari terakhir" :
+                              dateFilter === "30days" ? "30 hari terakhir" :
+                                dateFilter === "thisMonth" ? "Bulan ini" : dateFilter}
+                      </span>
+                    </div>
+                    <ChevronDownIcon className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${dateDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
                   {dateDropdownOpen && (
                     <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -694,11 +703,48 @@ export default function ServicesPage() {
                   )}
                 </div>
 
-                {/* View Toggle */}
-                <div className="flex bg-gray-100 p-1 rounded-lg">
+                {/* Sort Dropdown */}
+                <div className="relative col-span-1" ref={sortDropdownRef}>
+                  <button
+                    onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                    className="h-10 sm:h-11 w-full flex items-center justify-between gap-2 px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Squares2X2Icon className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="text-gray-700">
+                        {sortOrder === "desc" ? "Terbaru" : "Terdahulu"}
+                      </span>
+                    </div>
+                    <ChevronDownIcon className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${sortDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {sortDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
+                      <button
+                        onClick={() => {
+                          setSortOrder("desc");
+                          setSortDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg transition-colors ${sortOrder === "desc" ? "bg-primary/10 text-primary font-medium" : "text-gray-700"}`}
+                      >
+                        Terbaru
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSortOrder("asc");
+                          setSortDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 last:rounded-b-lg transition-colors ${sortOrder === "asc" ? "bg-primary/10 text-primary font-medium" : "text-gray-700"}`}
+                      >
+                        Terdahulu
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex bg-gray-100 p-1 rounded-lg col-span-1 justify-center sm:justify-start">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded-md transition ${viewMode === "grid"
+                    className={`p-2 rounded-md transition flex-1 sm:flex-none flex justify-center ${viewMode === "grid"
                       ? "bg-white shadow-sm text-primary"
                       : "text-gray-500 hover:text-gray-700"
                       }`}
@@ -707,7 +753,7 @@ export default function ServicesPage() {
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-md transition ${viewMode === "list"
+                    className={`p-2 rounded-md transition flex-1 sm:flex-none flex justify-center ${viewMode === "list"
                       ? "bg-white shadow-sm text-primary"
                       : "text-gray-500 hover:text-gray-700"
                       }`}
@@ -719,10 +765,11 @@ export default function ServicesPage() {
                 {/* Add Button */}
                 <button
                   onClick={handleAddService}
-                  className="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition shadow-sm flex items-center gap-2 text-sm font-medium"
+                  className="col-span-1 h-10 sm:h-auto px-3 sm:px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition shadow-sm flex items-center justify-center gap-2 text-sm font-medium whitespace-nowrap"
                 >
                   <PlusIcon className="w-5 h-5" />
-                  Buat Layanan
+                  <span className="inline sm:hidden">Baru</span>
+                  <span className="hidden sm:inline">Buat Layanan</span>
                 </button>
               </div>
             </div>
@@ -762,7 +809,7 @@ export default function ServicesPage() {
       ) : (
         viewMode === "grid" ? (
           /* GRID VIEW */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {currentItems.map((service) => (
               <div
                 key={service.id}

@@ -12,6 +12,7 @@ interface VectorPreviewProps {
   fileId: string | null;
   name: string;
   className?: string;
+  svgContent?: string | null;
 }
 
 type PreviewMethod = "api" | "direct" | "thumbnail" | "alternative";
@@ -20,6 +21,7 @@ export default function VectorPreview({
   fileId,
   name,
   className = "",
+  svgContent: manualSvgContent,
 }: VectorPreviewProps) {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -29,6 +31,12 @@ export default function VectorPreview({
   const [currentMethod, setCurrentMethod] = useState<PreviewMethod>("api");
 
   useEffect(() => {
+    if (manualSvgContent) {
+      setSvgContent(manualSvgContent);
+      setLoading(false);
+      return;
+    }
+
     if (!fileId) {
       setLoading(false);
       return;
@@ -172,9 +180,9 @@ export default function VectorPreview({
     };
 
     fetchPreview();
-  }, [fileId, currentMethod]);
+  }, [fileId, currentMethod, manualSvgContent]);
 
-  if (!fileId) {
+  if (!fileId && !manualSvgContent) {
     return (
       <div
         className={`flex items-center justify-center bg-gray-100 ${className}`}

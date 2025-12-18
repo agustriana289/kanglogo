@@ -601,7 +601,7 @@ export default function OrderManagementPage() {
     <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
       {/* Overview Stats */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <p className="text-slate-500 text-sm font-medium">Belum Dibayar</p>
           <div className="flex items-end justify-between mt-3">
@@ -677,61 +677,62 @@ export default function OrderManagementPage() {
                 className="pl-9 pr-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-48"
               />
             </div>
+            <div className="flex flex-row gap-3">
+              {/* Filter Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                  className="h-11 flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
+                >
+                  <FunnelIcon className="w-5 h-5" />
+                  <span className="hidden sm:inline">Filter</span>
+                </button>
+                {showFilterDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right">
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                        Paket
+                      </label>
+                      <input
+                        type="text"
+                        value={filterPackage}
+                        onChange={(e) => setFilterPackage(e.target.value)}
+                        placeholder="Filter paket..."
+                        className={inputStyle}
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                        Pelanggan
+                      </label>
+                      <input
+                        type="text"
+                        value={filterCustomer}
+                        onChange={(e) => setFilterCustomer(e.target.value)}
+                        placeholder="Filter pelanggan..."
+                        className={inputStyle}
+                      />
+                    </div>
+                    <button
+                      onClick={() => setShowFilterDropdown(false)}
+                      className="bg-primary hover:bg-primary/80 w-full h-10 rounded-lg text-sm font-medium text-white transition"
+                    >
+                      Terapkan Filter
+                    </button>
+                  </div>
+                )}
+              </div>
 
-            {/* Filter Button */}
-            <div className="relative">
+              {/* Add Button */}
               <button
-                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className="h-11 flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
-                <FunnelIcon className="w-5 h-5" />
-                <span className="hidden sm:inline">Filter</span>
+                <PlusIcon className="h-5 w-5 mr-2" />
+                <span className="hidden sm:inline">Invoice Baru</span>
+                <span className="sm:hidden">Baru</span>
               </button>
-              {showFilterDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right">
-                  <div className="mb-4">
-                    <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Paket
-                    </label>
-                    <input
-                      type="text"
-                      value={filterPackage}
-                      onChange={(e) => setFilterPackage(e.target.value)}
-                      placeholder="Filter paket..."
-                      className={inputStyle}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Pelanggan
-                    </label>
-                    <input
-                      type="text"
-                      value={filterCustomer}
-                      onChange={(e) => setFilterCustomer(e.target.value)}
-                      placeholder="Filter pelanggan..."
-                      className={inputStyle}
-                    />
-                  </div>
-                  <button
-                    onClick={() => setShowFilterDropdown(false)}
-                    className="bg-primary hover:bg-primary/80 w-full h-10 rounded-lg text-sm font-medium text-white transition"
-                  >
-                    Terapkan Filter
-                  </button>
-                </div>
-              )}
             </div>
-
-            {/* Add Button */}
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              <span className="hidden sm:inline">Invoice Baru</span>
-              <span className="sm:hidden">Baru</span>
-            </button>
           </div>
         </div>
       </div>

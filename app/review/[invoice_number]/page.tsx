@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Testimonial } from "@/types/testimonial";
-import LogoLoading from "@/components/LogoLoading";
+import LogoPathAnimation from "@/components/LogoPathAnimation";
 import { Star, CheckCircle, Package } from "lucide-react";
 
 interface RatingCategory {
@@ -44,7 +44,7 @@ export default function SubmitTestimonialPage() {
                 // Pertama, cari order berdasarkan invoice_number
                 const { data: orderData, error: orderError } = await supabase
                     .from("orders")
-                    .select("*")
+                    .select("*, services(title)")
                     .eq("invoice_number", invoice_number)
                     .single();
 
@@ -166,11 +166,8 @@ export default function SubmitTestimonialPage() {
 
     if (loading) {
         return (
-            <div className="fixed inset-0 bg-slate-100 flex items-center justify-center z-50">
-                <div className="flex flex-col items-center justify-center">
-                    <LogoLoading size="xl" />
-                    <p className="mt-8 text-xl text-slate-600">Memuat...</p>
-                </div>
+            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+                <LogoPathAnimation />
             </div>
         );
     }
@@ -234,7 +231,9 @@ export default function SubmitTestimonialPage() {
                             <div>
                                 <p className="text-xs text-gray-400 mb-0.5">{invoice_number}</p>
                                 <p className="font-semibold text-gray-800">
-                                    {orderInfo?.package_details?.name || "Layanan KangLogo"}
+                                    {orderInfo?.services?.title
+                                        ? `${orderInfo.services.title} - ${orderInfo?.package_details?.name}`
+                                        : orderInfo?.package_details?.name || "Layanan KangLogo"}
                                 </p>
                                 {orderInfo?.customer_name && (
                                     <p className="text-sm text-gray-500">
