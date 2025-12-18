@@ -1307,7 +1307,7 @@ export default function OrderManagementPage() {
                               const service = services.find(s => s.id === serviceId);
                               if (service && service.packages && service.packages.length > 0) {
                                 setEditedPackageDetails(service.packages[0]);
-                                setEditedFinalPrice(service.packages[0].price);
+                                setEditedFinalPrice(Number(service.packages[0].finalPrice));
                               }
                             }
                           }}
@@ -1338,7 +1338,7 @@ export default function OrderManagementPage() {
                               const pkg = service?.packages?.find(p => p.name === e.target.value);
                               if (pkg) {
                                 setEditedPackageDetails(pkg);
-                                setEditedFinalPrice(pkg.price);
+                                setEditedFinalPrice(Number(pkg.finalPrice));
                               }
                             }}
                             disabled={!editedServiceId}
