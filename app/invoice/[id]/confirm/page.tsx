@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
+import { Order } from "@/types/order";
+import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
 import { uploadToImgBB } from "@/lib/imgbb-upload";
 import {
@@ -10,24 +12,22 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   MessageCircle,
+  CreditCard,
   FileText,
   User,
   ExternalLink,
-  ShoppingBag,
 } from "lucide-react";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
 
-interface PaymentConfirmViewProps {
-  invoiceNumber: string;
-}
-
-export default function PaymentConfirmView({
-  invoiceNumber,
-}: PaymentConfirmViewProps) {
+export default function ConfirmPaymentPage() {
+  const params = useParams();
+  const invoice_number = params?.id as string;
   const router = useRouter();
 
-  const [order, setOrder] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
+    null
+  );
   const [waNumber, setWaNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -38,23 +38,20 @@ export default function PaymentConfirmView({
 
   useEffect(() => {
     const fetchData = async () => {
+      // Fetch Order with Service Title for informative display
       const { data: orderData, error } = await supabase
-        .from("store_orders")
-        .select(
-          `
-          *,
-          marketplace_assets ( nama_aset )
-        `
-        )
-        .eq("order_number", invoiceNumber)
+        .from("orders")
+        .select("*, services(title)")
+        .eq("invoice_number", invoice_number)
         .single();
 
       if (error || !orderData || orderData.status !== "pending_payment") {
-        router.push(`/invoice/${invoiceNumber}`);
+        router.push(`/invoice/${invoice_number}`);
         return;
       }
       setOrder(orderData);
 
+      // Fetch Payment Method
       if (orderData.payment_method_id) {
         const { data: pm } = await supabase
           .from("payment_methods")
@@ -63,6 +60,7 @@ export default function PaymentConfirmView({
           .single();
         if (pm) setPaymentMethod(pm);
       } else if (orderData.payment_method) {
+        // Fallback search by name
         const { data: pm } = await supabase
           .from("payment_methods")
           .select("*")
@@ -74,6 +72,7 @@ export default function PaymentConfirmView({
         if (pm) setPaymentMethod(pm);
       }
 
+      // Fetch WA number from settings
       const { data: settings } = await supabase
         .from("website_settings")
         .select("website_phone")
@@ -90,7 +89,7 @@ export default function PaymentConfirmView({
     };
 
     fetchData();
-  }, [invoiceNumber, router]);
+  }, [invoice_number, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,11 +122,18 @@ export default function PaymentConfirmView({
       if (uploadError) throw new Error("Gagal upload: " + uploadError);
 
       const { error: updateError } = await supabase
-        .from("store_orders")
-        .update({ status: "paid", payment_proof_url: uploadedUrl })
+        .from("orders")
+        .update({ status: "paid", proof_of_payment_url: uploadedUrl })
         .eq("id", order!.id);
 
       if (updateError) throw updateError;
+
+      // Log activity
+      await supabase.from("order_logs").insert({
+        order_id: order!.id,
+        status: "paid",
+        notes: `Konfirmasi pembayaran via web. Bukti: ${uploadedUrl}`,
+      });
 
       setSuccess(true);
     } catch (error: any) {
@@ -145,13 +151,13 @@ export default function PaymentConfirmView({
       </div>
     );
 
-  const waLink = `https://wa.me/${waNumber}?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20produk%20digital%20%23${order?.order_number}.%20Mohon%20untuk%20segera%20diproses.`;
+  const waLink = `https://wa.me/${waNumber}?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran%20untuk%20invoice%20%23${order?.invoice_number}.%20Mohon%20untuk%20segera%20diproses.`;
 
   return (
     <div className="min-h-screen bg-slate-100 py-12 px-4 font-sans">
       <div className="max-w-xl mx-auto">
         <button
-          onClick={() => router.push(`/invoice/${invoiceNumber}`)}
+          onClick={() => router.push(`/invoice/${invoice_number}`)}
           className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors mb-6 font-medium"
         >
           <ArrowLeft size={18} /> Kembali ke Invoice
@@ -160,44 +166,50 @@ export default function PaymentConfirmView({
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
           {!success ? (
             <>
+              {/* Previous structure layout liked by user */}
               <div className="bg-primary px-10 py-10 text-white relative">
                 <div className="relative z-10">
                   <h1 className="text-2xl font-bold mb-1">
                     Konfirmasi Pembayaran
                   </h1>
-                  <p className="text-white/70 text-sm font-medium">
-                    Unggah bukti transfer untuk pesanan produk digital Anda
+                  <p className="text-white/70 text-sm">
+                    Unggah bukti transfer untuk memproses pesanan Anda
                   </p>
                 </div>
                 <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <ShoppingBag size={80} />
+                  <CreditCard size={80} />
                 </div>
               </div>
 
               <div className="p-10 space-y-8">
+                {/* Summary Section - Optimized Aesthetics based on Testimonial Form */}
                 <div className="bg-slate-50 rounded-2xl p-7 space-y-4 border border-slate-200">
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between items-center group">
                       <span className="text-slate-500 flex items-center gap-2 font-medium">
-                        <FileText size={14} /> Nomor Pesanan
+                        <FileText size={14} /> Nomor Invoice
                       </span>
                       <span className="text-slate-800 font-bold font-mono bg-white px-2 py-0.5 rounded border border-slate-200 group-hover:border-primary/30 transition-colors">
-                        #{order?.order_number}
+                        #{order?.invoice_number}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500 flex items-center gap-2 font-medium">
-                        <ShoppingBag size={14} /> Nama Produk
+                        <ImageIcon size={14} /> Nama Layanan
                       </span>
                       <span className="text-slate-800 font-bold text-right max-w-[200px] break-words">
-                        {order?.marketplace_assets?.nama_aset}
+                        {(order as any)?.services?.title
+                          ? `${(order as any).services.title} (${
+                              order?.package_details?.name
+                            })`
+                          : order?.package_details?.name}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500 flex items-center gap-2 font-medium">
-                        <User size={14} /> Nama Pembeli
+                        <User size={14} /> Nama Pelanggan
                       </span>
                       <span className="text-slate-800 font-bold text-right">
                         {order?.customer_name}
@@ -206,17 +218,17 @@ export default function PaymentConfirmView({
 
                     <div className="pt-4 border-t border-slate-200 flex justify-between items-end mt-2">
                       <span className="text-slate-800 font-bold">
-                        Total Bayar
+                        Nominal Bayar
                       </span>
                       <span className="text-3xl font-black text-primary leading-none">
-                        Rp {order?.price.toLocaleString("id-ID")}
+                        Rp {order?.final_price.toLocaleString("id-ID")}
                       </span>
                     </div>
                   </div>
 
                   {paymentMethod && (
                     <div className="mt-6 pt-5 border-t border-slate-200">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
                         Rekening Tujuan
                       </p>
                       <div className="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
@@ -241,6 +253,7 @@ export default function PaymentConfirmView({
                   )}
                 </div>
 
+                {/* Upload Section - Matching Testimonial Form aesthetics */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-3">
                     <label className="text-sm font-bold text-slate-700 ml-1">
@@ -323,7 +336,7 @@ export default function PaymentConfirmView({
                 </h2>
                 <p className="text-slate-500 leading-relaxed max-w-[340px] mx-auto">
                   Terima kasih! Bukti pembayaran Anda telah kami terima dan akan
-                  segera diverifikasi agar file dapat Anda unduh.
+                  segera diproses oleh tim admin kami.
                 </p>
               </div>
 
@@ -338,7 +351,7 @@ export default function PaymentConfirmView({
                 </a>
 
                 <button
-                  onClick={() => router.push(`/invoice/${invoiceNumber}`)}
+                  onClick={() => router.push(`/invoice/${invoice_number}`)}
                   className="w-full bg-slate-100 text-slate-700 py-4 rounded-xl font-bold text-lg hover:bg-slate-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
                   <ExternalLink size={20} /> Kembali ke Invoice

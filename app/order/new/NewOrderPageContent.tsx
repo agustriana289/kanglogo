@@ -192,7 +192,9 @@ export default function NewOrderPageContent() {
         package_details: selectedPackage,
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
-        customer_whatsapp: formData.customer_whatsapp ? `${formData.country_code}${formData.customer_whatsapp}` : "",
+        customer_whatsapp: formData.customer_whatsapp
+          ? `${formData.country_code}${formData.customer_whatsapp}`
+          : "",
         // PERUBAHAN: Simpan kode dan jumlah diskon
         discount_code: appliedDiscount?.code || null,
         discount_amount: discountAmount > 0 ? discountAmount : null,
@@ -244,7 +246,7 @@ export default function NewOrderPageContent() {
         // Don't block order creation if email fails
       }
 
-      router.push(`/order/${newOrder.invoice_number}`);
+      router.push(`/invoice/${newOrder.invoice_number}`);
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Failed to create order. Please try again.");
@@ -413,7 +415,12 @@ export default function NewOrderPageContent() {
                     <select
                       className="w-24 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       value={formData.country_code}
-                      onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          country_code: e.target.value,
+                        })
+                      }
                     >
                       <option value="+62">🇮🇩 +62</option>
                       <option value="+1">🇺🇸 +1</option>
@@ -436,7 +443,12 @@ export default function NewOrderPageContent() {
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="812xxxxxxxx"
                       value={formData.customer_whatsapp}
-                      onChange={(e) => setFormData({ ...formData, customer_whatsapp: e.target.value.replace(/\D/g, '') })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          customer_whatsapp: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
                     />
                   </div>
                 </div>

@@ -31,12 +31,13 @@ interface OrderEmailData {
 
 // Kirim email notifikasi ke pelanggan
 export async function sendCustomerOrderEmail(data: OrderEmailData) {
-  const { type, invoiceNumber, customerEmail, productName, customerName } = data;
+  const { type, invoiceNumber, customerEmail, productName, customerName } =
+    data;
 
   const isStore = type === "store";
   const orderType = isStore ? "Pembelian" : "Pemesanan";
   const productType = isStore ? "Aset Digital" : "Jasa Layanan";
-  const invoicePath = isStore ? `/store/invoice/${invoiceNumber}` : `/order/${invoiceNumber}`;
+  const invoicePath = `/invoice/${invoiceNumber}`;
   const invoiceUrl = `${SITE_URL}${invoicePath}`;
 
   const subject = `${orderType} ${productType} (${productName}) di Kanglogo.com`;
@@ -106,7 +107,16 @@ export async function sendCustomerOrderEmail(data: OrderEmailData) {
 
 // Kirim email notifikasi ke admin
 export async function sendAdminOrderEmail(data: OrderEmailData) {
-  const { type, invoiceNumber, customerName, customerEmail, customerWhatsapp, productName, price, discountAmount } = data;
+  const {
+    type,
+    invoiceNumber,
+    customerName,
+    customerEmail,
+    customerWhatsapp,
+    productName,
+    price,
+    discountAmount,
+  } = data;
 
   const isStore = type === "store";
   const orderType = isStore ? "Pembelian" : "Pesanan";
@@ -144,29 +154,43 @@ export async function sendAdminOrderEmail(data: OrderEmailData) {
           </tr>
           <tr>
             <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">No WhatsApp</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 500;">${customerWhatsapp || "-"}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 500;">${
+              customerWhatsapp || "-"
+            }</td>
           </tr>
           <tr>
             <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Alamat Email</td>
             <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 500;">${customerEmail}</td>
           </tr>
           <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Nama ${isStore ? "Produk" : "Layanan"}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Nama ${
+              isStore ? "Produk" : "Layanan"
+            }</td>
             <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 500;">${productName}</td>
           </tr>
           <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Harga ${isStore ? "Produk" : "Layanan"}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 500;">${formatCurrency(price + discountAmount)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Harga ${
+              isStore ? "Produk" : "Layanan"
+            }</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 500;">${formatCurrency(
+              price + discountAmount
+            )}</td>
           </tr>
           <tr>
             <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Diskon</td>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: ${discountAmount > 0 ? '#16a34a' : '#64748b'}; font-weight: 500;">
-              ${discountAmount > 0 ? `- ${formatCurrency(discountAmount)}` : "-"}
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: ${
+              discountAmount > 0 ? "#16a34a" : "#64748b"
+            }; font-weight: 500;">
+              ${
+                discountAmount > 0 ? `- ${formatCurrency(discountAmount)}` : "-"
+              }
             </td>
           </tr>
           <tr style="background-color: #f8fafc;">
             <td style="padding: 12px; color: #334155; font-weight: 600;">Total Pembayaran</td>
-            <td style="padding: 12px; color: #1d4ed8; font-weight: 700; font-size: 18px;">${formatCurrency(price)}</td>
+            <td style="padding: 12px; color: #1d4ed8; font-weight: 700; font-size: 18px;">${formatCurrency(
+              price
+            )}</td>
           </tr>
         </table>
         
@@ -204,11 +228,15 @@ export async function sendAdminOrderEmail(data: OrderEmailData) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: `📦 ${orderType} Baru!`,
-        message: `${customerName} membeli ${productName} seharga ${formatCurrency(price)}`,
+        message: `${customerName} membeli ${productName} seharga ${formatCurrency(
+          price
+        )}`,
         url: "/admin/orders", // Redirect ke halaman order
-        icon: "/icons/icon-192x192.png"
-      })
-    }).catch(err => console.error("Failed to trigger push notification:", err));
+        icon: "/icons/icon-192x192.png",
+      }),
+    }).catch((err) =>
+      console.error("Failed to trigger push notification:", err)
+    );
 
     return { success: true, data: result };
   } catch (error) {

@@ -74,8 +74,6 @@ const statusOptions = [
   },
 ];
 
-
-
 export default function OrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +122,19 @@ export default function OrderManagementPage() {
   const [requestingTestimonial, setRequestingTestimonial] = useState(false);
   const [testimonialLink, setTestimonialLink] = useState<string | null>(null);
 
+  // Edit Mode States
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editedCustomerName, setEditedCustomerName] = useState("");
+  const [editedCustomerEmail, setEditedCustomerEmail] = useState("");
+  const [editedCustomerWhatsapp, setEditedCustomerWhatsapp] = useState("");
+  const [editedServiceId, setEditedServiceId] = useState<number | null>(null);
+  const [editedPackageDetails, setEditedPackageDetails] = useState<any>(null);
+  const [editedFinalPrice, setEditedFinalPrice] = useState(0);
+  const [editedDiscountCode, setEditedDiscountCode] = useState("");
+  const [editedDiscountAmount, setEditedDiscountAmount] = useState(0);
+  const [isEditingCustomService, setIsEditingCustomService] = useState(false);
+  const [editedCustomPackageName, setEditedCustomPackageName] = useState("");
+
   // Create Order States
   const [newOrder, setNewOrder] = useState({
     customer_name: "",
@@ -162,14 +173,16 @@ export default function OrderManagementPage() {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select(`
+        .select(
+          `
           *,
           services (
             id,
             title,
             slug
           )
-        `)
+        `
+        )
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -309,10 +322,18 @@ export default function OrderManagementPage() {
     if (!pageDropdownOpen && !bulkStatusDropdownOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (pageDropdownOpen && pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+      if (
+        pageDropdownOpen &&
+        pageDropdownRef.current &&
+        !pageDropdownRef.current.contains(event.target as Node)
+      ) {
         setPageDropdownOpen(false);
       }
-      if (bulkStatusDropdownOpen && bulkStatusDropdownRef.current && !bulkStatusDropdownRef.current.contains(event.target as Node)) {
+      if (
+        bulkStatusDropdownOpen &&
+        bulkStatusDropdownRef.current &&
+        !bulkStatusDropdownRef.current.contains(event.target as Node)
+      ) {
         setBulkStatusDropdownOpen(false);
       }
     };
@@ -352,6 +373,20 @@ export default function OrderManagementPage() {
     setEditedPaymentDeadline(
       order.payment_deadline ? order.payment_deadline.split("T")[0] : ""
     );
+
+    // Set edit mode states
+    setIsEditingDetails(false);
+    setEditedCustomerName(order.customer_name);
+    setEditedCustomerEmail(order.customer_email);
+    setEditedCustomerWhatsapp(order.customer_whatsapp);
+    setEditedServiceId(order.service_id);
+    setEditedPackageDetails(order.package_details);
+    setEditedFinalPrice(order.final_price);
+    setEditedDiscountCode(order.discount_code || "");
+    setEditedDiscountAmount(order.discount_amount || 0);
+    setIsEditingCustomService(false);
+    setEditedCustomPackageName(order.package_details?.name || "");
+
     setShowDetailModal(true);
   };
 
@@ -359,18 +394,43 @@ export default function OrderManagementPage() {
     if (!selectedOrder) return;
     setSaving(true);
     try {
+      const updateData: any = {
+        status: editedStatus,
+        final_file_link: finalFileLink || null,
+        created_at: editedCreatedAt
+          ? new Date(editedCreatedAt).toISOString()
+          : selectedOrder.created_at,
+        payment_deadline: editedPaymentDeadline
+          ? new Date(editedPaymentDeadline).toISOString()
+          : null,
+      };
+
+      // Add edited fields if in edit mode
+      if (isEditingDetails) {
+        updateData.customer_name = editedCustomerName;
+        updateData.customer_email = editedCustomerEmail;
+        updateData.customer_whatsapp = editedCustomerWhatsapp;
+        updateData.service_id = editedServiceId;
+
+        // Handle custom service
+        if (isEditingCustomService) {
+          updateData.package_details = {
+            name: editedCustomPackageName,
+            price: editedFinalPrice,
+            features: [],
+          };
+        } else {
+          updateData.package_details = editedPackageDetails;
+        }
+
+        updateData.final_price = editedFinalPrice;
+        updateData.discount_code = editedDiscountCode || null;
+        updateData.discount_amount = editedDiscountAmount || 0;
+      }
+
       const { error } = await supabase
         .from("orders")
-        .update({
-          status: editedStatus,
-          final_file_link: finalFileLink || null,
-          created_at: editedCreatedAt
-            ? new Date(editedCreatedAt).toISOString()
-            : selectedOrder.created_at,
-          payment_deadline: editedPaymentDeadline
-            ? new Date(editedPaymentDeadline).toISOString()
-            : null,
-        })
+        .update(updateData)
         .eq("id", selectedOrder.id);
 
       if (error) throw error;
@@ -381,6 +441,7 @@ export default function OrderManagementPage() {
       }
 
       showAlert("success", "Sukses", "Pesanan berhasil diperbarui!");
+      setIsEditingDetails(false);
       fetchOrders();
       setShowDetailModal(false);
     } catch (error: any) {
@@ -537,7 +598,15 @@ export default function OrderManagementPage() {
   };
 
   // Custom checkbox component with Heroicons (sama seperti di admin testimoni)
-  const CustomCheckbox = ({ checked, onChange, variant = "default" }: { checked: boolean; onChange: () => void; variant?: "default" | "header" }) => (
+  const CustomCheckbox = ({
+    checked,
+    onChange,
+    variant = "default",
+  }: {
+    checked: boolean;
+    onChange: () => void;
+    variant?: "default" | "header";
+  }) => (
     <button
       onClick={onChange}
       className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
@@ -552,7 +621,13 @@ export default function OrderManagementPage() {
       {checked ? (
         <CheckCircleIcon className="w-5 h-5" />
       ) : (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
           <circle cx="12" cy="12" r="9" />
         </svg>
       )}
@@ -747,13 +822,21 @@ export default function OrderManagementPage() {
             {/* Custom Bulk Status Dropdown */}
             <div className="relative" ref={bulkStatusDropdownRef}>
               <button
-                onClick={() => setBulkStatusDropdownOpen(!bulkStatusDropdownOpen)}
+                onClick={() =>
+                  setBulkStatusDropdownOpen(!bulkStatusDropdownOpen)
+                }
                 className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-slate-800 dark:border-gray-700 dark:hover:bg-gray-700"
               >
                 <span className="text-gray-700 dark:text-gray-300">
-                  {bulkStatus ? statusOptions.find(opt => opt.value === bulkStatus)?.label : "Ubah Status..."}
+                  {bulkStatus
+                    ? statusOptions.find((opt) => opt.value === bulkStatus)
+                      ?.label
+                    : "Ubah Status..."}
                 </span>
-                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""}`} />
+                <ChevronDownIcon
+                  className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""
+                    }`}
+                />
               </button>
               {bulkStatusDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -767,7 +850,9 @@ export default function OrderManagementPage() {
                       }}
                       className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors text-gray-700 dark:text-gray-300"
                     >
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${option.bgClass} ${option.textClass}`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${option.bgClass} ${option.textClass}`}
+                      >
                         {option.label}
                       </span>
                     </button>
@@ -859,14 +944,18 @@ export default function OrderManagementPage() {
 
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-400 uppercase">Jatuh Tempo</p>
+                      <p className="text-xs text-gray-400 uppercase">
+                        Jatuh Tempo
+                      </p>
                       <p className="text-sm text-gray-700">
-                        {formatDateSafe(order.payment_deadline || order.work_deadline)}
+                        {formatDateSafe(
+                          order.payment_deadline || order.work_deadline
+                        )}
                       </p>
                     </div>
                     <div className="flex gap-1">
                       <Link
-                        href={`/order/${order.invoice_number}`}
+                        href={`/invoice/${order.invoice_number}`}
                         target="_blank"
                         className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
                       >
@@ -893,7 +982,10 @@ export default function OrderManagementPage() {
                   <tr>
                     <th className="px-6 py-4 rounded-tl-lg">
                       <CustomCheckbox
-                        checked={selectedOrders.length === paginatedOrders.length && paginatedOrders.length > 0}
+                        checked={
+                          selectedOrders.length === paginatedOrders.length &&
+                          paginatedOrders.length > 0
+                        }
                         onChange={() => {
                           if (selectedOrders.length === paginatedOrders.length)
                             setSelectedOrders([]);
@@ -928,12 +1020,8 @@ export default function OrderManagementPage() {
                     >
                       Total
                     </th>
-                    <th className="px-6 py-4">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-right rounded-tr-lg">
-                      Aksi
-                    </th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right rounded-tr-lg">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -944,7 +1032,9 @@ export default function OrderManagementPage() {
                     return (
                       <tr
                         key={order.id}
-                        className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedOrders.includes(order.id) ? "bg-primary/5" : ""
+                        className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedOrders.includes(order.id)
+                          ? "bg-primary/5"
+                          : ""
                           }`}
                       >
                         <td className="px-6 py-4">
@@ -956,7 +1046,10 @@ export default function OrderManagementPage() {
                                   selectedOrders.filter((id) => id !== order.id)
                                 );
                               else
-                                setSelectedOrders([...selectedOrders, order.id]);
+                                setSelectedOrders([
+                                  ...selectedOrders,
+                                  order.id,
+                                ]);
                             }}
                           />
                         </td>
@@ -992,7 +1085,7 @@ export default function OrderManagementPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
                             <Link
-                              href={`/order/${order.invoice_number}`}
+                              href={`/invoice/${order.invoice_number}`}
                               target="_blank"
                               className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
                               title="Buka Invoice"
@@ -1021,12 +1114,16 @@ export default function OrderManagementPage() {
       {/* Pagination */}
       {sortedOrders.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
-
-          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+          <nav
+            aria-label="Page navigation"
+            className="flex items-center space-x-4"
+          >
             <ul className="flex -space-x-px text-sm gap-2">
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -1054,7 +1151,9 @@ export default function OrderManagementPage() {
               ))}
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages || totalPages === 0}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -1070,8 +1169,13 @@ export default function OrderManagementPage() {
               onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
               className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
             >
-              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+              <span className="text-gray-700 dark:text-gray-300">
+                {itemsPerPage} halaman
+              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""
+                  }`}
+              />
             </button>
             {pageDropdownOpen && (
               <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -1098,19 +1202,26 @@ export default function OrderManagementPage() {
       )}
 
       {/* Detail Modal */}
-      {
-        showDetailModal && selectedOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Detail Pesanan
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {selectedOrder.invoice_number}
-                  </p>
-                </div>
+      {showDetailModal && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Detail Pesanan
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {selectedOrder.invoice_number}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsEditingDetails(!isEditingDetails)}
+                  className="px-3 py-1.5 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition flex items-center gap-1.5"
+                >
+                  <PencilSquareIcon className="w-4 h-4" />
+                  {isEditingDetails ? "Batal Edit" : "Edit Detail"}
+                </button>
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -1118,13 +1229,45 @@ export default function OrderManagementPage() {
                   <XMarkIcon className="w-6 h-6" />
                 </button>
               </div>
+            </div>
 
-              <div className="p-6 space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                      <UserIcon className="w-4 h-4" /> Info Pelanggan
-                    </h4>
+            <div className="p-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4" /> Info Pelanggan
+                  </h4>
+                  {isEditingDetails ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Nama</label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={editedCustomerName}
+                          onChange={(e) => setEditedCustomerName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Email</label>
+                        <input
+                          type="email"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={editedCustomerEmail}
+                          onChange={(e) => setEditedCustomerEmail(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">WhatsApp</label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={editedCustomerWhatsapp}
+                          onChange={(e) => setEditedCustomerWhatsapp(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       <p>
                         <span className="text-gray-400">Nama:</span>{" "}
@@ -1139,11 +1282,104 @@ export default function OrderManagementPage() {
                         {selectedOrder.customer_whatsapp}
                       </p>
                     </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                      <ShoppingBagIcon className="w-4 h-4" /> Info Paket
-                    </h4>
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <ShoppingBagIcon className="w-4 h-4" /> Info Paket
+                  </h4>
+                  {isEditingDetails ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Layanan</label>
+                        <select
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={isEditingCustomService ? "custom" : (editedServiceId || "")}
+                          onChange={(e) => {
+                            if (e.target.value === "custom") {
+                              setIsEditingCustomService(true);
+                              setEditedServiceId(null);
+                              setEditedPackageDetails(null);
+                            } else {
+                              setIsEditingCustomService(false);
+                              const serviceId = Number(e.target.value);
+                              setEditedServiceId(serviceId);
+                              const service = services.find(s => s.id === serviceId);
+                              if (service && service.packages && service.packages.length > 0) {
+                                setEditedPackageDetails(service.packages[0]);
+                                setEditedFinalPrice(service.packages[0].price);
+                              }
+                            }
+                          }}
+                        >
+                          <option value="">Pilih Layanan</option>
+                          {services.map((s) => (
+                            <option key={s.id} value={s.id}>{s.title}</option>
+                          ))}
+                          <option value="custom">Custom (Layanan Khusus)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Paket</label>
+                        {isEditingCustomService ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            value={editedCustomPackageName}
+                            onChange={(e) => setEditedCustomPackageName(e.target.value)}
+                            placeholder="Masukkan nama paket custom"
+                          />
+                        ) : (
+                          <select
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            value={editedPackageDetails?.name || ""}
+                            onChange={(e) => {
+                              const service = services.find(s => s.id === editedServiceId);
+                              const pkg = service?.packages?.find(p => p.name === e.target.value);
+                              if (pkg) {
+                                setEditedPackageDetails(pkg);
+                                setEditedFinalPrice(pkg.price);
+                              }
+                            }}
+                            disabled={!editedServiceId}
+                          >
+                            <option value="">Pilih Paket</option>
+                            {services.find(s => s.id === editedServiceId)?.packages?.map((pkg) => (
+                              <option key={pkg.name} value={pkg.name}>{pkg.name}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Harga Final</label>
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={editedFinalPrice}
+                          onChange={(e) => setEditedFinalPrice(Number(e.target.value))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Kode Diskon</label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={editedDiscountCode}
+                          onChange={(e) => setEditedDiscountCode(e.target.value)}
+                          placeholder="Opsional"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Jumlah Diskon</label>
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          value={editedDiscountAmount}
+                          onChange={(e) => setEditedDiscountAmount(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+                  ) : (
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       <p>
                         <span className="text-gray-400">Paket:</span>{" "}
@@ -1153,491 +1389,497 @@ export default function OrderManagementPage() {
                         <span className="text-gray-400">Total:</span>{" "}
                         {formatCurrency(selectedOrder.final_price)}
                       </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-                    Kelola Status
-                  </h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Status
-                      </label>
-                      <select // This inputs was requested to be consistent
-                        className={inputStyle}
-                        value={editedStatus}
-                        onChange={(e) => setEditedStatus(e.target.value)}
-                      >
-                        {statusOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Link File Final
-                      </label>
-                      {isEditingFileLink ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            className={inputStyle}
-                            placeholder="https://drive.google.com/drive/folders/..."
-                            value={finalFileLink}
-                            onChange={(e) => setFinalFileLink(e.target.value)}
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingFileLink(false)}
-                            className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
-                          >
-                            OK
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div
-                            onClick={() =>
-                              finalFileLink &&
-                              window.open(
-                                `/file/o/${selectedOrder?.invoice_number}`,
-                                "_blank"
-                              )
-                            }
-                            className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink
-                              ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
-                              : ""
-                              }`}
-                          >
-                            {finalFileLink ? (
-                              <>
-                                <FolderOpenIcon className="w-4 h-4 text-primary flex-shrink-0" />
-                                <span className="text-sm text-gray-800 dark:text-white/90 truncate">
-                                  {finalFileLink}
-                                </span>
-                                <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              </>
-                            ) : (
-                              <span className="text-sm text-gray-400 dark:text-white/30">
-                                Belum ada link
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingFileLink(true)}
-                            className="p-2 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 flex-shrink-0"
-                            title="Edit Link"
-                          >
-                            <PencilSquareIcon className="w-4 h-4" />
-                          </button>
-                        </div>
+                      {selectedOrder.discount_code && (
+                        <p>
+                          <span className="text-gray-400">Diskon:</span>{" "}
+                          {selectedOrder.discount_code} (-{formatCurrency(selectedOrder.discount_amount || 0)})
+                        </p>
                       )}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tanggal Dibuat
-                      </label>
-                      <input
-                        type="date"
-                        className={inputStyle}
-                        value={editedCreatedAt}
-                        onChange={(e) => setEditedCreatedAt(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Jatuh Tempo
-                      </label>
-                      <input
-                        type="date"
-                        className={inputStyle}
-                        value={editedPaymentDeadline}
-                        onChange={(e) => setEditedPaymentDeadline(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
-                {/* Left side - Minta Testimoni for completed orders */}
-                <div>
-                  {selectedOrder?.status === "completed" && (
-                    <button
-                      onClick={async () => {
-                        if (!selectedOrder) return;
-                        const link = `${window.location.origin}/review/${selectedOrder.invoice_number}`;
-                        await navigator.clipboard.writeText(link);
-                        showAlert("success", "Berhasil", "Link testimoni disalin!");
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+                  Kelola Status
+                </h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Status
+                    </label>
+                    <select // This inputs was requested to be consistent
+                      className={inputStyle}
+                      value={editedStatus}
+                      onChange={(e) => setEditedStatus(e.target.value)}
                     >
-                      <ChatBubbleLeftEllipsisIcon className="w-4 h-4" />
-                      Minta Testimoni
-                    </button>
-                  )}
-                </div>
-
-                {/* Right side - Action buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-slate-700 dark:text-white dark:border-gray-600"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleSaveChanges}
-                    disabled={saving}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {saving ? "Menyimpan..." : "Simpan Perubahan"}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!selectedOrder) return;
-                      if (selectedOrder.status !== "cancelled") {
-                        showAlert(
-                          "error",
-                          "Gagal",
-                          "Hanya pesanan dengan status 'Dibatalkan' yang dapat dihapus"
-                        );
-                        return;
-                      }
-
-                      const confirmed = await showConfirm(
-                        "Hapus Pesanan",
-                        "Apakah Anda yakin ingin menghapus pesanan ini secara permanen?",
-                        "error",
-                        "Hapus Permanen"
-                      );
-                      if (!confirmed) return;
-
-                      try {
-                        const { error } = await supabase
-                          .from("orders")
-                          .delete()
-                          .eq("id", selectedOrder.id);
-                        if (error) throw error;
-
-                        // Send delete notification
-                        await createOrderDeletedNotification(
-                          selectedOrder.invoice_number,
-                          selectedOrder.customer_name
-                        );
-
-                        showAlert(
-                          "success",
-                          "Berhasil",
-                          "Pesanan berhasil dihapus"
-                        );
-                        setShowDetailModal(false);
-                        fetchOrders();
-                      } catch (err) {
-                        console.error(err);
-                        showAlert("error", "Gagal", "Gagal menghapus pesanan");
-                      }
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                    Hapus Pesanan
-                  </button>
+                      {statusOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Link File Final
+                    </label>
+                    {isEditingFileLink ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className={inputStyle}
+                          placeholder="https://drive.google.com/drive/folders/..."
+                          value={finalFileLink}
+                          onChange={(e) => setFinalFileLink(e.target.value)}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingFileLink(false)}
+                          className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
+                        >
+                          OK
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div
+                          onClick={() =>
+                            finalFileLink &&
+                            window.open(
+                              `/file/o/${selectedOrder?.invoice_number}`,
+                              "_blank"
+                            )
+                          }
+                          className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink
+                            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
+                            : ""
+                            }`}
+                        >
+                          {finalFileLink ? (
+                            <>
+                              <FolderOpenIcon className="w-4 h-4 text-primary flex-shrink-0" />
+                              <span className="text-sm text-gray-800 dark:text-white/90 truncate">
+                                {finalFileLink}
+                              </span>
+                              <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-400 dark:text-white/30">
+                              Belum ada link
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingFileLink(true)}
+                          className="p-2 text-gray-500 hover:text-primary bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 flex-shrink-0"
+                          title="Edit Link"
+                        >
+                          <PencilSquareIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tanggal Dibuat
+                    </label>
+                    <input
+                      type="date"
+                      className={inputStyle}
+                      value={editedCreatedAt}
+                      onChange={(e) => setEditedCreatedAt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Jatuh Tempo
+                    </label>
+                    <input
+                      type="date"
+                      className={inputStyle}
+                      value={editedPaymentDeadline}
+                      onChange={(e) => setEditedPaymentDeadline(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )
-      }
 
-      {/* Create Order Modal - with Styled Inputs */}
-      {
-        showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-xl">
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Buat Invoice Baru
-                </h3>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Nama Pelanggan
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={newOrder.customer_name}
-                    onChange={(e) =>
-                      setNewOrder({ ...newOrder, customer_name: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    className={inputStyle}
-                    value={newOrder.customer_email}
-                    onChange={(e) =>
-                      setNewOrder({ ...newOrder, customer_email: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="text"
-                    className={inputStyle}
-                    value={newOrder.customer_whatsapp}
-                    onChange={(e) =>
-                      setNewOrder({
-                        ...newOrder,
-                        customer_whatsapp: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Layanan
-                  </label>
-                  <select
-                    className={inputStyle}
-                    value={isCustomService ? "custom" : selectedServiceId || ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "custom") {
-                        setIsCustomService(true);
-                        setSelectedServiceId(null);
-                        setSelectedPackage(null);
-                      } else {
-                        setIsCustomService(false);
-                        const sId = Number(val);
-                        setSelectedServiceId(sId || null);
-                        setSelectedPackage(null);
-                        setNewOrder({
-                          ...newOrder,
-                          package_name: "",
-                          final_price: 0,
-                        });
-                      }
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+              {/* Left side - Minta Testimoni for completed orders */}
+              <div>
+                {selectedOrder?.status === "completed" && (
+                  <button
+                    onClick={async () => {
+                      if (!selectedOrder) return;
+                      const link = `${window.location.origin}/review/${selectedOrder.invoice_number}`;
+                      await navigator.clipboard.writeText(link);
+                      showAlert(
+                        "success",
+                        "Berhasil",
+                        "Link testimoni disalin!"
+                      );
                     }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
                   >
-                    <option value="">Pilih Layanan</option>
-                    {services.map((svc) => (
-                      <option key={svc.id} value={svc.id}>
-                        {svc.title}
-                      </option>
-                    ))}
-                    <option value="custom">Custom (Layanan Khusus)</option>
-                  </select>
-                </div>
-                {isCustomService ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Nama Layanan/Paket Custom
-                      </label>
-                      <input
-                        type="text"
-                        className={inputStyle}
-                        placeholder="Masukkan nama layanan..."
-                        value={newOrder.package_name}
-                        onChange={(e) =>
-                          setNewOrder({
-                            ...newOrder,
-                            package_name: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Paket
-                    </label>
-                    <select
-                      className={inputStyle}
-                      value={newOrder.package_name}
-                      onChange={(e) => {
-                        const pkgName = e.target.value;
-                        const selectedSvc = services.find(
-                          (s) => s.id === selectedServiceId
-                        );
-                        const pkg = selectedSvc?.packages?.find(
-                          (p: ServicePackage) => p.name === pkgName
-                        );
-                        setSelectedPackage(pkg || null);
-                        setNewOrder({
-                          ...newOrder,
-                          package_name: pkgName,
-                          final_price: pkg
-                            ? parseInt(pkg.finalPrice.replace(/\D/g, ""))
-                            : 0,
-                        });
-                      }}
-                      disabled={!selectedServiceId}
-                    >
-                      <option value="">Pilih Paket</option>
-                      {selectedServiceId &&
-                        services
-                          .find((s) => s.id === selectedServiceId)
-                          ?.packages?.map((pkg: ServicePackage, idx: number) => (
-                            <option key={idx} value={pkg.name}>
-                              {pkg.name} - {pkg.finalPrice}
-                            </option>
-                          ))}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Total Harga (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    className={inputStyle}
-                    value={newOrder.final_price}
-                    onChange={(e) =>
-                      setNewOrder({
-                        ...newOrder,
-                        final_price: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Kode Diskon
-                    </label>
-                    <input
-                      type="text"
-                      className={inputStyle}
-                      placeholder="Opsional"
-                      value={newOrder.discount_code}
-                      onChange={(e) =>
-                        setNewOrder({
-                          ...newOrder,
-                          discount_code: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Potongan (Rp)
-                    </label>
-                    <input
-                      type="number"
-                      className={inputStyle}
-                      placeholder="0"
-                      value={newOrder.discount_amount}
-                      onChange={(e) =>
-                        setNewOrder({
-                          ...newOrder,
-                          discount_amount: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                {newOrder.discount_amount > 0 && (
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-sm">
-                    <span className="text-green-700 dark:text-green-400">
-                      Total Setelah Diskon:{" "}
-                      <strong>
-                        {formatCurrency(
-                          newOrder.final_price - newOrder.discount_amount
-                        )}
-                      </strong>
-                    </span>
-                  </div>
+                    <ChatBubbleLeftEllipsisIcon className="w-4 h-4" />
+                    Minta Testimoni
+                  </button>
                 )}
               </div>
-              <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+
+              {/* Right side - Action buttons */}
+              <div className="flex gap-3">
                 <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-slate-700 dark:text-white dark:border-gray-600"
                 >
                   Batal
                 </button>
                 <button
-                  onClick={handleCreateOrder}
-                  disabled={creating}
-                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50"
+                  onClick={handleSaveChanges}
+                  disabled={saving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {creating ? "Membuat..." : "Buat Invoice"}
+                  {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!selectedOrder) return;
+                    if (selectedOrder.status !== "cancelled") {
+                      showAlert(
+                        "error",
+                        "Gagal",
+                        "Hanya pesanan dengan status 'Dibatalkan' yang dapat dihapus"
+                      );
+                      return;
+                    }
+
+                    const confirmed = await showConfirm(
+                      "Hapus Pesanan",
+                      "Apakah Anda yakin ingin menghapus pesanan ini secara permanen?",
+                      "error",
+                      "Hapus Permanen"
+                    );
+                    if (!confirmed) return;
+
+                    try {
+                      const { error } = await supabase
+                        .from("orders")
+                        .delete()
+                        .eq("id", selectedOrder.id);
+                      if (error) throw error;
+
+                      // Send delete notification
+                      await createOrderDeletedNotification(
+                        selectedOrder.invoice_number,
+                        selectedOrder.customer_name
+                      );
+
+                      showAlert(
+                        "success",
+                        "Berhasil",
+                        "Pesanan berhasil dihapus"
+                      );
+                      setShowDetailModal(false);
+                      fetchOrders();
+                    } catch (err) {
+                      console.error(err);
+                      showAlert("error", "Gagal", "Gagal menghapus pesanan");
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                  Hapus Pesanan
                 </button>
               </div>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
+
+      {/* Create Order Modal - with Styled Inputs */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Buat Invoice Baru
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nama Pelanggan
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={newOrder.customer_name}
+                  onChange={(e) =>
+                    setNewOrder({ ...newOrder, customer_name: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  className={inputStyle}
+                  value={newOrder.customer_email}
+                  onChange={(e) =>
+                    setNewOrder({ ...newOrder, customer_email: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  WhatsApp
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  value={newOrder.customer_whatsapp}
+                  onChange={(e) =>
+                    setNewOrder({
+                      ...newOrder,
+                      customer_whatsapp: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Layanan
+                </label>
+                <select
+                  className={inputStyle}
+                  value={isCustomService ? "custom" : selectedServiceId || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "custom") {
+                      setIsCustomService(true);
+                      setSelectedServiceId(null);
+                      setSelectedPackage(null);
+                    } else {
+                      setIsCustomService(false);
+                      const sId = Number(val);
+                      setSelectedServiceId(sId || null);
+                      setSelectedPackage(null);
+                      setNewOrder({
+                        ...newOrder,
+                        package_name: "",
+                        final_price: 0,
+                      });
+                    }
+                  }}
+                >
+                  <option value="">Pilih Layanan</option>
+                  {services.map((svc) => (
+                    <option key={svc.id} value={svc.id}>
+                      {svc.title}
+                    </option>
+                  ))}
+                  <option value="custom">Custom (Layanan Khusus)</option>
+                </select>
+              </div>
+              {isCustomService ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nama Layanan/Paket Custom
+                    </label>
+                    <input
+                      type="text"
+                      className={inputStyle}
+                      placeholder="Masukkan nama layanan..."
+                      value={newOrder.package_name}
+                      onChange={(e) =>
+                        setNewOrder({
+                          ...newOrder,
+                          package_name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Paket
+                  </label>
+                  <select
+                    className={inputStyle}
+                    value={newOrder.package_name}
+                    onChange={(e) => {
+                      const pkgName = e.target.value;
+                      const selectedSvc = services.find(
+                        (s) => s.id === selectedServiceId
+                      );
+                      const pkg = selectedSvc?.packages?.find(
+                        (p: ServicePackage) => p.name === pkgName
+                      );
+                      setSelectedPackage(pkg || null);
+                      setNewOrder({
+                        ...newOrder,
+                        package_name: pkgName,
+                        final_price: pkg
+                          ? parseInt(pkg.finalPrice.replace(/\D/g, ""))
+                          : 0,
+                      });
+                    }}
+                    disabled={!selectedServiceId}
+                  >
+                    <option value="">Pilih Paket</option>
+                    {selectedServiceId &&
+                      services
+                        .find((s) => s.id === selectedServiceId)
+                        ?.packages?.map((pkg: ServicePackage, idx: number) => (
+                          <option key={idx} value={pkg.name}>
+                            {pkg.name} - {pkg.finalPrice}
+                          </option>
+                        ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Total Harga (Rp)
+                </label>
+                <input
+                  type="number"
+                  className={inputStyle}
+                  value={newOrder.final_price}
+                  onChange={(e) =>
+                    setNewOrder({
+                      ...newOrder,
+                      final_price: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Kode Diskon
+                  </label>
+                  <input
+                    type="text"
+                    className={inputStyle}
+                    placeholder="Opsional"
+                    value={newOrder.discount_code}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        discount_code: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Potongan (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    className={inputStyle}
+                    placeholder="0"
+                    value={newOrder.discount_amount}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        discount_amount: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              {newOrder.discount_amount > 0 && (
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-sm">
+                  <span className="text-green-700 dark:text-green-400">
+                    Total Setelah Diskon:{" "}
+                    <strong>
+                      {formatCurrency(
+                        newOrder.final_price - newOrder.discount_amount
+                      )}
+                    </strong>
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreateOrder}
+                disabled={creating}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 disabled:opacity-50"
+              >
+                {creating ? "Membuat..." : "Buat Invoice"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Success Modal */}
-      {
-        showSuccessModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-xl animate-fadeIn">
-              <div className="p-8 text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                  <CheckCircleIcon className="w-10 h-10 text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  Invoice Berhasil Dibuat!
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  Nomor Invoice:
-                </p>
-                <p className="text-2xl font-mono font-bold text-primary mb-6">
-                  {createdInvoice}
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowSuccessModal(false)}
-                    className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-                  >
-                    Tutup
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowSuccessModal(false);
-                      const order = orders.find(
-                        (o) => o.invoice_number === createdInvoice
-                      );
-                      if (order) openDetailModal(order);
-                    }}
-                    className="flex-1 px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
-                  >
-                    Lihat Invoice
-                  </button>
-                </div>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-xl animate-fadeIn">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                <CheckCircleIcon className="w-10 h-10 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Invoice Berhasil Dibuat!
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Nomor Invoice:
+              </p>
+              <p className="text-2xl font-mono font-bold text-primary mb-6">
+                {createdInvoice}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                >
+                  Tutup
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    const order = orders.find(
+                      (o) => o.invoice_number === createdInvoice
+                    );
+                    if (order) openDetailModal(order);
+                  }}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80"
+                >
+                  Lihat Invoice
+                </button>
               </div>
             </div>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 }

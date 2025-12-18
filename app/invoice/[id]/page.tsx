@@ -8,20 +8,18 @@ import {
   Clock,
   CheckCircle,
   CreditCard,
-  Hash,
   User,
   CircleDollarSign,
 } from "lucide-react";
 import { Order } from "@/types/order";
 import { PaymentMethod } from "@/types/payment-method";
 import { supabase } from "@/lib/supabase";
-// import html2pdf from "html2pdf.js"; (Removed for dynamic import)
 import LogoPathAnimation from "@/components/LogoPathAnimation";
 import InvoiceGate from "@/components/InvoiceGate";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
-  const invoice_number = params?.invoice_number as string;
+  const invoice_number = params?.id as string;
   const router = useRouter();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [order, setOrder] = useState<Order | null>(null);
@@ -39,73 +37,134 @@ export default function InvoiceDetailPage() {
 
   useEffect(() => {
     const fetchOrder = async () => {
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
+      // Try store_orders first
+      const { data: storeOrder, error: storeError } = await supabase
+        .from("store_orders")
         .select("*")
         .eq("invoice_number", invoice_number)
-        .single();
+        .maybeSingle();
 
-      if (orderError || !orderData) {
-        console.error("Error fetching order:", orderError);
+      if (storeOrder && !storeError) {
+        // Use store order
+        setOrder(storeOrder as any);
+
+        if (storeOrder.payment_method_id) {
+          const { data: paymentData } = await supabase
+            .from("payment_methods")
+            .select("*")
+            .eq("id", storeOrder.payment_method_id)
+            .single();
+          if (paymentData) setPaymentMethod(paymentData);
+        } else if (storeOrder.payment_method) {
+          const { data: paymentData } = await supabase
+            .from("payment_methods")
+            .select("*")
+            .or(
+              `name.ilike.%${storeOrder.payment_method}%,type.ilike.%${storeOrder.payment_method}%`
+            )
+            .limit(1)
+            .maybeSingle();
+          if (paymentData) setPaymentMethod(paymentData);
+        }
+
         setLoading(false);
-        return;
-      }
 
-      console.log("Order data:", orderData);
-      setOrder(orderData);
+        // Timer
+        if (
+          storeOrder.payment_deadline &&
+          storeOrder.status === "pending_payment"
+        ) {
+          const updateTimer = () => {
+            const now = new Date().getTime();
+            const dueTime = new Date(storeOrder.payment_deadline).getTime();
+            const difference = dueTime - now;
 
-      if (orderData.payment_method_id) {
-        const { data: paymentData, error: paymentError } = await supabase
-          .from("payment_methods")
+            if (difference > 0) {
+              const hours = Math.floor(difference / (1000 * 60 * 60));
+              const minutes = Math.floor(
+                (difference % (1000 * 60 * 60)) / (1000 * 60)
+              );
+              const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+              setTimeLeft({ hours, minutes, seconds });
+            } else {
+              setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+            }
+          };
+
+          updateTimer();
+          const timer = setInterval(updateTimer, 1000);
+          return () => clearInterval(timer);
+        }
+      } else {
+        // Try regular orders
+        const { data: orderData, error: orderError } = await supabase
+          .from("orders")
           .select("*")
-          .eq("id", orderData.payment_method_id)
+          .eq("invoice_number", invoice_number)
           .single();
 
-        if (!paymentError && paymentData) {
-          setPaymentMethod(paymentData);
+        if (orderError || !orderData) {
+          console.error("Error fetching order:", orderError);
+          setLoading(false);
+          return;
         }
-      } else if (orderData.payment_method) {
-        const { data: paymentData, error: paymentError } = await supabase
-          .from("payment_methods")
-          .select("*")
-          .or(
-            `name.ilike.%${orderData.payment_method}%,type.ilike.%${orderData.payment_method}%`
-          )
-          .limit(1)
-          .maybeSingle();
 
-        if (paymentData) {
-          setPaymentMethod(paymentData);
-        }
-      }
+        console.log("Order data:", orderData);
+        setOrder(orderData);
 
-      setLoading(false);
+        if (orderData.payment_method_id) {
+          const { data: paymentData, error: paymentError } = await supabase
+            .from("payment_methods")
+            .select("*")
+            .eq("id", orderData.payment_method_id)
+            .single();
 
-      // Timer
-      if (
-        orderData.payment_deadline &&
-        orderData.status === "pending_payment"
-      ) {
-        const updateTimer = () => {
-          const now = new Date().getTime();
-          const dueTime = new Date(orderData.payment_deadline).getTime();
-          const difference = dueTime - now;
-
-          if (difference > 0) {
-            const hours = Math.floor(difference / (1000 * 60 * 60));
-            const minutes = Math.floor(
-              (difference % (1000 * 60 * 60)) / (1000 * 60)
-            );
-            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-            setTimeLeft({ hours, minutes, seconds });
-          } else {
-            setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+          if (!paymentError && paymentData) {
+            setPaymentMethod(paymentData);
           }
-        };
+        } else if (orderData.payment_method) {
+          const { data: paymentData, error: paymentError } = await supabase
+            .from("payment_methods")
+            .select("*")
+            .or(
+              `name.ilike.%${orderData.payment_method}%,type.ilike.%${orderData.payment_method}%`
+            )
+            .limit(1)
+            .maybeSingle();
 
-        updateTimer();
-        const timer = setInterval(updateTimer, 1000);
-        return () => clearInterval(timer);
+          if (paymentData) {
+            setPaymentMethod(paymentData);
+          }
+        }
+
+        setLoading(false);
+
+        // Timer
+        if (
+          orderData.payment_deadline &&
+          orderData.status === "pending_payment"
+        ) {
+          const updateTimer = () => {
+            const now = new Date().getTime();
+            const dueTime = new Date(orderData.payment_deadline).getTime();
+            const difference = dueTime - now;
+
+            if (difference > 0) {
+              const hours = Math.floor(difference / (1000 * 60 * 60));
+              const minutes = Math.floor(
+                (difference % (1000 * 60 * 60)) / (1000 * 60)
+              );
+              const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+              setTimeLeft({ hours, minutes, seconds });
+            } else {
+              setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+            }
+          };
+
+          updateTimer();
+          const timer = setInterval(updateTimer, 1000);
+          return () => clearInterval(timer);
+        }
       }
     };
 
@@ -166,6 +225,7 @@ export default function InvoiceDetailPage() {
     if (isDownloading) return "Downloading...";
     if (order?.status === "completed" && order.final_file_link)
       return "Lihat File";
+
     return "Unduh Invoice";
   };
 
@@ -269,7 +329,7 @@ export default function InvoiceDetailPage() {
                   disabled={isDownloading}
                   className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 font-semibold transition-all disabled:opacity-50"
                 >
-                  <Download size={18} className="text-primary" />{" "}
+                  <Download size={18} className="text-primary" />
                   {getDownloadButtonText()}
                 </button>
                 <button
@@ -434,6 +494,7 @@ export default function InvoiceDetailPage() {
                             </p>
                           </div>
                         </div>
+
                         <div className="flex gap-2 justify-center">
                           {[
                             { label: "JAM", val: timeLeft.hours },
@@ -496,12 +557,13 @@ export default function InvoiceDetailPage() {
                         Rp {subtotal.toLocaleString("id-ID")}
                       </span>
                     </div>
+
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">
-                          Diskon{" "}
+                          Diskon
                           {order.discount_code
-                            ? `(${order.discount_code})`
+                            ? ` (${order.discount_code})`
                             : ""}
                         </span>
                         <span className="font-bold text-green-600">
@@ -509,12 +571,14 @@ export default function InvoiceDetailPage() {
                         </span>
                       </div>
                     )}
+
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Pajak</span>
                       <span className="font-medium text-slate-800">
                         Rp {tax.toLocaleString("id-ID")}
                       </span>
                     </div>
+
                     <div className="pt-3 border-t border-slate-200">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-800 font-bold">

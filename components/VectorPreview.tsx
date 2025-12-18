@@ -255,14 +255,17 @@ export default function VectorPreview({
     backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
   };
 
-  // Render inline SVG with background pattern
   if (svgContent) {
     return (
       <div
-        className={`${className} bg-checker-pattern`}
-        dangerouslySetInnerHTML={{ __html: svgContent }}
+        className={`${className} bg-checker-pattern flex items-center justify-center`}
         style={checkerPatternStyle}
-      />
+      >
+        <div
+          className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:object-contain"
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+        />
+      </div>
     );
   }
 
