@@ -10,6 +10,7 @@ import { getGoogleDriveDownloadUrl } from "@/lib/googleDriveUtils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import VectorPreview from "./VectorPreview";
+import WidgetArea from "@/components/WidgetArea";
 
 interface VectorDetailProps {
     vector: LogoVector;
@@ -80,6 +81,9 @@ export default function VectorDetail({ vector }: VectorDetailProps) {
 
                     {/* Right: Info & Download */}
                     <div className="space-y-6">
+                        {/* Widget - Below Preview */}
+                        <WidgetArea position="vector_top" />
+
                         {/* Title & Category */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                             <div className="flex items-start justify-between mb-4">
@@ -97,6 +101,9 @@ export default function VectorDetail({ vector }: VectorDetailProps) {
                                 </p>
                             )}
                         </div>
+
+                        {/* Widget - Above Download */}
+                        <WidgetArea position="vector_middle" />
 
                         {/* Download Button */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
@@ -147,6 +154,9 @@ export default function VectorDetail({ vector }: VectorDetailProps) {
                                 💡 <strong>Tip:</strong> File SVG dapat diedit dengan Adobe Illustrator, Inkscape, atau editor vector lainnya
                             </p>
                         </div>
+
+                        {/* Widget - Below Tip */}
+                        <WidgetArea position="vector_bottom" />
                     </div>
                 </div>
 

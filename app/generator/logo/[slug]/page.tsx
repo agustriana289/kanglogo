@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { LogoAsset, LogoFont } from "@/types/logo-generator";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
 import Image from "next/image";
-import TrakteerWidget from "@/components/TrakteerWidget";
+import WidgetArea from "@/components/WidgetArea";
 import {
     SwatchIcon,
     DocumentTextIcon,
@@ -299,6 +299,8 @@ export default function LogoGeneratorDetailPage() {
                     <p className="text-slate-500">Sesuaikan logo <span className="font-semibold text-primary">{asset.nama_aset}</span> dengan preferensi Anda.</p>
                 </div>
 
+                <WidgetArea position="generator_top" />
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
                     <div className="lg:col-span-2 space-y-6">
@@ -387,7 +389,7 @@ export default function LogoGeneratorDetailPage() {
                             </div>
                         </div>
                         <canvas ref={canvasRef} className="hidden" />
-                        <TrakteerWidget />
+                        <WidgetArea position="generator_middle" />
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-8 sticky top-6">
@@ -614,6 +616,7 @@ export default function LogoGeneratorDetailPage() {
                             </div>
                         </div>
 
+                        <WidgetArea position="generator_sidebar" />
                     </div>
                 </div>
             </div>

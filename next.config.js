@@ -24,7 +24,28 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "pagead2.googlesyndication.com",
+      },
+      {
+        protocol: "https",
+        hostname: "googleadservices.com",
+      },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "geolocation=(), microphone=(), camera=()",
+          },
+        ],
+      },
+    ];
   },
 };
 module.exports = withBundleAnalyzer(withPWA(nextConfig));

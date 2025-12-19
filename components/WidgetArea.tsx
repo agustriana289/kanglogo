@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import WidgetRenderer from "@/components/WidgetRenderer";
 
 interface Category {
   id: number;
@@ -139,12 +140,7 @@ export default function WidgetArea({
 
       {/* Render widget berdasarkan posisi */}
       {widgets.map((widget) => (
-        <div key={widget.id}>
-          <div
-            className="text-gray-700 dark:text-gray-300 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: widget.content }}
-          />
-        </div>
+        <WidgetRenderer key={widget.id} id={widget.id} content={widget.content} />
       ))}
     </div>
   );
