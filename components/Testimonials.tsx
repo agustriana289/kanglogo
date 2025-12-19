@@ -128,29 +128,6 @@ export default function Testimonials() {
             </div>
           ))}
         </div>
-
-        {/* Link ke halaman semua testimoni */}
-        <div className="text-center mt-10">
-          <Link
-            href="/testimonials"
-            className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
-          >
-            Lihat Semua Testimoni
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </Link>
-        </div>
       </div>
     </section>
   );

@@ -78,17 +78,6 @@ export default function Portfolio({ category }: { category?: string }) {
             </Link>
           ))}
         </div>
-
-        <div className="mt-16">
-          <div className="flex justify-center gap-2">
-            <Link
-              href="/projects"
-              className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
-            >
-              Lihat Semua Proyek
-            </Link>
-          </div>
-        </div>
       </div>
     </section>
   );

@@ -81,32 +81,6 @@ export default function FAQ({ showFeaturedOnly = false }: FAQProps) {
             ))}
           </div>
         </div>
-
-        {/* Link to full FAQ page (only on homepage) */}
-        {showFeaturedOnly && (
-          <div className="mt-12 text-center">
-            <a
-              href="/faq"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/80 transition-colors"
-            >
-              Lihat Semua FAQ
-              <svg
-                className="ml-2 w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </a>
-          </div>
-        )}
       </div>
     </section>
   );

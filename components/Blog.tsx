@@ -1,10 +1,10 @@
 // components/Blog.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
-import ArticleCard from './ArticleCard';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import ArticleCard from "./ArticleCard";
 
 interface Article {
   title: string;
@@ -31,8 +31,9 @@ export default function LatestArticles() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('articles')
-        .select(`
+        .from("articles")
+        .select(
+          `
           title,
           slug,
           excerpt,
@@ -41,22 +42,26 @@ export default function LatestArticles() {
           article_categories(
             categories(id, name, slug)
           )
-        `)
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
+        `
+        )
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
         .limit(6);
 
       if (error) {
-        console.error('Error fetching latest articles:', error);
+        console.error("Error fetching latest articles:", error);
       } else {
-        const transformedData = data?.map(article => ({
-          ...article,
-          categories: article.article_categories.map((ac: any) => ac.categories)
-        })) || [];
+        const transformedData =
+          data?.map((article) => ({
+            ...article,
+            categories: article.article_categories.map(
+              (ac: any) => ac.categories
+            ),
+          })) || [];
         setArticles(transformedData);
       }
     } catch (error) {
-      console.error('Error fetching latest articles:', error);
+      console.error("Error fetching latest articles:", error);
     } finally {
       setLoading(false);
     }
@@ -90,15 +95,6 @@ export default function LatestArticles() {
               ))}
             </div>
           )}
-        </div>
-
-        {/* Pagination / View All */}
-        <div className="mt-8 mb-16">
-          <div className="flex justify-center gap-2" id="blog-pager">
-            <Link className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500" href="/articles">
-              Semua artikel
-            </Link>
-          </div>
         </div>
       </div>
     </div>
