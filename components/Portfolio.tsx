@@ -7,18 +7,24 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function Portfolio() {
+export default function Portfolio({ category }: { category?: string }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("projects")
           .select("*")
           .order("created_at", { ascending: false })
           .limit(10); // Batasi jumlah proyek yang ditampilkan di homepage
+
+        if (category) {
+          query = query.eq("type", category);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         setProjects(data || []);
@@ -30,7 +36,7 @@ export default function Portfolio() {
     };
 
     fetchProjects();
-  }, []);
+  }, [category]);
 
   return (
     <section className="py-12 sm:py-24 bg-slate-100" id="porto">

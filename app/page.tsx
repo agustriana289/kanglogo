@@ -16,12 +16,12 @@ export default function Home() {
     <main>
       <Hero />
       <Featured />
-      <Portfolio />
+      <Portfolio category="Logo" />
       <Testimonials />
       <Video />
       <Reasons />
       <Pricing />
-      <FAQ />
+      <FAQ showFeaturedOnly={true} />
       <Steps />
       <CallToAction />
       <Blog />
