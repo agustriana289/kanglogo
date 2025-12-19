@@ -32,6 +32,10 @@ export interface Testimonial {
   token: string | null;
   is_featured: boolean;
 
+  // Review link expiration tracking
+  review_link_generated_at: string | null;
+  review_link_expires_at: string | null;
+
   // Timestamps
   submitted_at: string | null;
   created_at: string;

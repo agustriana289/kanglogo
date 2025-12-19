@@ -6,6 +6,7 @@ import { Service } from "@/types/service";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import PublicFAQ from "@/components/PublicFAQ";
+import PublicProjects from "@/components/PublicProjects";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
 
 export default function ServicesPage() {
@@ -31,9 +32,10 @@ export default function ServicesPage() {
 
         setServices(data || []);
 
-        // Set default selected service to the first one
+        // Set default selected service to featured service, or first one if none featured
         if (data && data.length > 0) {
-          setSelectedService(data[0]);
+          const featuredService = data.find((service) => service.is_featured);
+          setSelectedService(featuredService || data[0]);
         }
       } catch (err) {
         console.error("💥 Unexpected error:", err);
@@ -105,10 +107,11 @@ export default function ServicesPage() {
             <button
               key={service.id}
               onClick={() => handleServiceClick(service)}
-              className={`px-6 py-3 rounded-full text-base font-medium transition-all ${selectedService.id === service.id
+              className={`px-6 py-3 rounded-full text-base font-medium transition-all ${
+                selectedService.id === service.id
                   ? "bg-primary text-white"
                   : "bg-white text-slate-700 hover:bg-slate-200"
-                }`}
+              }`}
             >
               {service.title}
             </button>
@@ -224,6 +227,11 @@ export default function ServicesPage() {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Portfolio/Projects Section */}
+        <div className="mt-16">
+          <PublicProjects selectedService={selectedService} minimal={true} />
         </div>
 
         {/* FAQ Section - Added here */}

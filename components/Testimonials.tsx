@@ -13,8 +13,9 @@ const StarRating = ({ rating }: { rating: number }) => (
     {[1, 2, 3, 4, 5].map((star) => (
       <svg
         key={star}
-        className={`w-4 h-4 ${star <= rating ? "text-yellow-400" : "text-gray-300"
-          }`}
+        className={`w-4 h-4 ${
+          star <= rating ? "text-yellow-400" : "text-gray-300"
+        }`}
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -39,7 +40,6 @@ export default function Testimonials() {
           .limit(6); // Hanya tampilkan 6 testimoni di homepage
 
         if (error) throw error;
-
         setTestimonials(data || []);
       } catch (error) {
         console.error("Error fetching testimonials:", error);
@@ -117,11 +117,12 @@ export default function Testimonials() {
                   {testimonial.customer_name || "Pelanggan"}
                 </p>
                 <p className="text-xs text-primary">
-                  {testimonial.order_id
-                    ? testimonial.service_name && testimonial.package_name
-                      ? `${testimonial.service_name} (${testimonial.package_name})`
-                      : testimonial.service_name || "Layanan KangLogo"
-                    : testimonial.product_name || "Produk Digital"}
+                  {testimonial.service_name && testimonial.package_details?.name
+                    ? `${testimonial.service_name} (${testimonial.package_details.name})`
+                    : testimonial.service_name ||
+                      testimonial.package_details?.name ||
+                      testimonial.product_name ||
+                      "Layanan KangLogo"}
                 </p>
               </div>
             </div>

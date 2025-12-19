@@ -22,7 +22,14 @@ import { useAlert } from "@/components/providers/AlertProvider";
 // Tipe untuk notifikasi
 interface Notification {
   id: number;
-  type: "comment" | "discount" | "order" | "purchase" | "task" | "order_status";
+  type:
+    | "comment"
+    | "discount"
+    | "order"
+    | "purchase"
+    | "task"
+    | "order_status"
+    | "testimonial";
   title: string;
   message: string;
   link: string;
@@ -33,7 +40,9 @@ interface Notification {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
+  const [filteredNotifications, setFilteredNotifications] = useState<
+    Notification[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "unread" | "read">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,23 +58,32 @@ export default function NotificationsPage() {
   // Stats
   const stats = {
     total: notifications.length,
-    unread: notifications.filter(n => !n.is_read).length,
-    read: notifications.filter(n => n.is_read).length,
+    unread: notifications.filter((n) => !n.is_read).length,
+    read: notifications.filter((n) => n.is_read).length,
   };
 
   // Pagination
   const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredNotifications.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredNotifications.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
+      if (
+        typeDropdownRef.current &&
+        !typeDropdownRef.current.contains(event.target as Node)
+      ) {
         setTypeDropdownOpen(false);
       }
-      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+      if (
+        pageDropdownRef.current &&
+        !pageDropdownRef.current.contains(event.target as Node)
+      ) {
         setPageDropdownOpen(false);
       }
     };
@@ -84,14 +102,14 @@ export default function NotificationsPage() {
 
     // Filter by tab
     if (activeTab === "unread") {
-      filtered = filtered.filter(n => !n.is_read);
+      filtered = filtered.filter((n) => !n.is_read);
     } else if (activeTab === "read") {
-      filtered = filtered.filter(n => n.is_read);
+      filtered = filtered.filter((n) => n.is_read);
     }
 
     // Filter by type
     if (typeFilter) {
-      filtered = filtered.filter(n => n.type === typeFilter);
+      filtered = filtered.filter((n) => n.type === typeFilter);
     }
 
     // Filter by search
@@ -186,6 +204,8 @@ export default function NotificationsPage() {
         return <CheckCircleIcon className="w-6 h-6 text-teal-500" />;
       case "task":
         return <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />;
+      case "testimonial":
+        return <ChatBubbleLeftIcon className="w-6 h-6 text-amber-500" />;
       default:
         return <BellIcon className="w-6 h-6 text-gray-500" />;
     }
@@ -193,13 +213,22 @@ export default function NotificationsPage() {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case "comment": return "Komentar";
-      case "discount": return "Diskon";
-      case "order": return "Pesanan";
-      case "purchase": return "Pembelian";
-      case "order_status": return "Status Pesanan";
-      case "task": return "Tugas";
-      default: return type;
+      case "comment":
+        return "Komentar";
+      case "discount":
+        return "Diskon";
+      case "order":
+        return "Pesanan";
+      case "purchase":
+        return "Pembelian";
+      case "order_status":
+        return "Status Pesanan";
+      case "task":
+        return "Tugas";
+      case "testimonial":
+        return "Testimoni";
+      default:
+        return type;
     }
   };
 
@@ -231,28 +260,31 @@ export default function NotificationsPage() {
           <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
             <button
               onClick={() => setActiveTab("all")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
-                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "all"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
               Semua ({stats.total})
             </button>
             <button
               onClick={() => setActiveTab("unread")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "unread"
-                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "unread"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
               Belum Dibaca ({stats.unread})
             </button>
             <button
               onClick={() => setActiveTab("read")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "read"
-                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "read"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
               Dibaca ({stats.read})
             </button>
@@ -282,7 +314,11 @@ export default function NotificationsPage() {
                 <span className="text-gray-700">
                   {typeFilter === "" ? "Semua Jenis" : getTypeLabel(typeFilter)}
                 </span>
-                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${typeDropdownOpen ? "rotate-180" : ""}`} />
+                <ChevronDownIcon
+                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                    typeDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
               {typeDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -294,6 +330,7 @@ export default function NotificationsPage() {
                     { value: "purchase", label: "Pembelian" },
                     { value: "order_status", label: "Status Pesanan" },
                     { value: "task", label: "Tugas" },
+                    { value: "testimonial", label: "Testimoni" },
                   ].map((option) => (
                     <button
                       key={option.value}
@@ -301,10 +338,11 @@ export default function NotificationsPage() {
                         setTypeFilter(option.value);
                         setTypeDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${typeFilter === option.value
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700"
-                        }`}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                        typeFilter === option.value
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-gray-700"
+                      }`}
                     >
                       {option.label}
                     </button>
@@ -336,10 +374,11 @@ export default function NotificationsPage() {
           {currentItems.map((notification) => (
             <div
               key={notification.id}
-              className={`flex items-start gap-3 p-4 rounded-lg border transition-colors ${!notification.is_read
+              className={`flex items-start gap-3 p-4 rounded-lg border transition-colors ${
+                !notification.is_read
                   ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                   : "bg-white dark:bg-slate-700 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-600"
-                }`}
+              }`}
             >
               {/* Icon */}
               <div className="flex-shrink-0 mt-0.5">
@@ -375,8 +414,18 @@ export default function NotificationsPage() {
                     className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
                     title="Lihat Detail"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
                     </svg>
                   </a>
                 )}
@@ -405,11 +454,16 @@ export default function NotificationsPage() {
       {/* Pagination */}
       {filteredNotifications.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
-          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+          <nav
+            aria-label="Page navigation"
+            className="flex items-center space-x-4"
+          >
             <ul className="flex -space-x-px text-sm gap-2">
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -427,10 +481,11 @@ export default function NotificationsPage() {
                   <li key={idx}>
                     <button
                       onClick={() => setCurrentPage(page)}
-                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
-                        }`}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${
+                        currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                      }`}
                     >
                       {page}
                     </button>
@@ -438,7 +493,9 @@ export default function NotificationsPage() {
                 ))}
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages || totalPages === 0}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -454,8 +511,14 @@ export default function NotificationsPage() {
               onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
               className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
             >
-              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+              <span className="text-gray-700 dark:text-gray-300">
+                {itemsPerPage} halaman
+              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  pageDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {pageDropdownOpen && (
               <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -467,10 +530,11 @@ export default function NotificationsPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-gray-700 dark:text-gray-300"
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                      itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
                   >
                     {value} halaman
                   </button>

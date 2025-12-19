@@ -347,14 +347,15 @@ export default function StorePurchasesPage() {
   }) => (
     <button
       onClick={onChange}
-      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
-        ? variant === "header"
-          ? "text-white"
-          : "text-primary"
-        : variant === "header"
+      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${
+        checked
+          ? variant === "header"
+            ? "text-white"
+            : "text-primary"
+          : variant === "header"
           ? "text-white/50 hover:text-white/80"
           : "text-gray-300 hover:text-gray-400"
-        }`}
+      }`}
     >
       {checked ? (
         <CheckCircleIcon className="w-5 h-5" />
@@ -470,10 +471,11 @@ export default function StorePurchasesPage() {
                   setFilterStatus(st);
                   setCurrentPage(1);
                 }}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === st
-                  ? "shadow-sm text-gray-900 bg-white"
-                  : "text-gray-500 hover:text-gray-900"
-                  }`}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                  filterStatus === st
+                    ? "shadow-sm text-gray-900 bg-white"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
               >
                 {st}
               </button>
@@ -553,12 +555,13 @@ export default function StorePurchasesPage() {
                 <span className="text-gray-700">
                   {bulkStatus
                     ? statusOptions.find((opt) => opt.value === bulkStatus)
-                      ?.label
+                        ?.label
                     : "Ubah Status..."}
                 </span>
                 <ChevronDownIcon
-                  className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""
-                    }`}
+                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                    bulkStatusDropdownOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
               {bulkStatusDropdownOpen && (
@@ -729,8 +732,9 @@ export default function StorePurchasesPage() {
                   return (
                     <tr
                       key={o.id}
-                      className={`hover:bg-gray-50 transition ${selectedOrders.includes(o.id) ? "bg-primary/5" : ""
-                        }`}
+                      className={`hover:bg-gray-50 transition ${
+                        selectedOrders.includes(o.id) ? "bg-primary/5" : ""
+                      }`}
                     >
                       <td className="px-6 py-4">
                         <CustomCheckbox
@@ -815,10 +819,11 @@ export default function StorePurchasesPage() {
                   ) : (
                     <button
                       onClick={() => setCurrentPage(p as number)}
-                      className={`w-9 h-9 border rounded-lg ${currentPage === p
-                        ? "text-primary bg-primary/10 border-primary"
-                        : "hover:bg-gray-50"
-                        }`}
+                      className={`w-9 h-9 border rounded-lg ${
+                        currentPage === p
+                          ? "text-primary bg-primary/10 border-primary"
+                          : "hover:bg-gray-50"
+                      }`}
                     >
                       {p}
                     </button>
@@ -845,8 +850,9 @@ export default function StorePurchasesPage() {
             >
               <span>{itemsPerPage} halaman</span>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${pageDropdownOpen ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 transition-transform ${
+                  pageDropdownOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
             {pageDropdownOpen && (
@@ -859,10 +865,11 @@ export default function StorePurchasesPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${itemsPerPage === v
-                      ? "text-primary font-medium bg-primary/5"
-                      : ""
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
+                      itemsPerPage === v
+                        ? "text-primary font-medium bg-primary/5"
+                        : ""
+                    }`}
                   >
                     {v} halaman
                   </button>
@@ -989,10 +996,11 @@ export default function StorePurchasesPage() {
                               "_blank"
                             )
                           }
-                          className={`flex-1 flex items-center gap-2 px-3 py-2.5 border rounded-lg overflow-hidden ${downloadLink
-                            ? "cursor-pointer hover:bg-gray-50"
-                            : ""
-                            }`}
+                          className={`flex-1 flex items-center gap-2 px-3 py-2.5 border rounded-lg overflow-hidden ${
+                            downloadLink
+                              ? "cursor-pointer hover:bg-gray-50"
+                              : ""
+                          }`}
                         >
                           {downloadLink ? (
                             <>
@@ -1036,13 +1044,69 @@ export default function StorePurchasesPage() {
                   <button
                     onClick={async () => {
                       if (!selectedOrder) return;
-                      const link = `${window.location.origin}/review/${selectedOrder.order_number}`;
-                      await navigator.clipboard.writeText(link);
-                      showAlert(
-                        "success",
-                        "Berhasil",
-                        "Link testimoni disalin!"
-                      );
+                      try {
+                        const now = new Date();
+                        const expiresAt = new Date(
+                          now.getTime() + 14 * 24 * 60 * 60 * 1000
+                        ); // 14 days
+
+                        // Update testimonials dengan set timestamps
+                        const { data: testimonials, error: fetchError } =
+                          await supabase
+                            .from("testimonials")
+                            .select("id")
+                            .eq("store_order_id", selectedOrder.id)
+                            .maybeSingle();
+
+                        if (testimonials) {
+                          // Update existing testimonial
+                          const { error: updateError } = await supabase
+                            .from("testimonials")
+                            .update({
+                              review_link_generated_at: now.toISOString(),
+                              review_link_expires_at: expiresAt.toISOString(),
+                            })
+                            .eq("id", testimonials.id);
+
+                          if (updateError) throw updateError;
+                        } else {
+                          // Create new testimonial with tracking
+                          const { error: insertError } = await supabase
+                            .from("testimonials")
+                            .insert({
+                              store_order_id: selectedOrder.id,
+                              customer_name: selectedOrder.customer_name,
+                              customer_email: selectedOrder.customer_email,
+                              review_link_generated_at: now.toISOString(),
+                              review_link_expires_at: expiresAt.toISOString(),
+                            });
+
+                          if (insertError) throw insertError;
+                        }
+
+                        // Copy link
+                        const link = `${window.location.origin}/review/${selectedOrder.order_number}`;
+                        await navigator.clipboard.writeText(link);
+
+                        showAlert(
+                          "success",
+                          "Berhasil",
+                          `Link testimoni disalin! Link berlaku selama 14 hari.`
+                        );
+
+                        // Refresh orders
+                        await fetchOrders();
+                      } catch (error: any) {
+                        console.error(
+                          "Error generating testimonial link:",
+                          error
+                        );
+                        showAlert(
+                          "error",
+                          "Gagal",
+                          "Gagal generate link testimoni."
+                        );
+                      }
                     }}
                     className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
                   >

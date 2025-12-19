@@ -15,7 +15,10 @@ import {
   ChevronDownIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
-import { StarIcon as StarIconSolid, CheckCircleIcon } from "@heroicons/react/24/solid";
+import {
+  StarIcon as StarIconSolid,
+  CheckCircleIcon,
+} from "@heroicons/react/24/solid";
 
 type FilterTab = "all" | "service" | "store";
 
@@ -51,13 +54,25 @@ export default function TestimonialManagementPage() {
     if (!starDropdownOpen && !dateDropdownOpen && !pageDropdownOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (starDropdownOpen && starDropdownRef.current && !starDropdownRef.current.contains(event.target as Node)) {
+      if (
+        starDropdownOpen &&
+        starDropdownRef.current &&
+        !starDropdownRef.current.contains(event.target as Node)
+      ) {
         setStarDropdownOpen(false);
       }
-      if (dateDropdownOpen && dateDropdownRef.current && !dateDropdownRef.current.contains(event.target as Node)) {
+      if (
+        dateDropdownOpen &&
+        dateDropdownRef.current &&
+        !dateDropdownRef.current.contains(event.target as Node)
+      ) {
         setDateDropdownOpen(false);
       }
-      if (pageDropdownOpen && pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+      if (
+        pageDropdownOpen &&
+        pageDropdownRef.current &&
+        !pageDropdownRef.current.contains(event.target as Node)
+      ) {
         setPageDropdownOpen(false);
       }
     };
@@ -125,7 +140,10 @@ export default function TestimonialManagementPage() {
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             return tDate >= thirtyDaysAgo;
           case "thisMonth":
-            return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+            return (
+              tDate.getMonth() === now.getMonth() &&
+              tDate.getFullYear() === now.getFullYear()
+            );
           default:
             return true;
         }
@@ -138,7 +156,10 @@ export default function TestimonialManagementPage() {
   const totalPages = Math.ceil(filteredTestimonials.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredTestimonials.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredTestimonials.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // Reset page when filters change
   useEffect(() => {
@@ -187,7 +208,10 @@ export default function TestimonialManagementPage() {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.from("testimonials").delete().eq("id", id);
+      const { error } = await supabase
+        .from("testimonials")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
 
       setTestimonials(testimonials.filter((t) => t.id !== id));
@@ -220,7 +244,11 @@ export default function TestimonialManagementPage() {
 
       setTestimonials(testimonials.filter((t) => !selectedIds.includes(t.id)));
       setSelectedIds([]);
-      showAlert("success", "Berhasil", `${selectedIds.length} testimoni berhasil dihapus!`);
+      showAlert(
+        "success",
+        "Berhasil",
+        `${selectedIds.length} testimoni berhasil dihapus!`
+      );
     } catch (error) {
       console.error("Error batch deleting:", error);
       showAlert("error", "Gagal", "Gagal menghapus testimoni!");
@@ -244,7 +272,11 @@ export default function TestimonialManagementPage() {
         )
       );
       setSelectedIds([]);
-      showAlert("success", "Berhasil", `${selectedIds.length} testimoni dijadikan unggulan!`);
+      showAlert(
+        "success",
+        "Berhasil",
+        `${selectedIds.length} testimoni dijadikan unggulan!`
+      );
     } catch (error) {
       console.error("Error batch featuring:", error);
       showAlert("error", "Gagal", "Gagal mengubah status unggulan!");
@@ -268,7 +300,9 @@ export default function TestimonialManagementPage() {
       showAlert(
         "success",
         "Berhasil",
-        !currentValue ? "Testimoni dijadikan unggulan!" : "Testimoni tidak lagi unggulan."
+        !currentValue
+          ? "Testimoni dijadikan unggulan!"
+          : "Testimoni tidak lagi unggulan."
       );
     } catch (error) {
       console.error("Error toggling featured:", error);
@@ -313,22 +347,37 @@ export default function TestimonialManagementPage() {
   };
 
   // Custom checkbox component with Heroicons
-  const CustomCheckbox = ({ checked, onChange, variant = "default" }: { checked: boolean; onChange: () => void; variant?: "default" | "header" }) => (
+  const CustomCheckbox = ({
+    checked,
+    onChange,
+    variant = "default",
+  }: {
+    checked: boolean;
+    onChange: () => void;
+    variant?: "default" | "header";
+  }) => (
     <button
       onClick={onChange}
-      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
-        ? variant === "header"
-          ? "text-white"
-          : "text-primary"
-        : variant === "header"
+      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${
+        checked
+          ? variant === "header"
+            ? "text-white"
+            : "text-primary"
+          : variant === "header"
           ? "text-white/50 hover:text-white/80"
           : "text-gray-300 hover:text-gray-400"
-        }`}
+      }`}
     >
       {checked ? (
         <CheckCircleIcon className="w-5 h-5" />
       ) : (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
           <circle cx="12" cy="12" r="9" />
         </svg>
       )}
@@ -341,7 +390,9 @@ export default function TestimonialManagementPage() {
       {[1, 2, 3, 4, 5].map((star) => (
         <StarIconSolid
           key={star}
-          className={`w-4 h-4 ${star <= rating ? "text-yellow-400" : "text-gray-200"}`}
+          className={`w-4 h-4 ${
+            star <= rating ? "text-yellow-400" : "text-gray-200"
+          }`}
         />
       ))}
     </div>
@@ -400,10 +451,11 @@ export default function TestimonialManagementPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === tab.key
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                  activeTab === tab.key
+                    ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
               >
                 {tab.label}
               </button>
@@ -432,9 +484,13 @@ export default function TestimonialManagementPage() {
                 >
                   <StarIconSolid className="w-4 h-4 text-yellow-400" />
                   <span className="text-gray-700 dark:text-gray-300">
-                    {starFilter === "all" ? "Semua Bintang" : `${starFilter} Bintang`}
+                    {starFilter === "all" ? "Semua" : `${starFilter} Bintang`}
                   </span>
-                  <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${starDropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDownIcon
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      starDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
                 {starDropdownOpen && (
                   <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -452,17 +508,22 @@ export default function TestimonialManagementPage() {
                           setStarFilter(option.value as number | "all");
                           setStarDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 first:rounded-t-lg last:rounded-b-lg transition-colors ${starFilter === option.value
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-gray-700 dark:text-gray-300"
-                          }`}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                          starFilter === option.value
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
                       >
                         {option.value !== "all" && (
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <StarIconSolid
                                 key={star}
-                                className={`w-5 h-5 ${star <= (option.value as number) ? "text-yellow-400" : "text-gray-200"}`}
+                                className={`w-5 h-5 ${
+                                  star <= (option.value as number)
+                                    ? "text-yellow-400"
+                                    : "text-gray-200"
+                                }`}
                               />
                             ))}
                           </div>
@@ -482,13 +543,23 @@ export default function TestimonialManagementPage() {
                 >
                   <CalendarIcon className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-700 dark:text-gray-300">
-                    {dateFilter === "" ? "Semua Tanggal" :
-                      dateFilter === "today" ? "Hari ini" :
-                        dateFilter === "7days" ? "7 hari terakhir" :
-                          dateFilter === "30days" ? "30 hari terakhir" :
-                            dateFilter === "thisMonth" ? "Bulan ini" : dateFilter}
+                    {dateFilter === ""
+                      ? "Semua"
+                      : dateFilter === "today"
+                      ? "Hari ini"
+                      : dateFilter === "7days"
+                      ? "7 hari terakhir"
+                      : dateFilter === "30days"
+                      ? "30 hari terakhir"
+                      : dateFilter === "thisMonth"
+                      ? "Bulan ini"
+                      : dateFilter}
                   </span>
-                  <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${dateDropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDownIcon
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      dateDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
                 {dateDropdownOpen && (
                   <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -505,10 +576,11 @@ export default function TestimonialManagementPage() {
                           setDateFilter(option.value);
                           setDateDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${dateFilter === option.value
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-gray-700 dark:text-gray-300"
-                          }`}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                          dateFilter === option.value
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
                       >
                         {option.label}
                       </button>
@@ -567,7 +639,10 @@ export default function TestimonialManagementPage() {
                   <tr>
                     <th className="px-6 py-4 rounded-tl-lg">
                       <CustomCheckbox
-                        checked={selectedIds.length === currentItems.length && currentItems.length > 0}
+                        checked={
+                          selectedIds.length === currentItems.length &&
+                          currentItems.length > 0
+                        }
                         onChange={toggleSelectAll}
                         variant="header"
                       />
@@ -584,8 +659,11 @@ export default function TestimonialManagementPage() {
                   {currentItems.map((testimonial) => (
                     <tr
                       key={testimonial.id}
-                      className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedIds.includes(testimonial.id) ? "bg-primary/5" : ""
-                        }`}
+                      className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${
+                        selectedIds.includes(testimonial.id)
+                          ? "bg-primary/5"
+                          : ""
+                      }`}
                     >
                       <td className="px-6 py-4">
                         <CustomCheckbox
@@ -606,15 +684,18 @@ export default function TestimonialManagementPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`px-2 py-0.5 text-xs rounded-full ${testimonial.order_id
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-green-100 text-green-700"
-                              }`}
+                            className={`px-2 py-0.5 text-xs rounded-full ${
+                              testimonial.order_id
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
                           >
                             {testimonial.order_id ? "Layanan" : "Toko"}
                           </span>
                           <span className="text-gray-800 dark:text-gray-200">
-                            {testimonial.service_name || testimonial.product_name || "-"}
+                            {testimonial.service_name ||
+                              testimonial.product_name ||
+                              "-"}
                           </span>
                         </div>
                         {testimonial.is_featured && (
@@ -627,7 +708,9 @@ export default function TestimonialManagementPage() {
                       <td className="px-6 py-4">
                         {testimonial.submitted_at ? (
                           <div className="space-y-1">
-                            <StarDisplay rating={Math.round(getAverageRating(testimonial))} />
+                            <StarDisplay
+                              rating={Math.round(getAverageRating(testimonial))}
+                            />
                             <p className="text-xs text-gray-500">
                               Rata-rata: {getAverageRating(testimonial)}/5
                             </p>
@@ -641,18 +724,27 @@ export default function TestimonialManagementPage() {
                       <td className="px-6 py-4 max-w-xs">
                         <p className="text-gray-700 dark:text-gray-300 line-clamp-2">
                           {testimonial.review_text || (
-                            <span className="text-gray-400 italic">Belum ada ulasan</span>
+                            <span className="text-gray-400 italic">
+                              Belum ada ulasan
+                            </span>
                           )}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                        {formatDate(testimonial.submitted_at || testimonial.created_at)}
+                        {formatDate(
+                          testimonial.submitted_at || testimonial.created_at
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           {testimonial.token && (
                             <button
-                              onClick={() => copyTestimonialLink(testimonial.token!, testimonial.id)}
+                              onClick={() =>
+                                copyTestimonialLink(
+                                  testimonial.token!,
+                                  testimonial.id
+                                )
+                              }
                               className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
                               title="Salin link testimoni"
                             >
@@ -664,12 +756,22 @@ export default function TestimonialManagementPage() {
                             </button>
                           )}
                           <button
-                            onClick={() => toggleFeatured(testimonial.id, testimonial.is_featured)}
-                            className={`p-2 rounded-lg transition ${testimonial.is_featured
-                              ? "text-yellow-500 bg-yellow-50"
-                              : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50"
-                              }`}
-                            title={testimonial.is_featured ? "Hapus dari unggulan" : "Jadikan unggulan"}
+                            onClick={() =>
+                              toggleFeatured(
+                                testimonial.id,
+                                testimonial.is_featured
+                              )
+                            }
+                            className={`p-2 rounded-lg transition ${
+                              testimonial.is_featured
+                                ? "text-yellow-500 bg-yellow-50"
+                                : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50"
+                            }`}
+                            title={
+                              testimonial.is_featured
+                                ? "Hapus dari unggulan"
+                                : "Jadikan unggulan"
+                            }
                           >
                             <SparklesIcon className="w-5 h-5" />
                           </button>
@@ -694,15 +796,18 @@ export default function TestimonialManagementPage() {
             {currentItems.map((testimonial) => (
               <div
                 key={testimonial.id}
-                className={`bg-white rounded-xl shadow-sm border p-4 ${selectedIds.includes(testimonial.id)
-                  ? "border-primary bg-primary/5"
-                  : "border-slate-100"
-                  }`}
+                className={`bg-white rounded-xl shadow-sm border p-4 ${
+                  selectedIds.includes(testimonial.id)
+                    ? "border-primary bg-primary/5"
+                    : "border-slate-100"
+                }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {testimonial.submitted_at ? (
-                      <StarDisplay rating={Math.round(getAverageRating(testimonial))} />
+                      <StarDisplay
+                        rating={Math.round(getAverageRating(testimonial))}
+                      />
                     ) : (
                       <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
                         Menunggu
@@ -729,15 +834,18 @@ export default function TestimonialManagementPage() {
 
                 <div className="flex items-center gap-2 mb-2">
                   <span
-                    className={`px-2 py-0.5 text-xs rounded-full ${testimonial.order_id
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-green-100 text-green-700"
-                      }`}
+                    className={`px-2 py-0.5 text-xs rounded-full ${
+                      testimonial.order_id
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-green-100 text-green-700"
+                    }`}
                   >
                     {testimonial.order_id ? "Layanan" : "Toko"}
                   </span>
                   <span className="text-sm text-gray-700">
-                    {testimonial.service_name || testimonial.product_name || "-"}
+                    {testimonial.service_name ||
+                      testimonial.product_name ||
+                      "-"}
                   </span>
                   {testimonial.is_featured && (
                     <span className="inline-flex items-center gap-1 text-xs text-yellow-600">
@@ -757,13 +865,20 @@ export default function TestimonialManagementPage() {
                   <div>
                     <p className="text-xs text-gray-400 uppercase">Tanggal</p>
                     <p className="text-sm text-gray-700">
-                      {formatDate(testimonial.submitted_at || testimonial.created_at)}
+                      {formatDate(
+                        testimonial.submitted_at || testimonial.created_at
+                      )}
                     </p>
                   </div>
                   <div className="flex gap-1">
                     {testimonial.token && (
                       <button
-                        onClick={() => copyTestimonialLink(testimonial.token!, testimonial.id)}
+                        onClick={() =>
+                          copyTestimonialLink(
+                            testimonial.token!,
+                            testimonial.id
+                          )
+                        }
                         className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
                       >
                         {copiedId === testimonial.id ? (
@@ -774,11 +889,14 @@ export default function TestimonialManagementPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => toggleFeatured(testimonial.id, testimonial.is_featured)}
-                      className={`p-2 rounded-lg transition ${testimonial.is_featured
-                        ? "text-yellow-500 bg-yellow-50"
-                        : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50"
-                        }`}
+                      onClick={() =>
+                        toggleFeatured(testimonial.id, testimonial.is_featured)
+                      }
+                      className={`p-2 rounded-lg transition ${
+                        testimonial.is_featured
+                          ? "text-yellow-500 bg-yellow-50"
+                          : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50"
+                      }`}
                     >
                       <SparklesIcon className="w-5 h-5" />
                     </button>
@@ -799,12 +917,16 @@ export default function TestimonialManagementPage() {
       {/* Pagination */}
       {filteredTestimonials.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
-
-          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+          <nav
+            aria-label="Page navigation"
+            className="flex items-center space-x-4"
+          >
             <ul className="flex -space-x-px text-sm gap-2">
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -820,10 +942,11 @@ export default function TestimonialManagementPage() {
                   ) : (
                     <button
                       onClick={() => setCurrentPage(page as number)}
-                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
-                        }`}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${
+                        currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                      }`}
                     >
                       {page}
                     </button>
@@ -832,7 +955,9 @@ export default function TestimonialManagementPage() {
               ))}
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages || totalPages === 0}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -848,8 +973,14 @@ export default function TestimonialManagementPage() {
               onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
               className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
             >
-              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+              <span className="text-gray-700 dark:text-gray-300">
+                {itemsPerPage} halaman
+              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  pageDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {pageDropdownOpen && (
               <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -860,10 +991,11 @@ export default function TestimonialManagementPage() {
                       setItemsPerPage(value);
                       setPageDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-gray-700 dark:text-gray-300"
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                      itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
                   >
                     {value} halaman
                   </button>

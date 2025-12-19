@@ -96,19 +96,33 @@ export default function PublicFAQ({
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
-        {currentItems.map((faq) => (
-          <dl key={faq.id}>
-            <dt className="font-semibold text-gray-900 text-base mb-2">
-              {faq.question}
-            </dt>
-            <dd className="mt-2">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {faq.answer}
-              </p>
-            </dd>
-          </dl>
-        ))}
+      <div>
+        {/* Header dengan judul */}
+        <div className="pb-8 md:pb-12 text-center">
+          <h2 className="max-w-2xl mx-auto font-manrope font-bold text-4xl text-slate-700 mb-5">
+            <span className="text-primary">Pertanyaan</span> yang Sering
+            Diajukan
+          </h2>
+          <p className="sm:max-w-2xl sm:mx-auto text-center text-base font-normal leading-7 text-slate-700">
+            Temukan jawaban untuk pertanyaan umum tentang layanan ini
+          </p>
+        </div>
+
+        {/* Grid FAQ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
+          {currentItems.map((faq) => (
+            <dl key={faq.id}>
+              <dt className="font-semibold text-gray-900 text-base mb-2">
+                {faq.question}
+              </dt>
+              <dd className="mt-2">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {faq.answer}
+                </p>
+              </dd>
+            </dl>
+          ))}
+        </div>
       </div>
     );
   }

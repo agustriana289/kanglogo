@@ -428,12 +428,16 @@ export default function OrderManagementPage() {
         updateData.discount_amount = editedDiscountAmount || 0;
       }
 
+      console.log("Updating order dengan data:", updateData);
+      console.log("finalFileLink current value:", finalFileLink);
+
       const { error } = await supabase
         .from("orders")
         .update(updateData)
         .eq("id", selectedOrder.id);
 
       if (error) throw error;
+      console.log("Order update berhasil");
 
       // Send notification if status changed
       if (editedStatus !== selectedOrder.status) {
@@ -480,17 +484,17 @@ export default function OrderManagementPage() {
         discount_amount: newOrder.discount_amount || 0,
         package_details: selectedPackage
           ? {
-            name: selectedPackage.name,
-            finalPrice: selectedPackage.finalPrice,
-            duration: selectedPackage.duration,
-            features: selectedPackage.features || [],
-          }
+              name: selectedPackage.name,
+              finalPrice: selectedPackage.finalPrice,
+              duration: selectedPackage.duration,
+              features: selectedPackage.features || [],
+            }
           : {
-            name: newOrder.package_name || "Custom Service",
-            finalPrice: String(newOrder.final_price),
-            duration: "7 hari",
-            features: [],
-          },
+              name: newOrder.package_name || "Custom Service",
+              finalPrice: String(newOrder.final_price),
+              duration: "7 hari",
+              features: [],
+            },
         payment_method: newOrder.payment_method,
         status: "pending_payment",
         created_at: new Date().toISOString(),
@@ -609,14 +613,15 @@ export default function OrderManagementPage() {
   }) => (
     <button
       onClick={onChange}
-      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
-        ? variant === "header"
-          ? "text-white"
-          : "text-primary"
-        : variant === "header"
+      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${
+        checked
+          ? variant === "header"
+            ? "text-white"
+            : "text-primary"
+          : variant === "header"
           ? "text-white/50 hover:text-white/80"
           : "text-gray-300 hover:text-gray-400"
-        }`}
+      }`}
     >
       {checked ? (
         <CheckCircleIcon className="w-5 h-5" />
@@ -729,10 +734,11 @@ export default function OrderManagementPage() {
                   setFilterStatus(status);
                   setCurrentPage(1);
                 }}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === status
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                  filterStatus === status
+                    ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
               >
                 {status}
               </button>
@@ -830,12 +836,13 @@ export default function OrderManagementPage() {
                 <span className="text-gray-700 dark:text-gray-300">
                   {bulkStatus
                     ? statusOptions.find((opt) => opt.value === bulkStatus)
-                      ?.label
+                        ?.label
                     : "Ubah Status..."}
                 </span>
                 <ChevronDownIcon
-                  className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""
-                    }`}
+                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                    bulkStatusDropdownOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
               {bulkStatusDropdownOpen && (
@@ -1032,10 +1039,11 @@ export default function OrderManagementPage() {
                     return (
                       <tr
                         key={order.id}
-                        className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedOrders.includes(order.id)
-                          ? "bg-primary/5"
-                          : ""
-                          }`}
+                        className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${
+                          selectedOrders.includes(order.id)
+                            ? "bg-primary/5"
+                            : ""
+                        }`}
                       >
                         <td className="px-6 py-4">
                           <CustomCheckbox
@@ -1139,10 +1147,11 @@ export default function OrderManagementPage() {
                   ) : (
                     <button
                       onClick={() => setCurrentPage(page as number)}
-                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
-                        }`}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${
+                        currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                      }`}
                     >
                       {page}
                     </button>
@@ -1173,8 +1182,9 @@ export default function OrderManagementPage() {
                 {itemsPerPage} halaman
               </span>
               <ChevronDownIcon
-                className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  pageDropdownOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
             {pageDropdownOpen && (
@@ -1187,10 +1197,11 @@ export default function OrderManagementPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-gray-700 dark:text-gray-300"
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                      itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
                   >
                     {value} halaman
                   </button>
@@ -1240,30 +1251,42 @@ export default function OrderManagementPage() {
                   {isEditingDetails ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Nama</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Nama
+                        </label>
                         <input
                           type="text"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={editedCustomerName}
-                          onChange={(e) => setEditedCustomerName(e.target.value)}
+                          onChange={(e) =>
+                            setEditedCustomerName(e.target.value)
+                          }
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Email</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Email
+                        </label>
                         <input
                           type="email"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={editedCustomerEmail}
-                          onChange={(e) => setEditedCustomerEmail(e.target.value)}
+                          onChange={(e) =>
+                            setEditedCustomerEmail(e.target.value)
+                          }
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">WhatsApp</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          WhatsApp
+                        </label>
                         <input
                           type="text"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={editedCustomerWhatsapp}
-                          onChange={(e) => setEditedCustomerWhatsapp(e.target.value)}
+                          onChange={(e) =>
+                            setEditedCustomerWhatsapp(e.target.value)
+                          }
                         />
                       </div>
                     </div>
@@ -1291,10 +1314,16 @@ export default function OrderManagementPage() {
                   {isEditingDetails ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Layanan</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Layanan
+                        </label>
                         <select
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                          value={isEditingCustomService ? "custom" : (editedServiceId || "")}
+                          value={
+                            isEditingCustomService
+                              ? "custom"
+                              : editedServiceId || ""
+                          }
                           onChange={(e) => {
                             if (e.target.value === "custom") {
                               setIsEditingCustomService(true);
@@ -1304,29 +1333,45 @@ export default function OrderManagementPage() {
                               setIsEditingCustomService(false);
                               const serviceId = Number(e.target.value);
                               setEditedServiceId(serviceId);
-                              const service = services.find(s => s.id === serviceId);
-                              if (service && service.packages && service.packages.length > 0) {
+                              const service = services.find(
+                                (s) => s.id === serviceId
+                              );
+                              if (
+                                service &&
+                                service.packages &&
+                                service.packages.length > 0
+                              ) {
                                 setEditedPackageDetails(service.packages[0]);
-                                setEditedFinalPrice(Number(service.packages[0].finalPrice));
+                                setEditedFinalPrice(
+                                  Number(service.packages[0].finalPrice)
+                                );
                               }
                             }
                           }}
                         >
                           <option value="">Pilih Layanan</option>
                           {services.map((s) => (
-                            <option key={s.id} value={s.id}>{s.title}</option>
+                            <option key={s.id} value={s.id}>
+                              {s.title}
+                            </option>
                           ))}
-                          <option value="custom">Custom (Layanan Khusus)</option>
+                          <option value="custom">
+                            Custom (Layanan Khusus)
+                          </option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Paket</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Paket
+                        </label>
                         {isEditingCustomService ? (
                           <input
                             type="text"
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             value={editedCustomPackageName}
-                            onChange={(e) => setEditedCustomPackageName(e.target.value)}
+                            onChange={(e) =>
+                              setEditedCustomPackageName(e.target.value)
+                            }
                             placeholder="Masukkan nama paket custom"
                           />
                         ) : (
@@ -1334,8 +1379,12 @@ export default function OrderManagementPage() {
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             value={editedPackageDetails?.name || ""}
                             onChange={(e) => {
-                              const service = services.find(s => s.id === editedServiceId);
-                              const pkg = service?.packages?.find(p => p.name === e.target.value);
+                              const service = services.find(
+                                (s) => s.id === editedServiceId
+                              );
+                              const pkg = service?.packages?.find(
+                                (p) => p.name === e.target.value
+                              );
                               if (pkg) {
                                 setEditedPackageDetails(pkg);
                                 setEditedFinalPrice(Number(pkg.finalPrice));
@@ -1344,38 +1393,54 @@ export default function OrderManagementPage() {
                             disabled={!editedServiceId}
                           >
                             <option value="">Pilih Paket</option>
-                            {services.find(s => s.id === editedServiceId)?.packages?.map((pkg) => (
-                              <option key={pkg.name} value={pkg.name}>{pkg.name}</option>
-                            ))}
+                            {services
+                              .find((s) => s.id === editedServiceId)
+                              ?.packages?.map((pkg) => (
+                                <option key={pkg.name} value={pkg.name}>
+                                  {pkg.name}
+                                </option>
+                              ))}
                           </select>
                         )}
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Harga Final</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Harga Final
+                        </label>
                         <input
                           type="number"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={editedFinalPrice}
-                          onChange={(e) => setEditedFinalPrice(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditedFinalPrice(Number(e.target.value))
+                          }
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Kode Diskon</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Kode Diskon
+                        </label>
                         <input
                           type="text"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={editedDiscountCode}
-                          onChange={(e) => setEditedDiscountCode(e.target.value)}
+                          onChange={(e) =>
+                            setEditedDiscountCode(e.target.value)
+                          }
                           placeholder="Opsional"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Jumlah Diskon</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Jumlah Diskon
+                        </label>
                         <input
                           type="number"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={editedDiscountAmount}
-                          onChange={(e) => setEditedDiscountAmount(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditedDiscountAmount(Number(e.target.value))
+                          }
                         />
                       </div>
                     </div>
@@ -1392,7 +1457,8 @@ export default function OrderManagementPage() {
                       {selectedOrder.discount_code && (
                         <p>
                           <span className="text-gray-400">Diskon:</span>{" "}
-                          {selectedOrder.discount_code} (-{formatCurrency(selectedOrder.discount_amount || 0)})
+                          {selectedOrder.discount_code} (-
+                          {formatCurrency(selectedOrder.discount_amount || 0)})
                         </p>
                       )}
                     </div>
@@ -1432,12 +1498,26 @@ export default function OrderManagementPage() {
                           className={inputStyle}
                           placeholder="https://drive.google.com/drive/folders/..."
                           value={finalFileLink}
-                          onChange={(e) => setFinalFileLink(e.target.value)}
+                          onChange={(e) => {
+                            console.log(
+                              "Changing finalFileLink from:",
+                              finalFileLink,
+                              "to:",
+                              e.target.value
+                            );
+                            setFinalFileLink(e.target.value);
+                          }}
                           autoFocus
                         />
                         <button
                           type="button"
-                          onClick={() => setIsEditingFileLink(false)}
+                          onClick={() => {
+                            console.log(
+                              "Closing edit mode. finalFileLink is now:",
+                              finalFileLink
+                            );
+                            setIsEditingFileLink(false);
+                          }}
                           className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 flex-shrink-0"
                         >
                           OK
@@ -1453,10 +1533,11 @@ export default function OrderManagementPage() {
                               "_blank"
                             )
                           }
-                          className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink
-                            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
-                            : ""
-                            }`}
+                          className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${
+                            finalFileLink
+                              ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
+                              : ""
+                          }`}
                         >
                           {finalFileLink ? (
                             <>
@@ -1516,18 +1597,78 @@ export default function OrderManagementPage() {
                   <button
                     onClick={async () => {
                       if (!selectedOrder) return;
-                      const link = `${window.location.origin}/review/${selectedOrder.invoice_number}`;
-                      await navigator.clipboard.writeText(link);
-                      showAlert(
-                        "success",
-                        "Berhasil",
-                        "Link testimoni disalin!"
-                      );
+                      setRequestingTestimonial(true);
+                      try {
+                        const now = new Date();
+                        const expiresAt = new Date(
+                          now.getTime() + 14 * 24 * 60 * 60 * 1000
+                        ); // 14 days
+
+                        // Update testimonials dengan set timestamps
+                        const { data: testimonials, error: fetchError } =
+                          await supabase
+                            .from("testimonials")
+                            .select("id")
+                            .eq("order_id", selectedOrder.id)
+                            .maybeSingle();
+
+                        if (testimonials) {
+                          // Update existing testimonial
+                          const { error: updateError } = await supabase
+                            .from("testimonials")
+                            .update({
+                              review_link_generated_at: now.toISOString(),
+                              review_link_expires_at: expiresAt.toISOString(),
+                            })
+                            .eq("id", testimonials.id);
+
+                          if (updateError) throw updateError;
+                        } else {
+                          // Create new testimonial with tracking
+                          const { error: insertError } = await supabase
+                            .from("testimonials")
+                            .insert({
+                              order_id: selectedOrder.id,
+                              customer_name: selectedOrder.customer_name,
+                              customer_email: selectedOrder.customer_email,
+                              review_link_generated_at: now.toISOString(),
+                              review_link_expires_at: expiresAt.toISOString(),
+                            });
+
+                          if (insertError) throw insertError;
+                        }
+
+                        // Copy link
+                        const link = `${window.location.origin}/review/${selectedOrder.invoice_number}`;
+                        await navigator.clipboard.writeText(link);
+
+                        showAlert(
+                          "success",
+                          "Berhasil",
+                          `Link testimoni disalin! Link berlaku selama 14 hari.`
+                        );
+
+                        // Refresh orders untuk update state
+                        await fetchOrders();
+                      } catch (error: any) {
+                        console.error(
+                          "Error generating testimonial link:",
+                          error
+                        );
+                        showAlert(
+                          "error",
+                          "Gagal",
+                          "Gagal generate link testimoni."
+                        );
+                      } finally {
+                        setRequestingTestimonial(false);
+                      }
                     }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                    disabled={requestingTestimonial}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2"
                   >
                     <ChatBubbleLeftEllipsisIcon className="w-4 h-4" />
-                    Minta Testimoni
+                    {requestingTestimonial ? "Memproses..." : "Minta Testimoni"}
                   </button>
                 )}
               </div>

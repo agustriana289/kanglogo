@@ -21,8 +21,9 @@ const StarRating = ({
     {[1, 2, 3, 4, 5].map((star) => (
       <svg
         key={star}
-        className={`${size === "md" ? "w-5 h-5" : "w-4 h-4"} ${star <= rating ? "text-yellow-400" : "text-gray-300"
-          }`}
+        className={`${size === "md" ? "w-5 h-5" : "w-4 h-4"} ${
+          star <= rating ? "text-yellow-400" : "text-gray-300"
+        }`}
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -56,7 +57,6 @@ export default function TestimonialsPage() {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-
         setTestimonials(data || []);
         setFilteredTestimonials(data || []);
       } catch (error) {
@@ -148,10 +148,11 @@ export default function TestimonialsPage() {
               <div className="flex gap-1">
                 <button
                   onClick={() => setFilterRating(null)}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition ${filterRating === null
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                    filterRating === null
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
                 >
                   Semua
                 </button>
@@ -159,10 +160,11 @@ export default function TestimonialsPage() {
                   <button
                     key={rating}
                     onClick={() => setFilterRating(rating)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition flex items-center gap-1 ${filterRating === rating
-                      ? "bg-primary text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition flex items-center gap-1 ${
+                      filterRating === rating
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                   >
                     {rating}
                     <svg
@@ -188,10 +190,11 @@ export default function TestimonialsPage() {
                   <button
                     key={opt.key}
                     onClick={() => setFilterSource(opt.key as any)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition ${filterSource === opt.key
-                      ? "bg-primary text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                      filterSource === opt.key
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                   >
                     {opt.label}
                   </button>
@@ -242,10 +245,11 @@ export default function TestimonialsPage() {
                     size="md"
                   />
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${testimonial.order_id
-                      ? "bg-blue-50 text-blue-600"
-                      : "bg-green-50 text-green-600"
-                      }`}
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      testimonial.order_id
+                        ? "bg-blue-50 text-blue-600"
+                        : "bg-green-50 text-green-600"
+                    }`}
                   >
                     {testimonial.order_id ? "Layanan" : "Toko"}
                   </span>
@@ -262,11 +266,13 @@ export default function TestimonialsPage() {
                     {testimonial.customer_name || "Pelanggan"}
                   </p>
                   <p className="text-xs text-primary mt-0.5">
-                    {testimonial.order_id
-                      ? testimonial.service_name && testimonial.package_name
-                        ? `${testimonial.service_name} (${testimonial.package_name})`
-                        : testimonial.service_name || "Layanan KangLogo"
-                      : testimonial.product_name || "Produk Digital"}
+                    {testimonial.service_name &&
+                    testimonial.package_details?.name
+                      ? `${testimonial.service_name} (${testimonial.package_details.name})`
+                      : testimonial.service_name ||
+                        testimonial.package_details?.name ||
+                        testimonial.product_name ||
+                        "Layanan KangLogo"}
                   </p>
                 </div>
               </div>
@@ -301,10 +307,11 @@ export default function TestimonialsPage() {
                     <button
                       onClick={() => setCurrentPage(page)}
                       aria-current={currentPage === page ? "page" : undefined}
-                      className={`flex items-center justify-center box-border border font-medium text-sm w-10 h-10 focus:outline-none transition-colors ${currentPage === page
-                        ? "text-primary bg-gray-100 border-gray-200 hover:text-primary"
-                        : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
+                      className={`flex items-center justify-center box-border border font-medium text-sm w-10 h-10 focus:outline-none transition-colors ${
+                        currentPage === page
+                          ? "text-primary bg-gray-100 border-gray-200 hover:text-primary"
+                          : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
                     >
                       {page}
                     </button>

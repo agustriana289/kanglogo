@@ -19,8 +19,9 @@ export async function createCommentNotification(commentId: number) {
       .insert({
         type: "comment",
         title: "Komentar Baru",
-        message: `${comment.name} mengomentari artikel "${comment.articles?.title || "tanpa judul"
-          }"`,
+        message: `${comment.name} mengomentari artikel "${
+          comment.articles?.title || "tanpa judul"
+        }"`,
         link: `/admin/blog#comment-${commentId}`,
         related_id: commentId,
       });
@@ -52,8 +53,9 @@ export async function createDiscountExpiryNotification(discountId: number) {
       .insert({
         type: "discount",
         title: "Diskon Akan Kadaluarsa",
-        message: `Diskon "${discount.code || "Otomatis"
-          }" akan kadaluarsa dalam 3 hari`,
+        message: `Diskon "${
+          discount.code || "Otomatis"
+        }" akan kadaluarsa dalam 3 hari`,
         link: `/admin/discounts#discount-${discountId}`,
         related_id: discountId,
       });
@@ -129,8 +131,9 @@ export async function createOrderStatusNotification(
       .insert({
         type: "order_status",
         title: "Status Pesanan Diubah",
-        message: `Status pesanan ${order.invoice_number} berubah menjadi "${statusLabels[newStatus] || newStatus
-          }"`,
+        message: `Status pesanan ${order.invoice_number} berubah menjadi "${
+          statusLabels[newStatus] || newStatus
+        }"`,
         link: `/admin/orders#order-${orderId}`,
         related_id: orderId,
       });
@@ -165,8 +168,9 @@ export async function createTaskDeadlineNotification(taskId: number) {
       .insert({
         type: "task",
         title: "Deadline Task Mendekat",
-        message: `Task "${(task.package_details as any)?.name || "Tanpa Nama"
-          }" akan deadline dalam 3 hari`,
+        message: `Task "${
+          (task.package_details as any)?.name || "Tanpa Nama"
+        }" akan deadline dalam 3 hari`,
         link: `/admin/tasks#task-${taskId}`,
         related_id: taskId,
       });
@@ -221,7 +225,10 @@ export async function createPaymentDeadlineNotification(orderId: number) {
       .single();
 
     if (error || !order) {
-      console.error("Error fetching order for payment deadline notification:", error);
+      console.error(
+        "Error fetching order for payment deadline notification:",
+        error
+      );
       return;
     }
 
@@ -256,7 +263,10 @@ export async function createDiscountUsageLimitNotification(discountId: number) {
       .single();
 
     if (error || !discount) {
-      console.error("Error fetching discount for usage limit notification:", error);
+      console.error(
+        "Error fetching discount for usage limit notification:",
+        error
+      );
       return;
     }
 
@@ -265,7 +275,9 @@ export async function createDiscountUsageLimitNotification(discountId: number) {
       .insert({
         type: "discount",
         title: "Batas Penggunaan Diskon Tercapai",
-        message: `Diskon "${discount.code || "Otomatis"}" telah mencapai batas penggunaan`,
+        message: `Diskon "${
+          discount.code || "Otomatis"
+        }" telah mencapai batas penggunaan`,
         link: `/admin/discounts`,
         related_id: discountId,
       });
@@ -319,7 +331,9 @@ export async function createOrderDetailChangedNotification(
       .insert({
         type: "order",
         title: "Detail Pesanan Diubah",
-        message: `Pesanan ${invoiceNumber} telah diubah: ${changedFields.join(", ")}`,
+        message: `Pesanan ${invoiceNumber} telah diubah: ${changedFields.join(
+          ", "
+        )}`,
         link: `/admin/orders`,
         related_id: orderId,
       });
@@ -335,3 +349,48 @@ export async function createOrderDetailChangedNotification(
   }
 }
 
+// Fungsi untuk membuat notifikasi testimoni baru diterima
+export async function createNewTestimonialNotification(testimonialId: number) {
+  try {
+    const { data: testimonial, error } = await supabase
+      .from("testimonials")
+      .select(
+        "id, customer_name, rating_service, rating_design, rating_communication, service_name, product_name"
+      )
+      .eq("id", testimonialId)
+      .single();
+
+    if (error || !testimonial) {
+      console.error("Error fetching testimonial for notification:", error);
+      return;
+    }
+
+    // Hitung rata-rata rating
+    const avgRating =
+      (testimonial.rating_service +
+        testimonial.rating_design +
+        testimonial.rating_communication) /
+      3;
+
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert({
+        type: "testimonial",
+        title: "Testimoni Baru Diterima",
+        message: `${testimonial.customer_name} memberikan testimoni untuk "${
+          testimonial.service_name || testimonial.product_name || "Layanan"
+        }" dengan rating ${avgRating.toFixed(1)}/5`,
+        link: `/admin/testimonials#testimonial-${testimonialId}`,
+        related_id: testimonialId,
+      });
+
+    if (notificationError) {
+      console.error(
+        "Error creating testimonial notification:",
+        notificationError
+      );
+    }
+  } catch (error) {
+    console.error("Error in createNewTestimonialNotification:", error);
+  }
+}
