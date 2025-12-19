@@ -1,7 +1,4 @@
-// app/review/[invoice_number]/page.tsx
-"use client";
-
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Testimonial } from "@/types/testimonial";
@@ -32,6 +29,39 @@ const ratingCategories: RatingCategory[] = [
     description: "Responsif dan keramahan tim",
   },
 ];
+
+// Star rating component - memoized
+interface StarRatingProps {
+  value: number;
+  onChange: (val: number) => void;
+}
+
+const StarRating = memo(function StarRating({
+  value,
+  onChange,
+}: StarRatingProps) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          className="focus:outline-none transition-transform hover:scale-110"
+        >
+          <Star
+            size={32}
+            className={`${
+              star <= value
+                ? "fill-yellow-400 text-yellow-400"
+                : "fill-gray-200 text-gray-200"
+            } transition-colors`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+});
 
 export default function SubmitTestimonialPage() {
   const params = useParams();
@@ -279,40 +309,6 @@ export default function SubmitTestimonialPage() {
       setSubmitting(false);
     }
   };
-
-  // Star rating component - memoized to prevent unnecessary re-renders
-  const StarRating = useCallback(
-    memo(
-      ({
-        value,
-        onChange,
-      }: {
-        value: number;
-        onChange: (val: number) => void;
-      }) => (
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => onChange(star)}
-              className="focus:outline-none transition-transform hover:scale-110"
-            >
-              <Star
-                size={32}
-                className={`${
-                  star <= value
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "fill-gray-200 text-gray-200"
-                } transition-colors`}
-              />
-            </button>
-          ))}
-        </div>
-      )
-    ),
-    []
-  );
 
   if (loading) {
     return (
