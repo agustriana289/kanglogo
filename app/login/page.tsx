@@ -49,7 +49,9 @@ export default function LoginPage() {
       console.log("Session created:", data.session);
 
       // Verify session is saved
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         console.error("Session verification failed");
         setError("Login failed: Session not persisted");
@@ -70,32 +72,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-800 bg-no-repeat bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]">
+    <section className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex items-center justify-center py-8 px-4 md:px-6">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-slate-700 shadow-lg rounded-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 md:p-8 space-y-6">
           {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center justify-center mb-2">
             <img
               alt="Jasa Logo #1 Indonesia - Kanglogo.com"
-              className="h-8"
+              className="h-10 md:h-12"
               src={logoUrl}
               title="Jasa Logo #1 Indonesia - Kanglogo.com"
             />
           </div>
 
+          {/* Title */}
+          <div className="text-center">
+            <h1 className="font-manrope font-bold text-2xl md:text-3xl text-slate-800 mb-2">
+              Masuk Akun Admin
+            </h1>
+            <p className="text-sm md:text-base text-slate-600">
+              Masukkan kredensial untuk mengakses panel admin
+            </p>
+          </div>
+
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-              {error}
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm font-medium flex items-start gap-2">
+                <span className="text-lg">⚠️</span>
+                <span>{error}</span>
+              </p>
             </div>
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleLogin}>
-            <div className="mb-4">
+          <form onSubmit={handleLogin} className="space-y-4">
+            {/* Email Input */}
+            <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2"
+                className="block text-sm font-semibold text-slate-700 mb-2"
               >
                 Email
               </label>
@@ -105,15 +121,16 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm"
                 placeholder="halo@kanglogo.com"
               />
             </div>
 
-            <div className="mb-6">
+            {/* Password Input */}
+            <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2"
+                className="block text-sm font-semibold text-slate-700 mb-2"
               >
                 Password
               </label>
@@ -123,30 +140,44 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm"
                 placeholder="••••••••"
               />
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-primary text-white font-bold py-3 px-4 rounded-lg hover:bg-primary/90 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 text-base md:text-lg mt-6"
             >
-              {loading ? "Loading..." : "Login"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="inline-block animate-spin">⚙️</span>
+                  Sedang Login...
+                </span>
+              ) : (
+                "Login"
+              )}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          {/* Back to Home Link */}
+          <div className="pt-4 border-t border-slate-200 text-center">
             <Link
               href="/"
-              className="text-sm text-blue-500 hover:text-blue-600"
+              className="text-sm text-primary hover:text-primary/80 font-medium transition"
             >
               ← Kembali ke Homepage
             </Link>
           </div>
         </div>
+
+        {/* Additional Info */}
+        <div className="text-center mt-8 text-slate-600 text-xs md:text-sm">
+          <p>Lupa password? Hubungi administrator</p>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

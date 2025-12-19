@@ -40,7 +40,9 @@ export default function FAQManagementPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "featured" | "not-featured">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "featured" | "not-featured"
+  >("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   const [formData, setFormData] = useState({
@@ -55,12 +57,14 @@ export default function FAQManagementPage() {
   // Stats
   const stats = {
     total: faqs.length,
-    featured: faqs.filter(f => f.featured).length,
-    notFeatured: faqs.filter(f => !f.featured).length,
+    featured: faqs.filter((f) => f.featured).length,
+    notFeatured: faqs.filter((f) => !f.featured).length,
   };
 
   // Get unique categories
-  const categories = Array.from(new Set(faqs.map(f => f.category).filter(Boolean)));
+  const categories = Array.from(
+    new Set(faqs.map((f) => f.category).filter(Boolean))
+  );
 
   // Pagination
   const totalPages = Math.ceil(filteredFaqs.length / itemsPerPage);
@@ -73,7 +77,10 @@ export default function FAQManagementPage() {
     if (!pageDropdownOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+      if (
+        pageDropdownRef.current &&
+        !pageDropdownRef.current.contains(event.target as Node)
+      ) {
         setPageDropdownOpen(false);
       }
     };
@@ -82,22 +89,20 @@ export default function FAQManagementPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [pageDropdownOpen]);
 
-
-
   useEffect(() => {
     // Filter FAQs based on search query, tab, and category
     let filtered = faqs;
 
     // Filter by featured tab
     if (activeTab === "featured") {
-      filtered = filtered.filter(faq => faq.featured);
+      filtered = filtered.filter((faq) => faq.featured);
     } else if (activeTab === "not-featured") {
-      filtered = filtered.filter(faq => !faq.featured);
+      filtered = filtered.filter((faq) => !faq.featured);
     }
 
     // Filter by category
     if (selectedCategory) {
-      filtered = filtered.filter(faq => faq.category === selectedCategory);
+      filtered = filtered.filter((faq) => faq.category === selectedCategory);
     }
 
     // Filter by search query
@@ -193,7 +198,11 @@ export default function FAQManagementPage() {
 
   const handleSaveFAQ = async () => {
     if (!formData.question.trim() || !formData.answer.trim()) {
-      showAlert("warning", "Validasi", "Pertanyaan dan jawaban tidak boleh kosong!");
+      showAlert(
+        "warning",
+        "Validasi",
+        "Pertanyaan dan jawaban tidak boleh kosong!"
+      );
       return;
     }
 
@@ -216,9 +225,7 @@ export default function FAQManagementPage() {
 
         showAlert("success", "Berhasil", "FAQ berhasil diperbarui!");
       } else {
-        const { error } = await supabase
-          .from("faqs")
-          .insert([formData]);
+        const { error } = await supabase.from("faqs").insert([formData]);
 
         if (error) {
           throw error;
@@ -259,28 +266,31 @@ export default function FAQManagementPage() {
           <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
             <button
               onClick={() => setActiveTab("all")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
-                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "all"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
               Semua ({stats.total})
             </button>
             <button
               onClick={() => setActiveTab("featured")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "featured"
-                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "featured"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
               Featured ({stats.featured})
             </button>
             <button
               onClick={() => setActiveTab("not-featured")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "not-featured"
-                ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "not-featured"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
               Tidak Featured ({stats.notFeatured})
             </button>
@@ -478,11 +488,16 @@ export default function FAQManagementPage() {
       {/* Pagination */}
       {filteredFaqs.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
-          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+          <nav
+            aria-label="Page navigation"
+            className="flex items-center space-x-4"
+          >
             <ul className="flex -space-x-px text-sm gap-2">
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -500,10 +515,11 @@ export default function FAQManagementPage() {
                   <li key={idx}>
                     <button
                       onClick={() => setCurrentPage(page)}
-                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
-                        }`}
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${
+                        currentPage === page
+                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                      }`}
                     >
                       {page}
                     </button>
@@ -511,7 +527,9 @@ export default function FAQManagementPage() {
                 ))}
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages || totalPages === 0}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -527,8 +545,14 @@ export default function FAQManagementPage() {
               onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
               className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
             >
-              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+              <span className="text-gray-700 dark:text-gray-300">
+                {itemsPerPage} halaman
+              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  pageDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {pageDropdownOpen && (
               <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -540,10 +564,11 @@ export default function FAQManagementPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-gray-700 dark:text-gray-300"
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                      itemsPerPage === value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
                   >
                     {value} halaman
                   </button>
@@ -570,14 +595,15 @@ export default function FAQManagementPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   Pertanyaan
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white"
+                  placeholder="Masukkan pertanyaan"
                   value={formData.question}
                   onChange={(e) =>
                     setFormData({ ...formData, question: e.target.value })
@@ -586,12 +612,13 @@ export default function FAQManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   Jawaban
                 </label>
                 <textarea
                   rows={6}
-                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white resize-vertical"
+                  placeholder="Masukkan jawaban lengkap"
                   value={formData.answer}
                   onChange={(e) =>
                     setFormData({ ...formData, answer: e.target.value })
@@ -600,11 +627,11 @@ export default function FAQManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   Kategori
                 </label>
                 <select
-                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                   value={formData.category}
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
@@ -618,11 +645,11 @@ export default function FAQManagementPage() {
                 </select>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <input
                   type="checkbox"
                   id="featured"
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
                   checked={formData.featured}
                   onChange={(e) =>
                     setFormData({ ...formData, featured: e.target.checked })
@@ -630,7 +657,7 @@ export default function FAQManagementPage() {
                 />
                 <label
                   htmlFor="featured"
-                  className="ml-2 block text-sm text-gray-900 dark:text-white"
+                  className="ml-3 block text-sm font-medium text-gray-900 dark:text-white cursor-pointer"
                 >
                   Tampilkan di beranda (featured)
                 </label>

@@ -37,7 +37,9 @@ export default function DiscountManagementPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "active" | "inactive" | "scheduled" | "expired">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "active" | "inactive" | "scheduled" | "expired"
+  >("all");
 
   const { showAlert, showConfirm } = useAlert();
 
@@ -57,24 +59,33 @@ export default function DiscountManagementPage() {
   // Stats
   const stats = {
     total: discounts.length,
-    active: discounts.filter(d => getDiscountStatus(d).key === "active").length,
-    inactive: discounts.filter(d => !d.is_active).length,
-    scheduled: discounts.filter(d => getDiscountStatus(d).key === "scheduled").length,
-    expired: discounts.filter(d => getDiscountStatus(d).key === "expired").length,
+    active: discounts.filter((d) => getDiscountStatus(d).key === "active")
+      .length,
+    inactive: discounts.filter((d) => !d.is_active).length,
+    scheduled: discounts.filter((d) => getDiscountStatus(d).key === "scheduled")
+      .length,
+    expired: discounts.filter((d) => getDiscountStatus(d).key === "expired")
+      .length,
   };
 
   // Pagination
   const totalPages = Math.ceil(filteredDiscounts.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredDiscounts.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredDiscounts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
     if (!pageDropdownOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (pageDropdownRef.current && !pageDropdownRef.current.contains(event.target as Node)) {
+      if (
+        pageDropdownRef.current &&
+        !pageDropdownRef.current.contains(event.target as Node)
+      ) {
         setPageDropdownOpen(false);
       }
     };
@@ -94,22 +105,29 @@ export default function DiscountManagementPage() {
 
     // Filter by status tab
     if (activeTab === "active") {
-      filtered = filtered.filter(d => getDiscountStatus(d).key === "active");
+      filtered = filtered.filter((d) => getDiscountStatus(d).key === "active");
     } else if (activeTab === "inactive") {
-      filtered = filtered.filter(d => !d.is_active);
+      filtered = filtered.filter((d) => !d.is_active);
     } else if (activeTab === "scheduled") {
-      filtered = filtered.filter(d => getDiscountStatus(d).key === "scheduled");
+      filtered = filtered.filter(
+        (d) => getDiscountStatus(d).key === "scheduled"
+      );
     } else if (activeTab === "expired") {
-      filtered = filtered.filter(d => getDiscountStatus(d).key === "expired");
+      filtered = filtered.filter((d) => getDiscountStatus(d).key === "expired");
     }
 
     // Filter by search query
     if (searchQuery.trim() !== "") {
       filtered = filtered.filter(
         (discount) =>
-          (discount.code && discount.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (discount.description && discount.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (discount.type && discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
+          (discount.code &&
+            discount.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (discount.description &&
+            discount.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())) ||
+          (discount.type &&
+            discount.type.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -243,14 +261,16 @@ export default function DiscountManagementPage() {
       return {
         key: "inactive" as const,
         label: "Non-aktif",
-        color: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
+        color:
+          "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
         icon: <XCircleIcon className="w-4 h-4" />,
       };
     if (startDate && now < startDate)
       return {
         key: "scheduled" as const,
         label: "Terjadwal",
-        color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+        color:
+          "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
         icon: <ClockIcon className="w-4 h-4" />,
       };
     if (endDate && now > endDate)
@@ -263,7 +283,8 @@ export default function DiscountManagementPage() {
     return {
       key: "active" as const,
       label: "Aktif",
-      color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      color:
+        "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
       icon: <CheckCircleIcon className="w-4 h-4" />,
     };
   }
@@ -285,46 +306,51 @@ export default function DiscountManagementPage() {
           <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
             <button
               onClick={() => setActiveTab("all")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "all"
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "all"
                   ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              }`}
             >
               Semua ({stats.total})
             </button>
             <button
               onClick={() => setActiveTab("active")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "active"
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "active"
                   ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              }`}
             >
               Aktif ({stats.active})
             </button>
             <button
               onClick={() => setActiveTab("scheduled")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "scheduled"
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "scheduled"
                   ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              }`}
             >
               Terjadwal ({stats.scheduled})
             </button>
             <button
               onClick={() => setActiveTab("expired")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "expired"
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "expired"
                   ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              }`}
             >
               Kadaluarsa ({stats.expired})
             </button>
             <button
               onClick={() => setActiveTab("inactive")}
-              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${activeTab === "inactive"
+              className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                activeTab === "inactive"
                   ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+              }`}
             >
               Non-aktif ({stats.inactive})
             </button>
@@ -361,7 +387,9 @@ export default function DiscountManagementPage() {
         <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
           <TagIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            {searchQuery ? "Tidak ada diskon yang ditemukan" : "Tidak ada diskon"}
+            {searchQuery
+              ? "Tidak ada diskon yang ditemukan"
+              : "Tidak ada diskon"}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             {searchQuery
@@ -415,7 +443,8 @@ export default function DiscountManagementPage() {
                         </td>
                         <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
                           {discount.service_id
-                            ? services.find((s) => s.id === discount.service_id)?.title
+                            ? services.find((s) => s.id === discount.service_id)
+                                ?.title
                             : "Semua Layanan"}
                         </td>
                         <td className="px-6 py-4">
@@ -494,7 +523,8 @@ export default function DiscountManagementPage() {
                       <p>
                         <span className="font-medium">Berlaku Untuk:</span>{" "}
                         {discount.service_id
-                          ? services.find((s) => s.id === discount.service_id)?.title
+                          ? services.find((s) => s.id === discount.service_id)
+                              ?.title
                           : "Semua Layanan"}
                       </p>
                     </div>
@@ -526,11 +556,16 @@ export default function DiscountManagementPage() {
       {/* Pagination */}
       {filteredDiscounts.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
-          <nav aria-label="Page navigation" className="flex items-center space-x-4">
+          <nav
+            aria-label="Page navigation"
+            className="flex items-center space-x-4"
+          >
             <ul className="flex -space-x-px text-sm gap-2">
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -548,10 +583,11 @@ export default function DiscountManagementPage() {
                   <li key={idx}>
                     <button
                       onClick={() => setCurrentPage(page)}
-                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${
+                        currentPage === page
                           ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
                           : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
-                        }`}
+                      }`}
                     >
                       {page}
                     </button>
@@ -559,7 +595,9 @@ export default function DiscountManagementPage() {
                 ))}
               <li>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages || totalPages === 0}
                   className="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading shadow-xs font-medium leading-5 rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                 >
@@ -575,8 +613,14 @@ export default function DiscountManagementPage() {
               onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
               className="h-9 flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
             >
-              <span className="text-gray-700 dark:text-gray-300">{itemsPerPage} halaman</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""}`} />
+              <span className="text-gray-700 dark:text-gray-300">
+                {itemsPerPage} halaman
+              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  pageDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {pageDropdownOpen && (
               <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -588,10 +632,11 @@ export default function DiscountManagementPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                      itemsPerPage === value
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-gray-700 dark:text-gray-300"
-                      }`}
+                    }`}
                   >
                     {value} halaman
                   </button>
@@ -655,12 +700,12 @@ export default function DiscountManagementPage() {
               {/* Kode Diskon */}
               {!formData.is_automatic && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Kode Diskon
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                     value={formData.code || ""}
                     onChange={(e) =>
                       setFormData({
@@ -675,12 +720,12 @@ export default function DiscountManagementPage() {
 
               {/* Deskripsi */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   Deskripsi (Opsional)
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                   value={formData.description || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -692,11 +737,11 @@ export default function DiscountManagementPage() {
               {/* Nilai & Tipe Nilai */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Tipe Nilai
                   </label>
                   <select
-                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                     value={formData.type}
                     onChange={(e) =>
                       setFormData({
@@ -710,12 +755,12 @@ export default function DiscountManagementPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Nilai
                   </label>
                   <input
                     type="number"
-                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                     value={formData.value || ""}
                     onChange={(e) =>
                       setFormData({
@@ -723,17 +768,18 @@ export default function DiscountManagementPage() {
                         value: parseFloat(e.target.value) || 0,
                       })
                     }
+                    placeholder="Contoh: 10, 25, 50"
                   />
                 </div>
               </div>
 
               {/* Berlaku Untuk */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   Berlaku Untuk
                 </label>
                 <select
-                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                   value={formData.service_id || "all"}
                   onChange={(e) =>
                     setFormData({
@@ -757,12 +803,12 @@ export default function DiscountManagementPage() {
               {/* Durasi */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Tanggal Mulai
                   </label>
                   <input
                     type="datetime-local"
-                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                     value={formData.starts_at || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, starts_at: e.target.value })
@@ -770,12 +816,12 @@ export default function DiscountManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Tanggal Berakhir
                   </label>
                   <input
                     type="datetime-local"
-                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                     value={formData.expires_at || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, expires_at: e.target.value })
@@ -786,12 +832,12 @@ export default function DiscountManagementPage() {
 
               {/* Batas Pemakaian */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   Batas Pemakaian (Opsional)
                 </label>
                 <input
                   type="number"
-                  className="w-full rounded-lg border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary text-sm dark:bg-slate-900 dark:text-white p-2.5"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm dark:bg-slate-900 dark:text-white bg-white"
                   value={formData.usage_limit || ""}
                   onChange={(e) =>
                     setFormData({

@@ -276,100 +276,142 @@ export default function NewOrderPageContent() {
   const discountAmount = basePrice - finalPrice;
 
   return (
-    <div className="py-8 mb-8">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-primary">
-            Pembelian Jasa {service.title}
+    <section className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 md:py-16 px-4 md:px-6">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-8 md:mb-12">
+          <h1 className="font-manrope font-bold text-3xl md:text-4xl lg:text-5xl text-slate-800 mb-2">
+            <span className="text-primary">Pembelian</span> Jasa{" "}
+            {service.title.replace("Jasa ", "")}
           </h1>
+          <p className="text-slate-600 text-sm md:text-base">
+            Lengkapi data berikut untuk menyelesaikan pemesanan
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6 bg-white rounded-lg shadow p-4">
-            <div className="overflow-hidden">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left py-3 px-6 text-sm font-semibold text-gray-700">
-                      PAKET
-                    </th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
-                      ESTIMASI
-                    </th>
-                    <th className="text-right py-3 px-6 text-sm font-semibold text-gray-700">
-                      HARGA
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="py-4 px-6">
-                      <div className="font-medium text-gray-900">
-                        {selectedPackage.name}
-                      </div>
-                      <div className="text-sm text-gray-500 mt-2">
-                        <div className="font-semibold mb-1">Fitur:</div>
-                        <ul className="list-disc list-inside space-y-1">
-                          {selectedPackage.features.map((feature, i) => (
-                            <li key={i}>{feature}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-center text-gray-700 align-top">
-                      {selectedPackage.duration} Hari Kerja
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-gray-900 align-top">
-                      {selectedPackage.finalPrice}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Bagian Utama - Order Summary */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Package Details Card */}
+            <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 border border-slate-200">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-6">
+                Detail Paket
+              </h2>
 
-              <div className="p-6">
-                <div className="max-w-xs ml-auto space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium">
+              {/* Mobile-friendly package display */}
+              <div className="space-y-6">
+                <div className="pb-6 border-b border-slate-200">
+                  <h3 className="text-xl font-bold text-primary mb-4">
+                    {selectedPackage.name}
+                  </h3>
+
+                  {/* Duration and Price */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-xs md:text-sm text-slate-600 uppercase font-semibold mb-1">
+                        Estimasi
+                      </p>
+                      <p className="text-lg md:text-xl font-bold text-slate-800">
+                        {selectedPackage.duration}
+                      </p>
+                      <p className="text-xs text-slate-500">Hari Kerja</p>
+                    </div>
+                    <div className="bg-primary/10 p-4 rounded-lg">
+                      <p className="text-xs md:text-sm text-slate-600 uppercase font-semibold mb-1">
+                        Harga
+                      </p>
+                      <p className="text-lg md:text-xl font-bold text-primary">
+                        {selectedPackage.finalPrice}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div>
+                    <p className="text-sm md:text-base font-semibold text-slate-700 mb-3">
+                      Fitur Paket:
+                    </p>
+                    <ul className="space-y-2">
+                      {selectedPackage.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <svg
+                            className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-slate-700 text-sm md:text-base">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Pricing Summary */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                    <span className="text-slate-600 text-sm md:text-base">
+                      Subtotal
+                    </span>
+                    <span className="font-semibold text-slate-900 text-sm md:text-base">
                       Rp {basePrice.toLocaleString("id-ID")}
                     </span>
                   </div>
-                  {/* PERUBAHAN: Tampilkan diskon jika ada */}
+
+                  {/* Discount if applied */}
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Diskon ({appliedDiscount?.code})</span>
-                      <span className="font-medium">
+                    <div className="flex justify-between items-center pb-3 border-b border-green-200 bg-green-50 -mx-6 px-6 py-3 rounded-lg">
+                      <span className="text-green-700 text-sm md:text-base">
+                        Diskon ({appliedDiscount?.code})
+                      </span>
+                      <span className="font-semibold text-green-700 text-sm md:text-base">
                         - Rp {discountAmount.toLocaleString("id-ID")}
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Pajak</span>
-                    <span className="font-medium">Rp 0</span>
+
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                    <span className="text-slate-600 text-sm md:text-base">
+                      Pajak
+                    </span>
+                    <span className="font-semibold text-slate-900 text-sm md:text-base">
+                      Rp 0
+                    </span>
                   </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between text-base font-bold">
-                      <span>Total</span>
-                      <span>Rp {finalPrice.toLocaleString("id-ID")}</span>
-                    </div>
+
+                  <div className="flex justify-between items-center pt-3 bg-primary/5 -mx-6 px-6 py-4 rounded-lg">
+                    <span className="font-bold text-slate-900 text-base md:text-lg">
+                      Total
+                    </span>
+                    <span className="font-bold text-primary text-lg md:text-xl">
+                      Rp {finalPrice.toLocaleString("id-ID")}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          {/* Sidebar - Customer Form */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 border border-slate-200 sticky top-6">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-6">
                 Data Pelanggan
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* ... input fields untuk customer_name, email, whatsapp ... */}
+                {/* Nama Lengkap */}
                 <div>
                   <label
                     htmlFor="customer_name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
                   >
                     Nama Lengkap
                   </label>
@@ -378,17 +420,18 @@ export default function NewOrderPageContent() {
                     id="customer_name"
                     name="customer_name"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm"
                     placeholder="Masukkan nama lengkap"
                     value={formData.customer_name}
                     onChange={handleInputChange}
                   />
                 </div>
 
+                {/* Email */}
                 <div>
                   <label
                     htmlFor="customer_email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
                   >
                     Email
                   </label>
@@ -397,23 +440,24 @@ export default function NewOrderPageContent() {
                     id="customer_email"
                     name="customer_email"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm"
                     placeholder="nama@email.com"
                     value={formData.customer_email}
                     onChange={handleInputChange}
                   />
                 </div>
 
+                {/* WhatsApp Number */}
                 <div>
                   <label
                     htmlFor="customer_whatsapp"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
                   >
                     Nomor WhatsApp
                   </label>
                   <div className="flex gap-2">
                     <select
-                      className="w-24 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm bg-white"
                       value={formData.country_code}
                       onChange={(e) =>
                         setFormData({
@@ -440,7 +484,7 @@ export default function NewOrderPageContent() {
                       id="customer_whatsapp"
                       name="customer_whatsapp"
                       required
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm"
                       placeholder="812xxxxxxxx"
                       value={formData.customer_whatsapp}
                       onChange={(e) =>
@@ -453,21 +497,21 @@ export default function NewOrderPageContent() {
                   </div>
                 </div>
 
-                {/* PERUBAHAN: Tambahkan input untuk kode diskon */}
+                {/* Kode Diskon */}
                 <div>
                   <label
                     htmlFor="discount_code"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
                   >
-                    Kode Diskon
+                    Kode Diskon (Opsional)
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       id="discount_code"
                       name="discount_code"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Masukkan kode"
+                      className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm uppercase"
+                      placeholder="DISKON2024"
                       value={formData.discount_code}
                       onChange={handleInputChange}
                       disabled={!!appliedDiscount}
@@ -477,35 +521,37 @@ export default function NewOrderPageContent() {
                         type="button"
                         onClick={applyDiscount}
                         disabled={isApplyingDiscount || !formData.discount_code}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                        className="px-4 py-2.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50 transition font-semibold text-sm whitespace-nowrap"
                       >
-                        {isApplyingDiscount ? "Menerapkan..." : "Terapkan"}
+                        {isApplyingDiscount ? "..." : "Terapkan"}
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={removeDiscount}
-                        className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                        className="px-4 py-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-semibold text-sm whitespace-nowrap"
                       >
                         Hapus
                       </button>
                     )}
                   </div>
                   {discountError && (
-                    <p className="text-red-500 text-xs mt-1">{discountError}</p>
+                    <p className="text-red-600 text-xs mt-1.5 flex items-center gap-1">
+                      <span>⚠️</span> {discountError}
+                    </p>
                   )}
                   {appliedDiscount && (
-                    <p className="text-green-600 text-xs mt-1">
-                      Diskon berhasil diterapkan!
+                    <p className="text-green-600 text-xs mt-1.5 flex items-center gap-1">
+                      <span>✓</span> Diskon berhasil diterapkan!
                     </p>
                   )}
                 </div>
 
-                {/* ... input field untuk payment_method ... */}
+                {/* Metode Pembayaran */}
                 <div>
                   <label
                     htmlFor="payment_method"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
                   >
                     Metode Pembayaran
                   </label>
@@ -513,7 +559,7 @@ export default function NewOrderPageContent() {
                     id="payment_method"
                     name="payment_method"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm bg-white"
                     value={formData.payment_method}
                     onChange={handleInputChange}
                   >
@@ -528,13 +574,21 @@ export default function NewOrderPageContent() {
                   </select>
                 </div>
 
-                <div className="pt-4">
+                {/* Submit Button */}
+                <div className="pt-6">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    className="w-full bg-primary text-white py-3 px-4 rounded-lg font-bold text-base md:text-lg hover:bg-primary/90 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
                   >
-                    {submitting ? "Memproses..." : "Bayar Sekarang"}
+                    {submitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="inline-block animate-spin">⚙️</span>
+                        Memproses...
+                      </span>
+                    ) : (
+                      "Bayar Sekarang"
+                    )}
                   </button>
                 </div>
               </form>
@@ -542,6 +596,6 @@ export default function NewOrderPageContent() {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
