@@ -140,7 +140,11 @@ export default function WidgetArea({
 
       {/* Render widget berdasarkan posisi */}
       {widgets.map((widget) => (
-        <WidgetRenderer key={widget.id} id={widget.id} content={widget.content} />
+        <WidgetRenderer
+          key={widget.id}
+          id={widget.id}
+          content={widget.content}
+        />
       ))}
     </div>
   );

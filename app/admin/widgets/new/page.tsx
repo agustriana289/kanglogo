@@ -99,6 +99,14 @@ export default function NewWidgetPage() {
               <option value="proyek_sidebar">Proyek Sidebar</option>
               <option value="proyek_header">Proyek Header</option>
               <option value="proyek_footer">Proyek Footer</option>
+              <option value="generator_top">Generator Logo - Top</option>
+              <option value="generator_middle">Generator Logo - Middle</option>
+              <option value="generator_sidebar">
+                Generator Logo - Sidebar
+              </option>
+              <option value="vector_top">Logo Vector - Top</option>
+              <option value="vector_middle">Logo Vector - Middle</option>
+              <option value="vector_bottom">Logo Vector - Bottom</option>
             </select>
           </div>
 
