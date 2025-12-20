@@ -1636,6 +1636,7 @@ export default function OrderManagementPage() {
                               rating_service: 5,
                               rating_design: 5,
                               rating_communication: 5,
+                              is_featured: false,
                               review_link_generated_at: now.toISOString(),
                               review_link_expires_at: expiresAt.toISOString(),
                             });
@@ -1660,10 +1661,16 @@ export default function OrderManagementPage() {
                           "Error generating testimonial link:",
                           error
                         );
+                        console.error("Full error details:", {
+                          message: error.message,
+                          status: error.status,
+                          statusCode: error.statusCode,
+                          details: error.details,
+                        });
                         showAlert(
                           "error",
                           "Gagal",
-                          "Gagal generate link testimoni."
+                          error.message || "Gagal generate link testimoni."
                         );
                       } finally {
                         setRequestingTestimonial(false);
