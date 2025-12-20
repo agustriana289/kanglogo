@@ -1601,8 +1601,8 @@ export default function OrderManagementPage() {
                       try {
                         const now = new Date();
                         const expiresAt = new Date(
-                          now.getTime() + 14 * 24 * 60 * 60 * 1000
-                        ); // 14 days
+                          now.getTime() + 7 * 24 * 60 * 60 * 1000
+                        ); // 7 days
 
                         // Update testimonials dengan set timestamps
                         const { data: testimonials, error: fetchError } =
@@ -1611,6 +1611,8 @@ export default function OrderManagementPage() {
                             .select("id")
                             .eq("order_id", selectedOrder.id)
                             .maybeSingle();
+
+                        if (fetchError) throw fetchError;
 
                         if (testimonials) {
                           // Update existing testimonial
@@ -1631,6 +1633,9 @@ export default function OrderManagementPage() {
                               order_id: selectedOrder.id,
                               customer_name: selectedOrder.customer_name,
                               customer_email: selectedOrder.customer_email,
+                              rating_service: 5,
+                              rating_design: 5,
+                              rating_communication: 5,
                               review_link_generated_at: now.toISOString(),
                               review_link_expires_at: expiresAt.toISOString(),
                             });
@@ -1645,7 +1650,7 @@ export default function OrderManagementPage() {
                         showAlert(
                           "success",
                           "Berhasil",
-                          `Link testimoni disalin! Link berlaku selama 14 hari.`
+                          `Link testimoni disalin! Link berlaku selama 7 hari.`
                         );
 
                         // Refresh orders untuk update state
