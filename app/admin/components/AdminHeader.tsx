@@ -256,7 +256,7 @@ export default function AdminHeader({
             </button>
 
             {isNotificationOpen && (
-              <div className="fixed md:absolute bottom-auto md:bottom-auto left-1/2 md:left-auto -translate-x-1/2 md:translate-x-0 right-auto md:right-0 top-16 md:top-auto mt-0 md:mt-2 w-4/5 md:w-80 mx-auto md:mx-0 mb-4 md:mb-0 max-h-[70vh] md:max-h-80 bg-white dark:bg-slate-800 rounded-t-xl md:rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in-up z-50">
+              <div className="absolute right-0 mt-2 w-80 max-h-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in-up z-50 sm:fixed sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:top-16 sm:mt-0 sm:w-4/5 sm:mx-auto sm:mb-4 sm:max-h-[70vh] sm:rounded-t-xl sm:rounded-b-xl">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                   <h3 className="font-bold text-slate-800 dark:text-white">
                     Notifikasi
