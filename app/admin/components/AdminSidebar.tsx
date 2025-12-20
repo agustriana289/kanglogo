@@ -182,21 +182,24 @@ export default function AdminSidebar({
         bg-white dark:bg-slate-800 shadow-lg border-r border-slate-200 dark:border-slate-700
         flex flex-col z-50
         transform transition-all duration-300 ease-in-out
-        ${isMobileMenuOpen
+        ${
+          isMobileMenuOpen
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0"
-          }
+        }
       `}
       >
         {/* Logo Section */}
         <div
-          className={`h-16 flex items-center border-b border-slate-100 dark:border-slate-700 ${actuallyCollapsed ? "justify-center px-0" : "justify-between px-6"
-            }`}
+          className={`h-16 flex items-center border-b border-slate-100 dark:border-slate-700 ${
+            actuallyCollapsed ? "justify-center px-0" : "justify-between px-6"
+          }`}
         >
           <Link
             href="/admin"
-            className={`flex items-center ${actuallyCollapsed ? "justify-center" : ""
-              }`}
+            className={`flex items-center ${
+              actuallyCollapsed ? "justify-center" : ""
+            }`}
           >
             {actuallyCollapsed ? (
               // Collapsed: Show favicon
@@ -212,22 +215,22 @@ export default function AdminSidebar({
                 </div>
               )
             ) : // Expanded: Show logo only (no text)
-              logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt="Logo"
-                  className="h-10 object-contain max-w-[180px]"
-                />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center font-bold">
-                    KL
-                  </div>
-                  <span className="font-bold text-slate-800 dark:text-white text-lg">
-                    KangLogo
-                  </span>
+            logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Logo"
+                className="h-10 object-contain max-w-[180px]"
+              />
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center font-bold">
+                  KL
                 </div>
-              )}
+                <span className="font-bold text-slate-800 dark:text-white text-lg">
+                  KangLogo
+                </span>
+              </div>
+            )}
           </Link>
           <button
             onClick={onCloseMobileMenu}
@@ -247,18 +250,20 @@ export default function AdminSidebar({
             className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-xl
                 transition-all duration-200 group
-                ${pathname === "/admin"
-                ? "bg-primary text-white shadow-md shadow-primary/20"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
-              }
+                ${
+                  pathname === "/admin"
+                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                }
                 ${actuallyCollapsed ? "justify-center px-2" : ""}
             `}
           >
             <HomeIcon
-              className={`flex-shrink-0 w-5 h-5 ${pathname === "/admin"
+              className={`flex-shrink-0 w-5 h-5 ${
+                pathname === "/admin"
                   ? "text-white"
                   : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200"
-                }`}
+              }`}
             />
             {!actuallyCollapsed && (
               <span className="font-medium text-sm">Dashboard</span>
@@ -285,9 +290,10 @@ export default function AdminSidebar({
                       className={`
                         w-full flex justify-center items-center px-2 py-2.5 rounded-xl mb-1
                         transition-colors duration-200
-                        ${hasActiveChild
-                          ? "bg-primary/10 text-primary"
-                          : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-600"
+                        ${
+                          hasActiveChild
+                            ? "bg-primary/10 text-primary"
+                            : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-600"
                         }
                       `}
                     >
@@ -305,28 +311,32 @@ export default function AdminSidebar({
                     onClick={() => toggleGroup(group.label)}
                     className={`
                       w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors duration-200
-                      ${hasActiveChild
-                        ? "bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white font-medium"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                      ${
+                        hasActiveChild
+                          ? "bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white font-medium"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
                       <GroupIcon
-                        className={`w-5 h-5 ${hasActiveChild ? "text-primary" : "text-slate-400"
-                          }`}
+                        className={`w-5 h-5 ${
+                          hasActiveChild ? "text-primary" : "text-slate-400"
+                        }`}
                       />
                       <span className="font-medium text-sm">{group.label}</span>
                     </div>
                     <ChevronDownIcon
-                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
 
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
-                      }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+                    }`}
                   >
                     <div className="pl-3 space-y-1 border-l-2 border-slate-100 dark:border-slate-700 ml-5 my-1">
                       {group.children.map((child: any) => {
@@ -338,10 +348,11 @@ export default function AdminSidebar({
                             onClick={onCloseMobileMenu}
                             className={`
                                 flex items-center px-3 py-2 rounded-lg text-sm transition-colors
-                                ${isActive
-                                ? "text-primary font-medium bg-primary/5"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
-                              }
+                                ${
+                                  isActive
+                                    ? "text-primary font-medium bg-primary/5"
+                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }
                             `}
                           >
                             <span className="truncate">{child.label}</span>
@@ -366,18 +377,20 @@ export default function AdminSidebar({
                   className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1
                     transition-all duration-200 group
-                    ${isActive
-                      ? "bg-primary text-white shadow-md shadow-primary/20"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                    ${
+                      isActive
+                        ? "bg-primary text-white shadow-md shadow-primary/20"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                     }
                     ${actuallyCollapsed ? "justify-center px-2" : ""}
                   `}
                 >
                   <Icon
-                    className={`flex-shrink-0 w-5 h-5 ${isActive
+                    className={`flex-shrink-0 w-5 h-5 ${
+                      isActive
                         ? "text-white"
                         : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200"
-                      }`}
+                    }`}
                   />
                   {!actuallyCollapsed && (
                     <span className="font-medium text-sm">{group.label}</span>
