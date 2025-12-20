@@ -1082,7 +1082,6 @@ export default function StorePurchasesPage() {
                               rating_service: 5,
                               rating_design: 5,
                               rating_communication: 5,
-                              is_featured: false,
                               review_link_generated_at: now.toISOString(),
                               review_link_expires_at: expiresAt.toISOString(),
                             });
@@ -1107,16 +1106,10 @@ export default function StorePurchasesPage() {
                           "Error generating testimonial link:",
                           error
                         );
-                        console.error("Full error details:", {
-                          message: error.message,
-                          status: error.status,
-                          statusCode: error.statusCode,
-                          details: error.details,
-                        });
                         showAlert(
                           "error",
                           "Gagal",
-                          error.message || "Gagal generate link testimoni."
+                          "Gagal generate link testimoni."
                         );
                       }
                     }}

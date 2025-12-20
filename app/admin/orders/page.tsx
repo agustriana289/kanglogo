@@ -484,17 +484,17 @@ export default function OrderManagementPage() {
         discount_amount: newOrder.discount_amount || 0,
         package_details: selectedPackage
           ? {
-              name: selectedPackage.name,
-              finalPrice: selectedPackage.finalPrice,
-              duration: selectedPackage.duration,
-              features: selectedPackage.features || [],
-            }
+            name: selectedPackage.name,
+            finalPrice: selectedPackage.finalPrice,
+            duration: selectedPackage.duration,
+            features: selectedPackage.features || [],
+          }
           : {
-              name: newOrder.package_name || "Custom Service",
-              finalPrice: String(newOrder.final_price),
-              duration: "7 hari",
-              features: [],
-            },
+            name: newOrder.package_name || "Custom Service",
+            finalPrice: String(newOrder.final_price),
+            duration: "7 hari",
+            features: [],
+          },
         payment_method: newOrder.payment_method,
         status: "pending_payment",
         created_at: new Date().toISOString(),
@@ -613,15 +613,14 @@ export default function OrderManagementPage() {
   }) => (
     <button
       onClick={onChange}
-      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${
-        checked
+      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
           ? variant === "header"
             ? "text-white"
             : "text-primary"
           : variant === "header"
-          ? "text-white/50 hover:text-white/80"
-          : "text-gray-300 hover:text-gray-400"
-      }`}
+            ? "text-white/50 hover:text-white/80"
+            : "text-gray-300 hover:text-gray-400"
+        }`}
     >
       {checked ? (
         <CheckCircleIcon className="w-5 h-5" />
@@ -734,11 +733,10 @@ export default function OrderManagementPage() {
                   setFilterStatus(status);
                   setCurrentPage(1);
                 }}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
-                  filterStatus === status
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === status
                     ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 {status}
               </button>
@@ -836,13 +834,12 @@ export default function OrderManagementPage() {
                 <span className="text-gray-700 dark:text-gray-300">
                   {bulkStatus
                     ? statusOptions.find((opt) => opt.value === bulkStatus)
-                        ?.label
+                      ?.label
                     : "Ubah Status..."}
                 </span>
                 <ChevronDownIcon
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    bulkStatusDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
               {bulkStatusDropdownOpen && (
@@ -1039,11 +1036,10 @@ export default function OrderManagementPage() {
                     return (
                       <tr
                         key={order.id}
-                        className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${
-                          selectedOrders.includes(order.id)
+                        className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedOrders.includes(order.id)
                             ? "bg-primary/5"
                             : ""
-                        }`}
+                          }`}
                       >
                         <td className="px-6 py-4">
                           <CustomCheckbox
@@ -1147,11 +1143,10 @@ export default function OrderManagementPage() {
                   ) : (
                     <button
                       onClick={() => setCurrentPage(page as number)}
-                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${
-                        currentPage === page
+                      className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
                           ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
                           : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
@@ -1182,9 +1177,8 @@ export default function OrderManagementPage() {
                 {itemsPerPage} halaman
               </span>
               <ChevronDownIcon
-                className={`w-4 h-4 text-gray-400 transition-transform ${
-                  pageDropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 text-gray-400 transition-transform ${pageDropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
             {pageDropdownOpen && (
@@ -1197,11 +1191,10 @@ export default function OrderManagementPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
-                      itemsPerPage === value
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-gray-700 dark:text-gray-300"
-                    }`}
+                      }`}
                   >
                     {value} halaman
                   </button>
@@ -1533,11 +1526,10 @@ export default function OrderManagementPage() {
                               "_blank"
                             )
                           }
-                          className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${
-                            finalFileLink
+                          className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink
                               ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
                               : ""
-                          }`}
+                            }`}
                         >
                           {finalFileLink ? (
                             <>
@@ -1633,10 +1625,10 @@ export default function OrderManagementPage() {
                               order_id: selectedOrder.id,
                               customer_name: selectedOrder.customer_name,
                               customer_email: selectedOrder.customer_email,
+                              service_name: selectedOrder.package_details?.name || "Layanan KangLogo",
                               rating_service: 5,
                               rating_design: 5,
                               rating_communication: 5,
-                              is_featured: false,
                               review_link_generated_at: now.toISOString(),
                               review_link_expires_at: expiresAt.toISOString(),
                             });
@@ -1659,18 +1651,15 @@ export default function OrderManagementPage() {
                       } catch (error: any) {
                         console.error(
                           "Error generating testimonial link:",
-                          error
+                          error,
+                          error.details,
+                          error.hint,
+                          error.message
                         );
-                        console.error("Full error details:", {
-                          message: error.message,
-                          status: error.status,
-                          statusCode: error.statusCode,
-                          details: error.details,
-                        });
                         showAlert(
                           "error",
                           "Gagal",
-                          error.message || "Gagal generate link testimoni."
+                          `Gagal generate link testimoni: ${error.message || "Unknown error"}`
                         );
                       } finally {
                         setRequestingTestimonial(false);
