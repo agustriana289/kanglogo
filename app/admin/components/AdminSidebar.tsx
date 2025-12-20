@@ -47,7 +47,7 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [faviconUrl, setFaviconUrl] = useState<string>("");
-  const [openGroups, setOpenGroups] = useState<string[]>(["Layanan"]);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
 
   // On mobile, never use collapsed state for content rendering
   const actuallyCollapsed = isCollapsed && !isMobileMenuOpen;
