@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { sendPushNotification } from "./onesignal";
+import { sendTelegramNotification } from "./telegram";
 
 // Fungsi untuk membuat notifikasi komentar baru
 export async function createCommentNotification(commentId: number) {
@@ -29,13 +29,9 @@ export async function createCommentNotification(commentId: number) {
     if (notificationError) {
       console.error("Error creating comment notification:", notificationError);
     } else {
-      // Send Push Notification
-      await sendPushNotification(
-        { en: "Komentar Baru", id: "Komentar Baru" },
-        { en: `${comment.name} mengomentari artikel "${comment.articles?.title || "tanpa judul"}"`, id: `${comment.name} mengomentari artikel "${comment.articles?.title || "tanpa judul"}"` },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/blog#comment-${commentId}`
-      );
+      // Send Telegram Notification
+      const msg = `💬 <b>Komentar Baru</b>\n\n<b>${comment.name}</b>: "${comment.content}"\n\nPada artikel: <i>${comment.articles?.title}</i>`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createCommentNotification:", error);
@@ -70,12 +66,8 @@ export async function createDiscountExpiryNotification(discountId: number) {
     if (notificationError) {
       console.error("Error creating discount notification:", notificationError);
     } else {
-      await sendPushNotification(
-        { en: "Diskon Akan Kadaluarsa", id: "Diskon Akan Kadaluarsa" },
-        { en: `Diskon "${discount.code || "Otomatis"}" akan kadaluarsa dalam 3 hari`, id: `Diskon "${discount.code || "Otomatis"}" akan kadaluarsa dalam 3 hari` },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/discounts#discount-${discountId}`
-      );
+      const msg = `⚠️ <b>Diskon Kadaluarsa</b>\n\nKode Diskon <b>${discount.code || "Otomatis"}</b> akan kadaluarsa dalam 3 hari.`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createDiscountExpiryNotification:", error);
@@ -109,12 +101,8 @@ export async function createNewOrderNotification(orderId: number) {
     if (notificationError) {
       console.error("Error creating order notification:", notificationError);
     } else {
-      await sendPushNotification(
-        { en: "Pesanan Baru", id: "Pesanan Baru" },
-        { en: `Pesanan baru dari ${order.customer_name} dengan invoice ${order.invoice_number}`, id: `Pesanan baru dari ${order.customer_name} dengan invoice ${order.invoice_number}` },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders#order-${orderId}`
-      );
+      const msg = `🛒 <b>Pesanan Baru!</b>\n\nInvoice: <b>${order.invoice_number}</b>\nPelanggan: ${order.customer_name}`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createNewOrderNotification:", error);
@@ -164,13 +152,8 @@ export async function createOrderStatusNotification(
         notificationError
       );
     } else {
-      const msg = `Status pesanan ${order.invoice_number} berubah menjadi "${statusLabels[newStatus] || newStatus}"`;
-      await sendPushNotification(
-        { en: "Status Pesanan Diubah", id: "Status Pesanan Diubah" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders#order-${orderId}`
-      );
+      const msg = `🔄 <b>Status Pesanan Berubah</b>\n\nInvoice: <b>${order.invoice_number}</b>\nStatus Baru: <b>${statusLabels[newStatus] || newStatus}</b>`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createOrderStatusNotification:", error);
@@ -208,13 +191,8 @@ export async function createTaskDeadlineNotification(taskId: number) {
         notificationError
       );
     } else {
-      const msg = `Task "${(task.package_details as any)?.name || "Tanpa Nama"}" akan deadline dalam 3 hari`;
-      await sendPushNotification(
-        { en: "Deadline Task Mendekat", id: "Deadline Task Mendekat" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/tasks#task-${taskId}`
-      );
+      const msg = `⏰ <b>Deadline Task!</b>\n\nTask: <b>${(task.package_details as any)?.name || "Tanpa Nama"}</b>\nAkan deadline dalam 3 hari.`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createTaskDeadlineNotification:", error);
@@ -245,13 +223,8 @@ export async function createStorePurchaseNotification(
         notificationError
       );
     } else {
-      const msg = `${customerName} membeli "${assetName}" (${orderNumber})`;
-      await sendPushNotification(
-        { en: "Pembelian Toko Baru", id: "Pembelian Toko Baru" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders?tab=store`
-      );
+      const msg = `🛍️ <b>Pembelian Toko Baru</b>\n\nBarang: <b>${assetName}</b>\nPelanggan: ${customerName}\nOrder: ${orderNumber}`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createStorePurchaseNotification:", error);
@@ -291,13 +264,8 @@ export async function createPaymentDeadlineNotification(orderId: number) {
         notificationError
       );
     } else {
-      const msg = `Batas pembayaran pesanan ${order.invoice_number} dari ${order.customer_name} adalah besok`;
-      await sendPushNotification(
-        { en: "Batas Pembayaran Besok", id: "Batas Pembayaran Besok" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders`
-      );
+      const msg = `⏳ <b>Batas Pembayaran Besok</b>\n\nInvoice: <b>${order.invoice_number}</b>\nPelanggan: ${order.customer_name}`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createPaymentDeadlineNotification:", error);
@@ -338,13 +306,8 @@ export async function createDiscountUsageLimitNotification(discountId: number) {
         notificationError
       );
     } else {
-      const msg = `Diskon "${discount.code || "Otomatis"}" telah mencapai batas penggunaan`;
-      await sendPushNotification(
-        { en: "Batas Penggunaan Diskon Tercapai", id: "Batas Penggunaan Diskon Tercapai" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/discounts`
-      );
+      const msg = `🛑 <b>Batas Diskon Tercapai</b>\n\nKode: <b>${discount.code || "Otomatis"}</b> sudah mencapai limit penggunaan.`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createDiscountUsageLimitNotification:", error);
@@ -372,13 +335,8 @@ export async function createOrderDeletedNotification(
         notificationError
       );
     } else {
-      const msg = `Pesanan ${invoiceNumber} dari ${customerName} telah dihapus`;
-      await sendPushNotification(
-        { en: "Pesanan Dihapus", id: "Pesanan Dihapus" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders`
-      );
+      const msg = `🗑️ <b>Pesanan Dihapus</b>\n\nInvoice: <b>${invoiceNumber}</b>\nPelanggan: ${customerName}`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createOrderDeletedNotification:", error);
@@ -410,13 +368,8 @@ export async function createOrderDetailChangedNotification(
         notificationError
       );
     } else {
-      const msg = `Pesanan ${invoiceNumber} telah diubah: ${changedFields.join(", ")}`;
-      await sendPushNotification(
-        { en: "Detail Pesanan Diubah", id: "Detail Pesanan Diubah" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/orders`
-      );
+      const msg = `📝 <b>Detail Pesanan Diubah</b>\n\nInvoice: <b>${invoiceNumber}</b>\nPerubahan: ${changedFields.join(", ")}`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createOrderDetailChangedNotification:", error);
@@ -463,13 +416,8 @@ export async function createNewTestimonialNotification(testimonialId: number) {
         notificationError
       );
     } else {
-      const msg = `${testimonial.customer_name} memberikan testimoni untuk "${testimonial.service_name || testimonial.product_name || "Layanan"}" dengan rating ${avgRating.toFixed(1)}/5`;
-      await sendPushNotification(
-        { en: "Testimoni Baru Diterima", id: "Testimoni Baru Diterima" },
-        { en: msg, id: msg },
-        ["All"],
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/testimonials#testimonial-${testimonialId}`
-      );
+      const msg = `⭐ <b>Testimoni Baru!</b>\n\nPelanggan: ${testimonial.customer_name}\nRating: <b>${avgRating.toFixed(1)}/5</b>\nUntuk: ${testimonial.service_name || testimonial.product_name || "Layanan"}`;
+      await sendTelegramNotification(msg);
     }
   } catch (error) {
     console.error("Error in createNewTestimonialNotification:", error);

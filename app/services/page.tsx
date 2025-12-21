@@ -107,23 +107,14 @@ export default function ServicesPage() {
             <button
               key={service.id}
               onClick={() => handleServiceClick(service)}
-              className={`px-6 py-3 rounded-full text-base font-medium transition-all ${
-                selectedService.id === service.id
+              className={`px-4 py-2 rounded-full text-base font-medium transition-all ${selectedService.id === service.id
                   ? "bg-primary text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-200"
-              }`}
+                  : "bg-white text-slate-700 hover:shadow-sm"
+                }`}
             >
               {service.title}
             </button>
           ))}
-        </div>
-
-        {/* Promotional Banner */}
-        <div className="bg-primary/10 rounded-xl p-6 mb-10 text-center">
-          <p className="text-lg font-bold text-slate-700">
-            Hemat besar! Diskon sampai 50% hanya untuk pelanggan baru. Klaim
-            sekarang!
-          </p>
         </div>
 
         {/* Pricing Cards */}

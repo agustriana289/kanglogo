@@ -45,8 +45,22 @@ export default function Footer() {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const pathname = usePathname();
 
+  const [heroBackground, setHeroBackground] = useState<string | null>(null);
+
   const fetchSettings = async () => {
     try {
+      // Fetch hero background
+      const { data: heroData } = await supabase
+        .from("landing_page_content")
+        .select("value")
+        .eq("section", "hero")
+        .eq("key_name", "hero_background")
+        .single();
+
+      if (heroData) {
+        setHeroBackground(heroData.value);
+      }
+
       // Fetch pengaturan umum
       const { data: settingsData, error: settingsError } = await supabase
         .from("website_settings")
@@ -115,9 +129,8 @@ export default function Footer() {
     return links.filter((link) => link.category_id === categoryId);
   };
 
-  const waLink = `https://wa.me/${
-    settings?.website_phone?.replace(/\D/g, "") || ""
-  }`;
+  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
+    }`;
 
   // Perbaikan: Tambahkan tipe eksplisit untuk parameter svgString
   const fixSvg = (svgString: string) => {
@@ -135,7 +148,12 @@ export default function Footer() {
   return (
     <>
       <WidgetArea position="footer" />
-      <footer className="w-full bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]">
+      <footer
+        className="w-full bg-cover bg-center"
+        style={{
+          backgroundImage: heroBackground ? `url(${heroBackground})` : undefined,
+        }}
+      >
         <div className="mx-auto max-w-7xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 gap-y-8 md:gap-8 py-10 px-4 sm:px-6 lg:px-8">
           <div className="col-span-full mb-10 lg:col-span-2 lg:mb-0">
             <div className="section" id="foot-logo" data-name="Logo Footer">
@@ -175,9 +193,8 @@ export default function Footer() {
                 <div className="widget-content">
                   <a
                     className="py-2.5 px-5 h-9 block w-fit bg-primary rounded-full shadow-sm text-xs text-white mx-auto transition-all duration-500 hover:bg-primary/90 lg:mx-0"
-                    href={`mailto:${
-                      settings?.website_email || "halo@kanglogo.com"
-                    }`}
+                    href={`mailto:${settings?.website_email || "halo@kanglogo.com"
+                      }`}
                   >
                     {settings?.website_email || "halo@kanglogo.com"}
                   </a>

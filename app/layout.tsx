@@ -11,7 +11,7 @@ import PublicNotificationPopup from "@/components/PublicNotificationPopup";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 import JsonLd from "@/components/JsonLd";
 import Script from "next/script";
-import OneSignalProvider from "@/components/providers/OneSignalProvider";
+
 
 const inter = Inter({
   subsets: ["latin"],
@@ -139,7 +139,6 @@ export default function RootLayout({
         }} />
         <JsonLd data={organizationData} />
         <JsonLd data={websiteData} />
-        <OneSignalProvider />
         <RootLayoutClient />
         <Header />
         {children}
