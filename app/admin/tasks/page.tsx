@@ -10,7 +10,10 @@ import {
   UserIcon,
   ChevronDownIcon,
   CalendarIcon,
+  ArrowPathIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 // Type definition matching the query structure
 type OrderWithService = {
@@ -45,7 +48,40 @@ export default function TaskManagementPage() {
   const [displayLimit, setDisplayLimit] = useState(10);
   const [dateFilter, setDateFilter] = useState("");
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { showAlert } = useAlert();
+
+  // Check Google Connection
+  useEffect(() => {
+    const checkConnection = async () => {
+      const { data } = await supabase
+        .from("integrations")
+        .select("id")
+        .eq("service_name", "google_tasks")
+        .single();
+      if (data) setIsGoogleConnected(true);
+    };
+    checkConnection();
+  }, []);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/tasks/sync");
+      const data = await res.json();
+      if (res.ok) {
+        showAlert("success", "Sinkronisasi Berhasil", `Berhasil sinkronisasi ${data.operations_count || 0} tugas!`);
+        fetchTasks(); // Refresh list to catch any status updates from Google
+      } else {
+        throw new Error(data.error || "Gagal sinkronisasi");
+      }
+    } catch (error: any) {
+      showAlert("error", "Gagal Sinkronisasi", error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
 
 
@@ -334,8 +370,8 @@ export default function TaskManagementPage() {
                 key={tab.key}
                 onClick={() => setSelectedTaskGroup(tab.key as any)}
                 className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${selectedTaskGroup === tab.key
-                    ? "shadow-sm text-gray-900 bg-white"
-                    : "text-gray-500 hover:text-gray-900"
+                  ? "shadow-sm text-gray-900 bg-white"
+                  : "text-gray-500 hover:text-gray-900"
                   }`}
               >
                 {tab.label}
@@ -343,8 +379,30 @@ export default function TaskManagementPage() {
             ))}
           </div>
 
-          {/* Right: Filters */}
+          {/* Right: Filters & Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
+            {/* Google Tasks Actions */}
+            <div className="flex items-center gap-2">
+              {!isGoogleConnected ? (
+                <Link
+                  href="/api/auth/google"
+                  className="h-11 flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-all"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Connect Google Tasks
+                </Link>
+              ) : (
+                <button
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  className={`h-11 flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm disabled:opacity-70 ${isSyncing ? "animate-pulse" : ""}`}
+                >
+                  <ArrowPathIcon className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+                  {isSyncing ? "Syncing..." : "Sync Now"}
+                </button>
+              )}
+            </div>
+
             {/* Search */}
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -389,8 +447,8 @@ export default function TaskManagementPage() {
                         setDateDropdownOpen(false);
                       }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg transition-colors ${dateFilter === option.value
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-gray-700"
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700"
                         }`}
                     >
                       {option.label}
@@ -412,8 +470,8 @@ export default function TaskManagementPage() {
               key={tab.key}
               onClick={() => setSelectedTaskGroup(tab.key as any)}
               className={`flex-1 text-sm py-2.5 px-3 rounded-md font-medium transition-all ${selectedTaskGroup === tab.key
-                  ? "shadow-sm text-white bg-primary"
-                  : "text-gray-500 hover:text-gray-900"
+                ? "shadow-sm text-white bg-primary"
+                : "text-gray-500 hover:text-gray-900"
                 }`}
             >
               {tab.label}
@@ -588,14 +646,14 @@ function TaskListCard({
         <button
           onClick={() => toggleTaskStatus(task.id, task.status)}
           className={`mt-0.5 flex-shrink-0 ${task.status === STATUS_COMPLETED
-              ? "text-green-500"
-              : "text-slate-400 hover:text-primary"
+            ? "text-green-500"
+            : "text-slate-400 hover:text-primary"
             }`}
         >
           <div
             className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.status === STATUS_COMPLETED
-                ? "bg-green-500 border-green-500"
-                : "border-gray-300 hover:border-primary bg-white"
+              ? "bg-green-500 border-green-500"
+              : "border-gray-300 hover:border-primary bg-white"
               }`}
           >
             {task.status === STATUS_COMPLETED && (
@@ -607,8 +665,8 @@ function TaskListCard({
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-medium ${task.status === STATUS_COMPLETED
-                ? "text-slate-500 line-through"
-                : "text-slate-800"
+              ? "text-slate-500 line-through"
+              : "text-slate-800"
               }`}
           >
             {displayTitle}

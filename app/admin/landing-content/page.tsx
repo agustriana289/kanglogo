@@ -124,8 +124,8 @@ export default function LandingContentPage() {
     if (!file) return;
 
     // Validasi tipe file
-    if (!file.type.startsWith("image/")) {
-      showNotification("Please select an image file!", "error");
+    if (!file.type.startsWith("image/") && !file.name.endsWith(".svg") && !file.name.endsWith(".webp") && !file.name.endsWith(".json")) {
+      showNotification("Please select a valid image file (JPG, PNG, WebP, SVG)!", "error");
       return;
     }
 
@@ -200,8 +200,8 @@ export default function LandingContentPage() {
       const file = files[0];
 
       // Validasi tipe file
-      if (!file.type.startsWith("image/")) {
-        showNotification("Please select an image file!", "error");
+      if (!file.type.startsWith("image/") && !file.name.endsWith(".svg") && !file.name.endsWith(".webp") && !file.name.endsWith(".json")) {
+        showNotification("Please select a valid image file (JPG, PNG, WebP, SVG)!", "error");
         return;
       }
 
@@ -263,8 +263,8 @@ export default function LandingContentPage() {
     // Jika item belum ada (misal untuk field baru seperti icon), buat struktur default
     if (!item) {
       let contentType = "text";
-      if (keyName.includes("icon")) contentType = "icon";
-      else if (keyName.includes("image")) contentType = "image";
+      if (keyName.includes("icon") || keyName.includes("svg")) contentType = "icon"; // SVG treated as icon (textarea)
+      else if (keyName.includes("image") || keyName === "hero_background") contentType = "image";
       else if (keyName.includes("url") || keyName.includes("link")) contentType = "link";
 
       item = {
@@ -476,7 +476,7 @@ export default function LandingContentPage() {
                         or drag and drop
                       </p>
                       <p className="text-xs">
-                        PNG, JPG (MAX. 2MB, recommended size 1920x1080px)
+                        PNG, JPG, WebP, SVG (MAX. 2MB)
                       </p>
                     </div>
                   )}
@@ -487,11 +487,13 @@ export default function LandingContentPage() {
                     onChange={(e) =>
                       handleFileUpload(e, "hero", "hero_background")
                     }
-                    accept="image/*"
+                    accept="image/*,.svg,.webp"
                   />
                 </label>
               </div>
             </div>
+
+
 
             {/* Content Fields - Icon Only Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
@@ -510,6 +512,27 @@ export default function LandingContentPage() {
                   }
                   className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
                   title="Edit Hero Title"
+                >
+                  <PencilIcon className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Hero SVG */}
+              <div className="flex items-stretch justify-between p-4 bg-slate-50 dark:bg-slate-600 rounded-lg gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Hero SVG
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {content.hero?.hero_svg?.value ? "(SVG Set)" : "(empty)"}
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    openEditModal("hero", "hero_svg", "Hero SVG")
+                  }
+                  className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex-shrink-0"
+                  title="Edit Hero SVG"
                 >
                   <PencilIcon className="h-5 w-5" />
                 </button>

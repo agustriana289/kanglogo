@@ -21,6 +21,7 @@ interface HeroContent {
   hero_rating_text?: string;
   client_rating_url?: string;
   hero_image?: string;
+  hero_svg?: string;
   [key: `client_image${number}`]: string;
 }
 
@@ -108,23 +109,26 @@ export default function Hero() {
 
   return (
     <section
-      className="relative pt-12 pb-6 px-6 md:px-20 overflow-hidden bg-primary bg-no-repeat bg-cover bg-center"
-      style={{
-        backgroundImage: content.hero_background
-          ? `url(${content.hero_background})`
-          : "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
-        backgroundAttachment: "fixed",
-        backgroundPosition: "center",
-        backgroundSize: "cover",
-      }}
+      className="relative py-20 px-6 md:px-20 overflow-hidden bg-primary rounded-b-3xl"
       id="hero"
     >
+      {/* Background SVG Layer */}
+      {/* Background Layer (Image/SVG URL) */}
+      <div
+        className="absolute inset-0 z-0 bg-no-repeat bg-cover bg-center"
+        style={{
+          backgroundImage: content.hero_background
+            ? `url(${content.hero_background})`
+            : "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+        }}
+      />
+
       {/* Overlay untuk memastikan readability dengan dark gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10 z-0 pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col-reverse sm:flex-col gap-6 md:flex-row items-center justify-center max-w-7xl w-full mb-20 mx-auto min-h-[500px]">
         {/* Kolom Kiri: Teks dan Tombol */}
-        <div className="w-full md:w-2/3">
+        <div className="w-full md:w-6/12">
           {/* Judul - 3 komponen: title, subtitle dengan warna beda, dan deskripsi */}
           <div className="mb-9">
             {/* Line 1: Title (White) */}
@@ -250,21 +254,26 @@ export default function Hero() {
             )}
         </div>
 
-        {/* Kolom Kanan: Gambar - hanya muncul jika ada gambar */}
-        {content.hero_image && (
-          <div className="w-full md:w-1/3 flex justify-center md:justify-end">
+        {/* Kolom Kanan: Gambar atau SVG */}
+        <div className="w-full md:w-6/12 flex justify-center md:justify-end">
+          {content.hero_svg ? (
+            <div
+              className="w-full h-auto animate-float"
+              dangerouslySetInnerHTML={{ __html: content.hero_svg }}
+            />
+          ) : content.hero_image ? (
             <NextImage
-              className="max-w-full h-auto"
+              className="max-w-full h-auto animate-float"
               src={content.hero_image}
               alt="Hero Image"
               width={400}
               height={400}
               priority
               placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwEAAhEDEEA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgIBAwQDAAAAAAAAAAAAAQIDBBEABRIGEyExQVGB/8QAFAEBAAAAAAAAAAAAAAAAAAAAA//EABcRAAMBAAAAAAAAAAAAAAAAAAACEQH/2gAMAwEAAhEDEQA/ALZV2+5HaIJJKruwjUsd+Byc4zgfQB+tMV+maFSEQVqleFQMKI4lUD7gDAGlKUqZGf/Z"
             />
-          </div>
-        )}
+          ) : null}
+        </div>
       </div>
     </section>
   );

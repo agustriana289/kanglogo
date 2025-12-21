@@ -37,42 +37,12 @@ export default function Featured() {
 
   return (
     <section
-      className="pt-12 px-6 py-8 sm:py-12 lg:px-8 relative"
+      className="pt-12 md:pt-24 px-6 py-8 sm:py-12 lg:px-8 relative"
       id="featured"
     >
-      {/* Pembatas Bergelombang (Divider) */}
-      <div className="divider absolute top-0 left-0 w-full">
-        <svg
-          className="transform rotate-180 absolute bottom-0 fill-slate-100 h-[90px] md:h-[150px] w-full"
-          preserveAspectRatio="none"
-          viewBox="0 0 1000 37"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g className="fill-slate-100">
-            <path d="M0 0h1000v1.48H0z"></path>
-            <path
-              d="M0 0h1000v29.896S550 37 500 37 0 29.896 0 29.896V0Z"
-              opacity=".2"
-            ></path>
-            <path
-              d="M0 0h1000v22.792S600 37 500 37 0 22.792 0 22.792V0Z"
-              opacity=".3"
-            ></path>
-            <path
-              d="M0 0h1000v15.688S650 37 500 37 0 15.688 0 15.688V0Z"
-              opacity=".4"
-            ></path>
-            <path
-              d="M0 0h1000v8.584S700 37 500 37 0 8.584 0 8.584V0Z"
-              opacity=".5"
-            ></path>
-            <path d="M0 0v1.48s250 35.52 500 35.52 500-35.52 500-35.52V0H0Z"></path>
-          </g>
-        </svg>
-      </div>
 
       {/* Konten Utama */}
-      <div className="mx-auto max-w-7xl relative z-10">
+      <div className="mx-auto max-w-7xl relative z-10 pt-12">
         <div className="text-center mb-12">
           <h1 className="max-w-2xl mx-auto font-manrope font-bold text-4xl text-slate-700 mb-5 md:text-6xl leading-tight">
             {content.featured_title}
