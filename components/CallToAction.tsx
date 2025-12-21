@@ -14,19 +14,57 @@ export default function CallToAction() {
 
   const fetchContent = async () => {
     try {
-      const { data } = await supabase.from('landing_page_content').select('*').eq('section', 'call_to_action');
-      const grouped = data?.reduce((acc: any, item: any) => { acc[item.key_name] = item.value; return acc; }, {});
+      // Fetch Call to Action content
+      const { data: ctaData } = await supabase
+        .from("landing_page_content")
+        .select("*")
+        .eq("section", "call_to_action");
+
+      // Fetch Hero content for background
+      const { data: heroData } = await supabase
+        .from("landing_page_content")
+        .select("*")
+        .eq("section", "hero")
+        .eq("key_name", "hero_background")
+        .single();
+
+      const grouped = ctaData?.reduce((acc: any, item: any) => {
+        acc[item.key_name] = item.value;
+        return acc;
+      }, {});
+
+      // Add hero background to content
+      if (heroData) {
+        grouped.hero_background = heroData.value;
+      }
+
       setContent(grouped || {});
       setLoading(false);
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       setLoading(false);
     }
   };
 
-  if (loading) return <section className="bg-primary py-12" id="call"><div className="flex justify-center h-16"><div className="animate-spin rounded-full h-8 w-8 border border-white"></div></div></section>;
+  if (loading)
+    return (
+      <section className="bg-primary py-12" id="call">
+        <div className="flex justify-center h-16">
+          <div className="animate-spin rounded-full h-8 w-8 border border-white"></div>
+        </div>
+      </section>
+    );
+
   return (
-    <section className="bg-primary py-12 px-4 sm:px-0 bg-primary overflow-hidden bg-no-repeat bg-cover bg-center bg-[url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN9oQmdsmqogVJbD74a5hDrU0UJQuDbUzcQ2knFTw5YGbJz5R5i6n4FvOmqndZmNhTteIW4USYTDkTRXFEyUcEQWk5ENJbUIFBeuOj5oZqSSB1jnI6M7q7sZajQPzx1fdBQwB5dn7nC_N81UZ-bHBiH95gUgolTjWHegrPaQp6LMV-gSf_pNsUDGf-RE1N/s3125/Bg.webp)]" id="call">
+    <section
+      className="bg-primary py-12 px-4 sm:px-0 bg-primary overflow-hidden bg-no-repeat bg-cover bg-center"
+      style={{
+        backgroundImage: content.hero_background
+          ? `url(${content.hero_background})`
+          : undefined,
+      }}
+      id="call"
+    >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="font-manrope font-bold text-4xl text-white mb-5 md:text-6xl leading-[50px]">
           {content.cta_title}
