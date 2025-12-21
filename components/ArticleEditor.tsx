@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { sendChannelNotification } from '@/lib/telegram';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
@@ -201,6 +202,12 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
 
         if (error) throw error;
         savedArticle = data;
+
+        // Send Notification to Channel if status is published
+        if (articleData.status === 'published') {
+          const msg = `📝 <b>Artikel Baru!</b>\n\n<b>${articleData.title}</b>\n\n${articleData.excerpt}\n\n📖 Baca selengkapnya: https://kanglogo.com/blog/${articleData.slug}`;
+          await sendChannelNotification(msg, articleData.featured_image);
+        }
       }
 
       // Handle categories

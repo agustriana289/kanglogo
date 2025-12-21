@@ -6,6 +6,7 @@ import { useAlert } from "@/components/providers/AlertProvider";
 import { MarketplaceAsset } from "@/types/marketplace";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
 import { uploadFile } from "@/lib/supabase-storage";
+import { sendChannelNotification } from "@/lib/telegram";
 import {
   PlusIcon,
   PencilIcon,
@@ -338,6 +339,10 @@ export default function MarketplaceManagementPage() {
 
         fetchAssets();
         showAlert("success", "Berhasil", "Produk berhasil ditambahkan!");
+
+        // Send Notification to Channel
+        const msg = `🛍️ <b>Produk Baru!</b>\n\n<b>${updatedFormData.nama_aset}</b>\n\nHarga: <b>Rp ${updatedFormData.harga_aset.toLocaleString('id-ID')}</b>\nTagline: ${updatedFormData.tagline}\n\n🛒 Beli sekarang: https://kanglogo.com/store/${updatedFormData.slug}`;
+        await sendChannelNotification(msg, updatedFormData.image_url);
       }
 
       setShowModal(false);
