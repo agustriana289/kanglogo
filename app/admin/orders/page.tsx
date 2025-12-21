@@ -30,10 +30,7 @@ import {
 import Link from "next/link";
 import { format, addDays, isBefore } from "date-fns";
 import { id } from "date-fns/locale";
-import {
-  createOrderStatusNotification,
-  createOrderDeletedNotification,
-} from "@/lib/notifications";
+import { notifyOrderStatusChange } from "@/app/actions/notifications";
 
 const statusOptions = [
   {
@@ -441,7 +438,7 @@ export default function OrderManagementPage() {
 
       // Send notification if status changed
       if (editedStatus !== selectedOrder.status) {
-        await createOrderStatusNotification(selectedOrder.id, editedStatus);
+        await notifyOrderStatusChange(selectedOrder.id, editedStatus);
       }
 
       showAlert("success", "Sukses", "Pesanan berhasil diperbarui!");
@@ -614,12 +611,12 @@ export default function OrderManagementPage() {
     <button
       onClick={onChange}
       className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
-          ? variant === "header"
-            ? "text-white"
-            : "text-primary"
-          : variant === "header"
-            ? "text-white/50 hover:text-white/80"
-            : "text-gray-300 hover:text-gray-400"
+        ? variant === "header"
+          ? "text-white"
+          : "text-primary"
+        : variant === "header"
+          ? "text-white/50 hover:text-white/80"
+          : "text-gray-300 hover:text-gray-400"
         }`}
     >
       {checked ? (
@@ -734,8 +731,8 @@ export default function OrderManagementPage() {
                   setCurrentPage(1);
                 }}
                 className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === status
-                    ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
               >
                 {status}
@@ -1037,8 +1034,8 @@ export default function OrderManagementPage() {
                       <tr
                         key={order.id}
                         className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition ${selectedOrders.includes(order.id)
-                            ? "bg-primary/5"
-                            : ""
+                          ? "bg-primary/5"
+                          : ""
                           }`}
                       >
                         <td className="px-6 py-4">
@@ -1144,8 +1141,8 @@ export default function OrderManagementPage() {
                     <button
                       onClick={() => setCurrentPage(page as number)}
                       className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                          ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
-                          : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
+                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                        : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
                         }`}
                     >
                       {page}
@@ -1192,8 +1189,8 @@ export default function OrderManagementPage() {
                       setCurrentPage(1);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${itemsPerPage === value
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700 dark:text-gray-300"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-gray-700 dark:text-gray-300"
                       }`}
                   >
                     {value} halaman
@@ -1527,8 +1524,8 @@ export default function OrderManagementPage() {
                             )
                           }
                           className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900 overflow-hidden ${finalFileLink
-                              ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
-                              : ""
+                            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
+                            : ""
                             }`}
                         >
                           {finalFileLink ? (
