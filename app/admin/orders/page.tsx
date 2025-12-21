@@ -30,7 +30,7 @@ import {
 import Link from "next/link";
 import { format, addDays, isBefore } from "date-fns";
 import { id } from "date-fns/locale";
-import { notifyOrderStatusChange } from "@/app/actions/notifications";
+import { notifyOrderStatusChange, notifyOrderDeleted } from "@/app/actions/notifications";
 
 const statusOptions = [
   {
@@ -1714,7 +1714,7 @@ export default function OrderManagementPage() {
                       if (error) throw error;
 
                       // Send delete notification
-                      await createOrderDeletedNotification(
+                      await notifyOrderDeleted(
                         selectedOrder.invoice_number,
                         selectedOrder.customer_name
                       );
