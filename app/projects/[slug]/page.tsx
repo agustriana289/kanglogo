@@ -3,7 +3,7 @@ import { headers } from "next/headers"; // Tambahkan import ini
 import { supabase } from "@/lib/supabase";
 import { Project } from "@/types/project";
 import ShareButtons from "./ShareButtons";
-import Image from "next/image";
+import ProjectImage from "@/components/ProjectImage";
 
 export const revalidate = 0;
 
@@ -61,19 +61,12 @@ export default async function ProjectDetailPage({
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Kolom Kiri: Gambar */}
-          <div className="relative w-full h-80 lg:h-full lg:min-h-[600px] rounded-2xl overflow-hidden shadow-xl">
+          {/* Kolom Kiri: Gambar */}
+          <div className="w-full">
             {project.image_url ? (
-              <Image
-                src={project.image_url}
-                alt={project.title}
-                fill
-                style={{ objectFit: "cover" }}
-                priority
-                unoptimized
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
+              <ProjectImage src={project.image_url} alt={project.title} />
             ) : (
-              <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500">
+              <div className="w-full h-80 bg-slate-200 flex items-center justify-center text-slate-500 rounded-2xl">
                 Tidak Ada Gambar
               </div>
             )}
