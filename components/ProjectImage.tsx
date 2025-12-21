@@ -16,15 +16,14 @@ export default function ProjectImage({ src, alt }: ProjectImageProps) {
   return (
     <>
       <div
-        className="relative w-full h-auto min-h-[400px] lg:min-h-[600px] rounded-2xl overflow-hidden shadow-xl cursor-zoom-in group"
+        className="relative w-full h-[400px] lg:h-[600px] rounded-2xl overflow-hidden shadow-xl cursor-zoom-in group bg-slate-200"
         onClick={() => setIsOpen(true)}
       >
         <Image
           src={src}
           alt={alt}
-          width={1200}
-          height={1200}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
         />
