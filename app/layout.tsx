@@ -1,4 +1,5 @@
 // app/layout.tsx
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -146,7 +147,9 @@ export default function RootLayout({
         <Footer />
         <PublicNotificationPopup />
         <WhatsAppFloatingButton />
-        <SeoTracker />
+        <Suspense fallback={null}>
+          <SeoTracker />
+        </Suspense>
         <Script
           src="https://www.google.com/recaptcha/api.js"
           strategy="lazyOnload"
