@@ -17,70 +17,90 @@ function generateNames(
 
   const prefixText = prefix ? `${prefix} ` : "";
   const results: GeneratedResult[] = [];
-  const seen = new Set<string>(); // Untuk hindari duplikat
+  const seen = new Set<string>();
 
-  // Jika ada inputText, tambahkan ke keywords list
-  let finalKeywords = [...keywords];
   const cleanInputText = inputText.trim();
+
+  // Jika ada inputText, hasil harus selalu mengandung inputText
   if (cleanInputText && cleanInputText.length > 0) {
-    // Tambahkan input text sebagai keyword tambahan
-    finalKeywords = [cleanInputText, ...finalKeywords];
-  }
-
-  // Shuffle keywords untuk randomness
-  const shuffledKeywords = finalKeywords.sort(() => Math.random() - 0.5);
-
-  // Generate kombinasi dengan perkalian kartesian
-  const generateCombinations = (arr: string[], length: number): string[][] => {
-    const result: string[][] = [];
-
-    if (length === 2) {
-      // Untuk 2 kata: kombinasi berbeda, hindari duplikat (A+A, B+B, dll)
-      for (let i = 0; i < arr.length; i++) {
-        for (let j = 0; j < arr.length; j++) {
-          // Skip kombinasi yang sama word-nya
-          if (i !== j) {
-            result.push([arr[i], arr[j]]);
-          }
+    if (wordLength === 2) {
+      // Kombinasi: InputText + Keyword
+      keywords.forEach((keyword) => {
+        const name = [cleanInputText, keyword].join(separator);
+        if (!seen.has(name)) {
+          const fullName = prefixText ? `${prefixText}${name}` : name;
+          results.push({ name, full_name: fullName });
+          seen.add(name);
         }
-      }
-    } else if (length === 3) {
-      // Untuk 3 kata: kombinasi berbeda
-      for (let i = 0; i < arr.length; i++) {
-        for (let j = 0; j < arr.length; j++) {
-          for (let k = 0; k < arr.length; k++) {
-            // Skip jika semua sama atau ada duplikat bersebelahan
-            if (i !== j && j !== k && i !== k) {
-              result.push([arr[i], arr[j], arr[k]]);
+      });
+      // Juga: Keyword + InputText (untuk variasi)
+      keywords.forEach((keyword) => {
+        const name = [keyword, cleanInputText].join(separator);
+        if (!seen.has(name)) {
+          const fullName = prefixText ? `${prefixText}${name}` : name;
+          results.push({ name, full_name: fullName });
+          seen.add(name);
+        }
+      });
+    } else if (wordLength === 3) {
+      // Kombinasi: InputText + Keyword1 + Keyword2
+      for (let i = 0; i < keywords.length; i++) {
+        for (let j = 0; j < keywords.length; j++) {
+          if (i !== j) {
+            const name = [cleanInputText, keywords[i], keywords[j]].join(separator);
+            if (!seen.has(name)) {
+              const fullName = prefixText ? `${prefixText}${name}` : name;
+              results.push({ name, full_name: fullName });
+              seen.add(name);
             }
           }
         }
       }
     }
+  } else {
+    // Jika TIDAK ada inputText, gunakan kombinasi dari keywords biasa
+    const shuffledKeywords = keywords.sort(() => Math.random() - 0.5);
 
-    return result;
-  };
+    const generateCombinations = (arr: string[], length: number): string[][] => {
+      const result: string[][] = [];
 
-  // Generate kombinasi dari keywords
-  const combinations = generateCombinations(shuffledKeywords, wordLength);
+      if (length === 2) {
+        for (let i = 0; i < arr.length; i++) {
+          for (let j = 0; j < arr.length; j++) {
+            if (i !== j) {
+              result.push([arr[i], arr[j]]);
+            }
+          }
+        }
+      } else if (length === 3) {
+        for (let i = 0; i < arr.length; i++) {
+          for (let j = 0; j < arr.length; j++) {
+            for (let k = 0; k < arr.length; k++) {
+              if (i !== j && j !== k && i !== k) {
+                result.push([arr[i], arr[j], arr[k]]);
+              }
+            }
+          }
+        }
+      }
 
-  // Batasi maksimal hasil ke 100 kombinasi untuk performa
-  const limitedCombinations = combinations.slice(0, 100);
+      return result;
+    };
 
-  limitedCombinations.forEach((combo) => {
-    const name = combo.join(separator);
-    // Hindari duplikat hasil akhir
-    if (!seen.has(name)) {
-      const fullName = prefixText ? `${prefixText}${name}` : name;
-      results.push({
-        name,
-        full_name: fullName,
-      });
-      seen.add(name);
-    }
-  });
+    const combinations = generateCombinations(shuffledKeywords, wordLength);
+    const limitedCombinations = combinations.slice(0, 20);
 
-  return results;
+    limitedCombinations.forEach((combo) => {
+      const name = combo.join(separator);
+      if (!seen.has(name)) {
+        const fullName = prefixText ? `${prefixText}${name}` : name;
+        results.push({ name, full_name: fullName });
+        seen.add(name);
+      }
+    });
+  }
+
+  return results.slice(0, 20);
 }
 
 export async function POST(req: NextRequest) {
