@@ -205,7 +205,13 @@ export default function ArticleEditor({ article }: ArticleEditorProps) {
 
         // Send Notification to Channel if status is published
         if (articleData.status === 'published') {
-          const msg = `📝 <b>Artikel Baru!</b>\n\n<b>${articleData.title}</b>\n\n${articleData.excerpt}\n\n📖 Baca selengkapnya: https://kanglogo.com/blog/${articleData.slug}`;
+          // Format the URL correctly: /article/YYYY/MM/slug
+          const publishDate = new Date(articleData.published_at);
+          const year = publishDate.getFullYear();
+          const month = String(publishDate.getMonth() + 1).padStart(2, '0');
+          const articleUrl = `https://kanglogo.com/article/${year}/${month}/${articleData.slug}`;
+
+          const msg = `📝 <b>Artikel Baru!</b>\n\n<b>${articleData.title}</b>\n\n${articleData.excerpt}\n\n📖 Baca selengkapnya: ${articleUrl}`;
           await sendChannelNotification(msg, articleData.featured_image);
         }
       }
