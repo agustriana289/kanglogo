@@ -6,6 +6,42 @@ import {
   GeneratedResult,
 } from "@/types/brand-name-generator";
 
+function capitalizeFirst(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function hasConsecutiveConsonants(str: string, count: number = 3): boolean {
+  const consonants = 'bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ';
+  let consecutive = 0;
+  for (const char of str) {
+    if (consonants.includes(char)) {
+      consecutive++;
+      if (consecutive >= count) return true;
+    } else {
+      consecutive = 0;
+    }
+  }
+  return false;
+}
+
+function scoreNameQuality(name: string): number {
+  let score = 100;
+
+  const length = name.length;
+  if (length < 4) score -= 30;
+  else if (length > 15) score -= 20;
+  else if (length >= 6 && length <= 12) score += 10;
+
+  if (hasConsecutiveConsonants(name, 3)) score -= 25;
+
+  const vowels = 'aeiouAEIOU';
+  const vowelCount = Array.from(name).filter(c => vowels.includes(c)).length;
+  const vowelRatio = vowelCount / length;
+  if (vowelRatio >= 0.3 && vowelRatio <= 0.5) score += 10;
+
+  return Math.max(0, score);
+}
+
 function generateNames(
   keywords: string[],
   inputText: string,
@@ -16,88 +52,95 @@ function generateNames(
   if (keywords.length === 0) return [];
 
   const prefixText = prefix ? `${prefix} ` : "";
-  const results: GeneratedResult[] = [];
-  const seen = new Set<string>();
+  const results: Map<string, { name: string; full_name: string; score: number }> = new Map();
 
   const cleanInputText = inputText.trim();
+  const finalKeywords = cleanInputText && cleanInputText.length > 0
+    ? [cleanInputText, ...keywords]
+    : keywords;
 
-  if (cleanInputText && cleanInputText.length > 0) {
-    // Dengan input text - kombinasi input + keywords
-    if (wordLength === 2) {
-      keywords.forEach((keyword) => {
-        // Posisi 1: InputText + Keyword
-        const name1 = [cleanInputText, keyword].join(separator);
-        if (!seen.has(name1)) {
-          const fullName = prefixText ? `${prefixText}${name1}` : name1;
-          results.push({ name: name1, full_name: fullName });
-          seen.add(name1);
-        }
+  const addResult = (name: string) => {
+    const normalized = name.toLowerCase();
+    if (!results.has(normalized) && name.length >= 4 && name.length <= 20) {
+      const score = scoreNameQuality(name);
+      if (score > 30) {
+        const capitalizedName = separator === " " || separator === "-"
+          ? name.split(separator).map(capitalizeFirst).join(separator)
+          : capitalizeFirst(name);
+        const fullName = prefixText ? `${prefixText}${capitalizedName}` : capitalizedName;
+        results.set(normalized, { name: capitalizedName, full_name: fullName, score });
+      }
+    }
+  };
 
-        // Posisi 2: Keyword + InputText
-        const name2 = [keyword, cleanInputText].join(separator);
-        if (!seen.has(name2)) {
-          const fullName = prefixText ? `${prefixText}${name2}` : name2;
-          results.push({ name: name2, full_name: fullName });
-          seen.add(name2);
-        }
-      });
-    } else if (wordLength === 3) {
-      // 3 kata dengan input text
-      for (let i = 0; i < keywords.length; i++) {
-        for (let j = 0; j < keywords.length; j++) {
-          if (i !== j) {
-            // Posisi 1: InputText + K1 + K2
-            const name1 = [cleanInputText, keywords[i], keywords[j]].join(separator);
-            if (!seen.has(name1)) {
-              const fullName = prefixText ? `${prefixText}${name1}` : name1;
-              results.push({ name: name1, full_name: fullName });
-              seen.add(name1);
+  if (wordLength === 2) {
+    for (let i = 0; i < finalKeywords.length; i++) {
+      for (let j = 0; j < finalKeywords.length; j++) {
+        if (i !== j) {
+          const word1 = finalKeywords[i].toLowerCase();
+          const word2 = finalKeywords[j].toLowerCase();
+
+          if (separator) {
+            addResult([word1, word2].join(separator));
+          } else {
+            addResult(word1 + word2);
+
+            if (word1.length >= 3 && word2.length >= 3) {
+              addResult(word1.slice(0, -1) + word2.slice(1));
+              addResult(word1.slice(0, -2) + word2.slice(2));
             }
 
-            // Posisi 2: K1 + InputText + K2
-            const name2 = [keywords[i], cleanInputText, keywords[j]].join(separator);
-            if (!seen.has(name2)) {
-              const fullName = prefixText ? `${prefixText}${name2}` : name2;
-              results.push({ name: name2, full_name: fullName });
-              seen.add(name2);
+            if (word1.length >= 4 && word2.length >= 4) {
+              const mid1 = Math.floor(word1.length / 2);
+              const mid2 = Math.floor(word2.length / 2);
+              addResult(word1.slice(0, mid1) + word2.slice(mid2));
+              addResult(word1.slice(0, mid1 + 1) + word2.slice(mid2));
             }
 
-            // Posisi 3: K1 + K2 + InputText
-            const name3 = [keywords[i], keywords[j], cleanInputText].join(separator);
-            if (!seen.has(name3)) {
-              const fullName = prefixText ? `${prefixText}${name3}` : name3;
-              results.push({ name: name3, full_name: fullName });
-              seen.add(name3);
+            if (word1.length >= 3) {
+              addResult(word1.slice(0, 3) + word2);
+              addResult(word1.slice(0, 2) + word2);
+            }
+            if (word2.length >= 3) {
+              addResult(word1 + word2.slice(-3));
+              addResult(word1 + word2.slice(-2));
+            }
+
+            for (let k = 1; k < Math.min(word1.length, 3); k++) {
+              const overlap = word1.slice(-k);
+              if (word2.startsWith(overlap)) {
+                addResult(word1 + word2.slice(k));
+              }
             }
           }
         }
       }
     }
-  } else {
-    // Tanpa input text - kombinasi keywords saja
-    if (wordLength === 2) {
-      for (let i = 0; i < keywords.length; i++) {
-        for (let j = 0; j < keywords.length; j++) {
-          if (i !== j) {
-            const name = [keywords[i], keywords[j]].join(separator);
-            if (!seen.has(name)) {
-              const fullName = prefixText ? `${prefixText}${name}` : name;
-              results.push({ name, full_name: fullName });
-              seen.add(name);
-            }
-          }
-        }
-      }
-    } else if (wordLength === 3) {
-      for (let i = 0; i < keywords.length; i++) {
-        for (let j = 0; j < keywords.length; j++) {
-          for (let k = 0; k < keywords.length; k++) {
-            if (i !== j && j !== k && i !== k) {
-              const name = [keywords[i], keywords[j], keywords[k]].join(separator);
-              if (!seen.has(name)) {
-                const fullName = prefixText ? `${prefixText}${name}` : name;
-                results.push({ name, full_name: fullName });
-                seen.add(name);
+  } else if (wordLength === 3) {
+    for (let i = 0; i < finalKeywords.length; i++) {
+      for (let j = 0; j < finalKeywords.length; j++) {
+        for (let k = 0; k < finalKeywords.length; k++) {
+          if (i !== j && j !== k && i !== k) {
+            const word1 = finalKeywords[i].toLowerCase();
+            const word2 = finalKeywords[j].toLowerCase();
+            const word3 = finalKeywords[k].toLowerCase();
+
+            if (separator) {
+              addResult([word1, word2, word3].join(separator));
+            } else {
+              addResult(word1 + word2 + word3);
+
+              if (word1.length >= 2 && word2.length >= 2 && word3.length >= 2) {
+                addResult(word1.slice(0, 2) + word2.slice(0, 2) + word3);
+                addResult(word1 + word2.slice(0, 2) + word3.slice(0, 2));
+                addResult(word1.slice(0, 2) + word2 + word3.slice(0, 2));
+              }
+
+              if (word1.length >= 3 && word2.length >= 3 && word3.length >= 3) {
+                const mid1 = Math.floor(word1.length / 2);
+                const mid2 = Math.floor(word2.length / 2);
+                const mid3 = Math.floor(word3.length / 2);
+                addResult(word1.slice(0, mid1) + word2.slice(0, mid2) + word3.slice(mid3));
               }
             }
           }
@@ -106,7 +149,16 @@ function generateNames(
     }
   }
 
-  return results;
+  const sortedResults = Array.from(results.values())
+    .sort((a, b) => b.score - a.score)
+    .map(({ name, full_name }) => ({ name, full_name }));
+
+  for (let i = sortedResults.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sortedResults[i], sortedResults[j]] = [sortedResults[j], sortedResults[i]];
+  }
+
+  return sortedResults;
 }
 
 export async function POST(req: NextRequest) {

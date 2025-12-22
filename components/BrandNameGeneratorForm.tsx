@@ -24,6 +24,7 @@ export default function BrandNameGeneratorForm() {
   const [loadingIndustries, setLoadingIndustries] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const itemsPerPage = 12;
 
   // Fetch industries saat component mount
@@ -52,6 +53,7 @@ export default function BrandNameGeneratorForm() {
     setError("");
     setResults([]);
     setCurrentPage(1);
+    setCopiedIndex(null);
 
     if (!selectedIndustry) {
       setError("Pilih industri terlebih dahulu");
@@ -89,8 +91,10 @@ export default function BrandNameGeneratorForm() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   if (loadingIndustries) {
@@ -232,22 +236,29 @@ export default function BrandNameGeneratorForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {results
               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .map((result, index) => (
-                <div
-                  key={index}
-                  className="p-6 bg-white border border-slate-200 rounded-3xl hover:shadow-md transition-all"
-                >
-                  <p className="text-lg font-bold text-slate-800 mb-4 break-words">
-                    {result.full_name}
-                  </p>
+              .map((result, index) => {
+                const globalIndex = (currentPage - 1) * itemsPerPage + index;
+                const isCopied = copiedIndex === globalIndex;
+
+                return (
                   <button
-                    onClick={() => copyToClipboard(result.full_name)}
-                    className="w-full text-sm bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-colors"
+                    key={index}
+                    onClick={() => copyToClipboard(result.full_name, globalIndex)}
+                    className={`p-6 border rounded-3xl transition-all text-left w-full ${isCopied
+                        ? 'bg-primary border-primary shadow-lg scale-105'
+                        : 'bg-white border-slate-200 hover:shadow-md hover:border-primary/30 hover:scale-102'
+                      }`}
                   >
-                    Salin
+                    <p className={`text-lg font-bold break-words ${isCopied ? 'text-white' : 'text-slate-800'
+                      }`}>
+                      {result.full_name}
+                    </p>
+                    {isCopied && (
+                      <p className="text-sm text-white/90 mt-2 font-medium">✓ Tersalin!</p>
+                    )}
                   </button>
-                </div>
-              ))}
+                );
+              })}
           </div>
 
           {/* Pagination */}
@@ -257,11 +268,10 @@ export default function BrandNameGeneratorForm() {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    currentPage === page
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
                 >
                   {page}
                 </button>
