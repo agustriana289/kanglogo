@@ -23,6 +23,7 @@ interface Article {
   status: string;
   published_at: string;
   created_at: string;
+  views: number;
 }
 
 export default function BlogManagementPage() {
@@ -268,6 +269,7 @@ export default function BlogManagementPage() {
                     <th className="px-6 py-4 rounded-tl-lg">Judul</th>
                     <th className="px-6 py-4">Status</th>
                     <th className="px-6 py-4">Tanggal Dibuat</th>
+                    <th className="px-6 py-4">Views</th>
                     <th className="px-6 py-4">Tanggal Dipublikasikan</th>
                     <th className="px-6 py-4 text-right rounded-tr-lg">Aksi</th>
                   </tr>
@@ -300,6 +302,9 @@ export default function BlogManagementPage() {
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
                         {formatDate(article.created_at)}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
+                        {article.views || 0}
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-300">
                         {article.published_at
@@ -358,6 +363,9 @@ export default function BlogManagementPage() {
                   <div className="text-sm text-gray-500 dark:text-gray-400 mb-3 ml-8">
                     <p className="mb-1">
                       <span className="font-medium">Dibuat:</span> {formatDate(article.created_at)}
+                    </p>
+                    <p className="mb-1">
+                      <span className="font-medium">Views:</span> {article.views || 0}
                     </p>
                     <p>
                       <span className="font-medium">Dipublikasikan:</span>{" "}

@@ -1,7 +1,7 @@
 // components/ArticleCard.tsx
 import Link from 'next/link';
 import Image from 'next/image';
-import { ClockIcon, UserIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, UserIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 interface ArticleCardProps {
     article: {
@@ -10,6 +10,7 @@ interface ArticleCardProps {
         excerpt: string;
         published_at: string;
         author_name: string;
+        views?: number;
         featured_image?: string;
         categories: {
             id: number;
@@ -79,6 +80,9 @@ export default function ArticleCard({ article }: ArticleCardProps) {
                     </span>
                     <span className="text-gray-500 flex gap-1">
                         <UserIcon className="w-4 h-4" /> {article.author_name}
+                    </span>
+                    <span className="text-gray-500 flex gap-1 items-center ml-auto">
+                        <EyeIcon className="w-4 h-4" /> {article.views || 0}
                     </span>
                 </div>
             </div>

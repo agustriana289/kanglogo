@@ -14,6 +14,7 @@ interface Article {
   excerpt: string;
   featured_image: string;
   published_at: string;
+  views: number; // View count
   author_name: string; // Diubah menjadi string langsung
   categories: {
     id: number;
@@ -80,7 +81,9 @@ export default function DynamicArticlesList({
           slug,
           excerpt,
           featured_image,
+          featured_image,
           published_at,
+          views,
           author_name,
           article_categories(
             categories(id, name, slug)

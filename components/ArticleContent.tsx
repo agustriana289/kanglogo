@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -46,6 +46,24 @@ export default function ArticleContent({ article }: ArticleContentProps) {
   useEffect(() => {
     setCurrentUrl(window.location.href);
   }, []);
+
+  // Effect to increment view count
+  const viewIncremented = useRef(false);
+  useEffect(() => {
+    const incrementView = async () => {
+      // Prevent double counting in Strict Mode or re-renders
+      if (viewIncremented.current) return;
+      viewIncremented.current = true;
+
+      try {
+        await supabase.rpc('increment_article_views', { article_id: article.id });
+      } catch (error) {
+        console.error('Error incrementing view count:', error);
+      }
+    };
+
+    incrementView();
+  }, [article.id]);
 
   useEffect(() => {
     fetchRelatedArticles();
