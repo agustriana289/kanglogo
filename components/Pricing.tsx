@@ -80,13 +80,11 @@ export default function Pricing() {
           {featuredService.packages.map((plan, index) => (
             <div
               key={index}
-              className={`flex-col p-6 bg-white rounded-2xl shadow-md transform transition-transform items-center`}
+              className={`flex-col p-8 bg-white rounded-3xl shadow-sm hover:shadow-md transform transition-transform items-center`}
             >
               <div className="mb-6">
-                <div
-                  className={`text-center pb-4 mb-6 border-b border-slate-200`}
-                >
-                  <p className={`text-3xl font-bold text-primary`}>
+                <div className={`text-center pb-4`}>
+                  <p className={`text-4xl font-bold text-primary`}>
                     {plan.name}
                   </p>
                 </div>
@@ -142,7 +140,7 @@ export default function Pricing() {
                   )}{" "}
                 </p>
                 <Link
-                  className={`bg-primary text-white py-2 px-4 rounded-full text-lg transition duration-300 ease-in-out inline-flex items-center flex items-center justify-center w-full`}
+                  className={`bg-primary text-white py-2 px-4 rounded-full text-lg items-center flex items-center justify-center hover:bg-primary/70`}
                   href={`/order/new?service=${encodeURIComponent(
                     featuredService.slug
                   )}&package=${encodeURIComponent(plan.name)}`}
@@ -174,16 +172,6 @@ export default function Pricing() {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* --- Bagian 2: Grid Layanan Lainnya --- */}
-        <div className="text-center justify-center">
-          <Link
-            className="inline-flex items-center justify-center py-2.5 px-6 text-base font-semibold text-center text-white rounded-full bg-primary shadow-sm hover:bg-primary/80 transition-all duration-500"
-            href="/services"
-          >
-            Semua layanan
-          </Link>
         </div>
       </div>
     </section>
