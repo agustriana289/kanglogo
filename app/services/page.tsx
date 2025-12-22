@@ -107,10 +107,11 @@ export default function ServicesPage() {
             <button
               key={service.id}
               onClick={() => handleServiceClick(service)}
-              className={`px-4 py-2 rounded-full text-base font-medium transition-all ${selectedService.id === service.id
+              className={`px-4 py-2 rounded-full text-base font-medium transition-all ${
+                selectedService.id === service.id
                   ? "bg-primary text-white"
                   : "bg-white text-slate-700 hover:shadow-sm"
-                }`}
+              }`}
             >
               {service.title}
             </button>
@@ -118,16 +119,16 @@ export default function ServicesPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-6 place-items-center mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 place-items-center mb-10">
           {selectedService.packages && selectedService.packages.length > 0 ? (
             selectedService.packages.map((plan, index) => (
               <div
                 key={index}
-                className="flex-col p-6 bg-white rounded-2xl shadow-md transform transition-transform items-center"
+                className="flex-col p-8 bg-white rounded-3xl shadow-sm hover:shadow-md transform transition-transform items-center"
               >
                 <div className="mb-6">
-                  <div className="text-center pb-4 mb-6 border-b border-slate-200">
-                    <p className="text-3xl font-bold text-primary">
+                  <div className="text-center pb-4">
+                    <p className="text-4xl font-bold text-primary">
                       {plan.name}
                     </p>
                   </div>
@@ -175,7 +176,7 @@ export default function ServicesPage() {
                       {plan.finalPrice}
                     </span>
                   </p>
-                  <p className="text-md font-semibold md:mb-8 md:mt-2 uppercase text-slate-400 leading-4">
+                  <p className="text-md font-semibold mb-6 md:mb-8 md:mt-2 uppercase text-slate-400 leading-4">
                     {plan.beforeoriginalPrice}{" "}
                     {plan.originalPrice && (
                       <span className="line-through">{plan.originalPrice}</span>
@@ -185,7 +186,7 @@ export default function ServicesPage() {
                     href={`/order/new?service=${encodeURIComponent(
                       selectedService.slug
                     )}&package=${encodeURIComponent(plan.name)}`}
-                    className="bg-primary text-white py-2 px-4 rounded-full text-lg transition duration-300 ease-in-out inline-flex items-center flex items-center justify-center w-full"
+                    className="bg-primary text-white py-2 px-4 rounded-full text-lg hover:bg-primary/70 inline-flex items-center justify-center w-full transition-colors"
                   >
                     <svg
                       className="mr-2 w-4 md:w-6 aspect-square"
