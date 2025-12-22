@@ -22,12 +22,9 @@ function generateNames(
   const cleanInputText = inputText.trim();
 
   if (cleanInputText && cleanInputText.length > 0) {
-    // Jika ada inputText, generate dengan input text selalu ada tapi posisi random
-    const shuffledKeywords = keywords.sort(() => Math.random() - 0.5);
-
+    // Dengan input text - kombinasi input + keywords
     if (wordLength === 2) {
-      // Generate kombinasi dengan input text di posisi 1 atau 2 secara random
-      shuffledKeywords.forEach((keyword) => {
+      keywords.forEach((keyword) => {
         // Posisi 1: InputText + Keyword
         const name1 = [cleanInputText, keyword].join(separator);
         if (!seen.has(name1)) {
@@ -45,13 +42,12 @@ function generateNames(
         }
       });
     } else if (wordLength === 3) {
-      // Untuk 3 kata dengan input text
-      // Variasi: InputText + K1 + K2, K1 + InputText + K2, K1 + K2 + InputText
-      for (let i = 0; i < shuffledKeywords.length; i++) {
-        for (let j = 0; j < shuffledKeywords.length; j++) {
+      // 3 kata dengan input text
+      for (let i = 0; i < keywords.length; i++) {
+        for (let j = 0; j < keywords.length; j++) {
           if (i !== j) {
             // Posisi 1: InputText + K1 + K2
-            const name1 = [cleanInputText, shuffledKeywords[i], shuffledKeywords[j]].join(separator);
+            const name1 = [cleanInputText, keywords[i], keywords[j]].join(separator);
             if (!seen.has(name1)) {
               const fullName = prefixText ? `${prefixText}${name1}` : name1;
               results.push({ name: name1, full_name: fullName });
@@ -59,7 +55,7 @@ function generateNames(
             }
 
             // Posisi 2: K1 + InputText + K2
-            const name2 = [shuffledKeywords[i], cleanInputText, shuffledKeywords[j]].join(separator);
+            const name2 = [keywords[i], cleanInputText, keywords[j]].join(separator);
             if (!seen.has(name2)) {
               const fullName = prefixText ? `${prefixText}${name2}` : name2;
               results.push({ name: name2, full_name: fullName });
@@ -67,7 +63,7 @@ function generateNames(
             }
 
             // Posisi 3: K1 + K2 + InputText
-            const name3 = [shuffledKeywords[i], shuffledKeywords[j], cleanInputText].join(separator);
+            const name3 = [keywords[i], keywords[j], cleanInputText].join(separator);
             if (!seen.has(name3)) {
               const fullName = prefixText ? `${prefixText}${name3}` : name3;
               results.push({ name: name3, full_name: fullName });
@@ -78,14 +74,12 @@ function generateNames(
       }
     }
   } else {
-    // Jika TIDAK ada inputText, generate kombinasi dari keywords saja
-    const shuffledKeywords = keywords.sort(() => Math.random() - 0.5);
-
+    // Tanpa input text - kombinasi keywords saja
     if (wordLength === 2) {
-      for (let i = 0; i < shuffledKeywords.length; i++) {
-        for (let j = 0; j < shuffledKeywords.length; j++) {
+      for (let i = 0; i < keywords.length; i++) {
+        for (let j = 0; j < keywords.length; j++) {
           if (i !== j) {
-            const name = [shuffledKeywords[i], shuffledKeywords[j]].join(separator);
+            const name = [keywords[i], keywords[j]].join(separator);
             if (!seen.has(name)) {
               const fullName = prefixText ? `${prefixText}${name}` : name;
               results.push({ name, full_name: fullName });
@@ -95,11 +89,11 @@ function generateNames(
         }
       }
     } else if (wordLength === 3) {
-      for (let i = 0; i < shuffledKeywords.length; i++) {
-        for (let j = 0; j < shuffledKeywords.length; j++) {
-          for (let k = 0; k < shuffledKeywords.length; k++) {
+      for (let i = 0; i < keywords.length; i++) {
+        for (let j = 0; j < keywords.length; j++) {
+          for (let k = 0; k < keywords.length; k++) {
             if (i !== j && j !== k && i !== k) {
-              const name = [shuffledKeywords[i], shuffledKeywords[j], shuffledKeywords[k]].join(separator);
+              const name = [keywords[i], keywords[j], keywords[k]].join(separator);
               if (!seen.has(name)) {
                 const fullName = prefixText ? `${prefixText}${name}` : name;
                 results.push({ name, full_name: fullName });
@@ -112,8 +106,7 @@ function generateNames(
     }
   }
 
-  // Limit ke maksimal 200 hasil, tapi kembalikan semuanya untuk pagination di frontend
-  return results.slice(0, 200);
+  return results;
 }
 
 export async function POST(req: NextRequest) {
