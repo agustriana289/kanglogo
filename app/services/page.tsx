@@ -85,20 +85,19 @@ export default function ServicesPage() {
   }
 
   return (
-    <section className="py-24 bg-slate-100">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <section className="py-12 sm:py-24 bg-slate-100">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="max-w-2xl mx-auto text-center font-manrope font-bold text-4xl text-slate-700 sm:mb-5 md:text-6xl leading-[50px]">
-            Jasa
-            <span className="text-primary">
-              {" "}
+        <div className="pb-16">
+          <div className="text-center">
+            <h1 className="max-w-2xl mx-auto font-manrope font-bold text-4xl text-slate-700 mb-5 md:text-6xl leading-[50px]">
+              <span className="text-primary">Jasa </span>
               {selectedService.title.replace("Jasa ", "")}
-            </span>
-          </h1>
-          <p className="sm:max-w-2xl sm:mx-auto text-center text-base font-normal leading-7 text-slate-700 mb-9">
-            {selectedService.short_description}
-          </p>
+            </h1>
+            <p className="sm:max-w-2xl sm:mx-auto text-center text-base font-normal leading-7 text-slate-700 mb-9">
+              {selectedService.short_description}
+            </p>
+          </div>
         </div>
 
         {/* Service Selection Buttons */}
@@ -119,14 +118,14 @@ export default function ServicesPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 place-items-center mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 place-items-center mb-16">
           {selectedService.packages && selectedService.packages.length > 0 ? (
             selectedService.packages.map((plan, index) => (
               <div
                 key={index}
-                className="flex-col p-8 bg-white rounded-3xl shadow-sm hover:shadow-md transform transition-transform items-center"
+                className="flex-col p-8 bg-white rounded-3xl shadow-sm hover:shadow-md transform transition-transform items-center w-full"
               >
-                <div className="mb-6">
+                <div className="mb-6 w-full">
                   <div className="text-center pb-4">
                     <p className="text-4xl font-bold text-primary">
                       {plan.name}
@@ -170,7 +169,7 @@ export default function ServicesPage() {
                     </ul>
                   </div>
                 </div>
-                <div className="text-center">
+                <div className="text-center w-full">
                   <p className="text-4xl font-extrabold text-slate-700">
                     <span className="text-4xl font-bold mb-8">
                       {plan.finalPrice}
