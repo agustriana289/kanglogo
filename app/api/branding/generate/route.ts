@@ -21,33 +21,71 @@ function generateNames(
 
   const cleanInputText = inputText.trim();
 
-  // Jika ada inputText, hasil harus selalu mengandung inputText
   if (cleanInputText && cleanInputText.length > 0) {
+    // Jika ada inputText, generate dengan input text selalu ada tapi posisi random
+    const shuffledKeywords = keywords.sort(() => Math.random() - 0.5);
+
     if (wordLength === 2) {
-      // Kombinasi: InputText + Keyword
-      keywords.forEach((keyword) => {
-        const name = [cleanInputText, keyword].join(separator);
-        if (!seen.has(name)) {
-          const fullName = prefixText ? `${prefixText}${name}` : name;
-          results.push({ name, full_name: fullName });
-          seen.add(name);
+      // Generate kombinasi dengan input text di posisi 1 atau 2 secara random
+      shuffledKeywords.forEach((keyword) => {
+        // Posisi 1: InputText + Keyword
+        const name1 = [cleanInputText, keyword].join(separator);
+        if (!seen.has(name1)) {
+          const fullName = prefixText ? `${prefixText}${name1}` : name1;
+          results.push({ name: name1, full_name: fullName });
+          seen.add(name1);
         }
-      });
-      // Juga: Keyword + InputText (untuk variasi)
-      keywords.forEach((keyword) => {
-        const name = [keyword, cleanInputText].join(separator);
-        if (!seen.has(name)) {
-          const fullName = prefixText ? `${prefixText}${name}` : name;
-          results.push({ name, full_name: fullName });
-          seen.add(name);
+
+        // Posisi 2: Keyword + InputText
+        const name2 = [keyword, cleanInputText].join(separator);
+        if (!seen.has(name2)) {
+          const fullName = prefixText ? `${prefixText}${name2}` : name2;
+          results.push({ name: name2, full_name: fullName });
+          seen.add(name2);
         }
       });
     } else if (wordLength === 3) {
-      // Kombinasi: InputText + Keyword1 + Keyword2
-      for (let i = 0; i < keywords.length; i++) {
-        for (let j = 0; j < keywords.length; j++) {
+      // Untuk 3 kata dengan input text
+      // Variasi: InputText + K1 + K2, K1 + InputText + K2, K1 + K2 + InputText
+      for (let i = 0; i < shuffledKeywords.length; i++) {
+        for (let j = 0; j < shuffledKeywords.length; j++) {
           if (i !== j) {
-            const name = [cleanInputText, keywords[i], keywords[j]].join(separator);
+            // Posisi 1: InputText + K1 + K2
+            const name1 = [cleanInputText, shuffledKeywords[i], shuffledKeywords[j]].join(separator);
+            if (!seen.has(name1)) {
+              const fullName = prefixText ? `${prefixText}${name1}` : name1;
+              results.push({ name: name1, full_name: fullName });
+              seen.add(name1);
+            }
+
+            // Posisi 2: K1 + InputText + K2
+            const name2 = [shuffledKeywords[i], cleanInputText, shuffledKeywords[j]].join(separator);
+            if (!seen.has(name2)) {
+              const fullName = prefixText ? `${prefixText}${name2}` : name2;
+              results.push({ name: name2, full_name: fullName });
+              seen.add(name2);
+            }
+
+            // Posisi 3: K1 + K2 + InputText
+            const name3 = [shuffledKeywords[i], shuffledKeywords[j], cleanInputText].join(separator);
+            if (!seen.has(name3)) {
+              const fullName = prefixText ? `${prefixText}${name3}` : name3;
+              results.push({ name: name3, full_name: fullName });
+              seen.add(name3);
+            }
+          }
+        }
+      }
+    }
+  } else {
+    // Jika TIDAK ada inputText, generate kombinasi dari keywords saja
+    const shuffledKeywords = keywords.sort(() => Math.random() - 0.5);
+
+    if (wordLength === 2) {
+      for (let i = 0; i < shuffledKeywords.length; i++) {
+        for (let j = 0; j < shuffledKeywords.length; j++) {
+          if (i !== j) {
+            const name = [shuffledKeywords[i], shuffledKeywords[j]].join(separator);
             if (!seen.has(name)) {
               const fullName = prefixText ? `${prefixText}${name}` : name;
               results.push({ name, full_name: fullName });
@@ -56,51 +94,26 @@ function generateNames(
           }
         }
       }
-    }
-  } else {
-    // Jika TIDAK ada inputText, gunakan kombinasi dari keywords biasa
-    const shuffledKeywords = keywords.sort(() => Math.random() - 0.5);
-
-    const generateCombinations = (arr: string[], length: number): string[][] => {
-      const result: string[][] = [];
-
-      if (length === 2) {
-        for (let i = 0; i < arr.length; i++) {
-          for (let j = 0; j < arr.length; j++) {
-            if (i !== j) {
-              result.push([arr[i], arr[j]]);
-            }
-          }
-        }
-      } else if (length === 3) {
-        for (let i = 0; i < arr.length; i++) {
-          for (let j = 0; j < arr.length; j++) {
-            for (let k = 0; k < arr.length; k++) {
-              if (i !== j && j !== k && i !== k) {
-                result.push([arr[i], arr[j], arr[k]]);
+    } else if (wordLength === 3) {
+      for (let i = 0; i < shuffledKeywords.length; i++) {
+        for (let j = 0; j < shuffledKeywords.length; j++) {
+          for (let k = 0; k < shuffledKeywords.length; k++) {
+            if (i !== j && j !== k && i !== k) {
+              const name = [shuffledKeywords[i], shuffledKeywords[j], shuffledKeywords[k]].join(separator);
+              if (!seen.has(name)) {
+                const fullName = prefixText ? `${prefixText}${name}` : name;
+                results.push({ name, full_name: fullName });
+                seen.add(name);
               }
             }
           }
         }
       }
-
-      return result;
-    };
-
-    const combinations = generateCombinations(shuffledKeywords, wordLength);
-    const limitedCombinations = combinations.slice(0, 20);
-
-    limitedCombinations.forEach((combo) => {
-      const name = combo.join(separator);
-      if (!seen.has(name)) {
-        const fullName = prefixText ? `${prefixText}${name}` : name;
-        results.push({ name, full_name: fullName });
-        seen.add(name);
-      }
-    });
+    }
   }
 
-  return results.slice(0, 20);
+  // Limit ke maksimal 200 hasil, tapi kembalikan semuanya untuk pagination di frontend
+  return results.slice(0, 200);
 }
 
 export async function POST(req: NextRequest) {

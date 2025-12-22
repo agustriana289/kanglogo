@@ -23,6 +23,8 @@ export default function BrandNameGeneratorForm() {
   const [loading, setLoading] = useState(false);
   const [loadingIndustries, setLoadingIndustries] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   // Fetch industries saat component mount
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function BrandNameGeneratorForm() {
     e.preventDefault();
     setError("");
     setResults([]);
+    setCurrentPage(1);
 
     if (!selectedIndustry) {
       setError("Pilih industri terlebih dahulu");
@@ -224,24 +227,47 @@ export default function BrandNameGeneratorForm() {
             </h3>
             <p className="text-slate-600 mt-2">Pilih nama favorit Anda dan salin</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {results.map((result, index) => (
-              <div
-                key={index}
-                className="p-6 bg-white border border-slate-200 rounded-3xl hover:shadow-md transition-all"
-              >
-                <p className="text-lg font-bold text-slate-800 mb-4 break-words">
-                  {result.full_name}
-                </p>
-                <button
-                  onClick={() => copyToClipboard(result.full_name)}
-                  className="w-full text-sm bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-colors"
+
+          {/* Grid Hasil */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {results
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((result, index) => (
+                <div
+                  key={index}
+                  className="p-6 bg-white border border-slate-200 rounded-3xl hover:shadow-md transition-all"
                 >
-                  Salin
-                </button>
-              </div>
-            ))}
+                  <p className="text-lg font-bold text-slate-800 mb-4 break-words">
+                    {result.full_name}
+                  </p>
+                  <button
+                    onClick={() => copyToClipboard(result.full_name)}
+                    className="w-full text-sm bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-colors"
+                  >
+                    Salin
+                  </button>
+                </div>
+              ))}
           </div>
+
+          {/* Pagination */}
+          {Math.ceil(results.length / itemsPerPage) > 1 && (
+            <div className="flex justify-center gap-2 flex-wrap">
+              {Array.from({ length: Math.ceil(results.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === page
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
