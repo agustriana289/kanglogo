@@ -14,6 +14,7 @@ import {
   DocumentTextIcon,
   FolderIcon,
   ChatBubbleLeftIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 
 interface Article {
@@ -313,6 +314,16 @@ export default function BlogManagementPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          {article.published_at && (
+                            <Link
+                              href={`/article/${new Date(article.published_at).getFullYear()}/${String(new Date(article.published_at).getMonth() + 1).padStart(2, '0')}/${article.slug}`}
+                              target="_blank"
+                              className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                              title="Lihat"
+                            >
+                              <EyeIcon className="w-5 h-5" />
+                            </Link>
+                          )}
                           <Link
                             href={`/admin/blog/edit/${article.id}`}
                             className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
@@ -375,6 +386,16 @@ export default function BlogManagementPage() {
                     </p>
                   </div>
                   <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    {article.published_at && (
+                      <Link
+                        href={`/article/${new Date(article.published_at).getFullYear()}/${String(new Date(article.published_at).getMonth() + 1).padStart(2, '0')}/${article.slug}`}
+                        target="_blank"
+                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                        title="Lihat"
+                      >
+                        <EyeIcon className="w-5 h-5" />
+                      </Link>
+                    )}
                     <Link
                       href={`/admin/blog/edit/${article.id}`}
                       className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
