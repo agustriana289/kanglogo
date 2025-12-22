@@ -32,10 +32,10 @@ export default function SingleServicePricing({
               className={`flex-col p-8 bg-white rounded-3xl shadow-sm hover:shadow-md transform transition-transform items-center`}
             >
               <div className="mb-6">
-                <div
-                  className={`text-center pb-4`}
-                >
-                  <p className={`text-4xl font-bold text-primary`}>{plan.name}</p>
+                <div className={`text-center pb-4`}>
+                  <p className={`text-4xl font-bold text-primary`}>
+                    {plan.name}
+                  </p>
                 </div>
                 <div className="px-6">
                   <ul className="space-y-2">

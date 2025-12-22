@@ -72,7 +72,11 @@ export default function BrandKeywordBulkUpload({
       }
 
       if (successCount > 0) {
-        setSuccess(`${successCount} keyword berhasil ditambahkan${failCount > 0 ? `, ${failCount} gagal` : ""}`);
+        setSuccess(
+          `${successCount} keyword berhasil ditambahkan${
+            failCount > 0 ? `, ${failCount} gagal` : ""
+          }`
+        );
         setBulkKeywords("");
         setTimeout(() => {
           setShowModal(false);
@@ -107,7 +111,8 @@ export default function BrandKeywordBulkUpload({
 
             {selectedIndustry && (
               <p className="text-sm text-slate-600 mb-4">
-                Untuk industri: <span className="font-semibold">{selectedIndustry.name}</span>
+                Untuk industri:{" "}
+                <span className="font-semibold">{selectedIndustry.name}</span>
               </p>
             )}
 

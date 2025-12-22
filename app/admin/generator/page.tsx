@@ -17,7 +17,8 @@ export default function AdminGeneratorPage() {
               Kelola <span className="text-primary">Generator Nama Brand</span>
             </h1>
             <p className="text-slate-600">
-              Tambahkan industri baru dan kelola keywords untuk generator nama brand.
+              Tambahkan industri baru dan kelola keywords untuk generator nama
+              brand.
             </p>
           </div>
 

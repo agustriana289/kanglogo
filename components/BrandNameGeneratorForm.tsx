@@ -101,7 +101,8 @@ export default function BrandNameGeneratorForm() {
             Generator <span className="text-primary">Nama Brand</span>
           </h2>
           <p className="text-slate-600">
-            Buat kombinasi nama brand yang unik dengan memilih industri dan opsi yang tersedia.
+            Buat kombinasi nama brand yang unik dengan memilih industri dan opsi
+            yang tersedia.
           </p>
         </div>
 
@@ -170,7 +171,9 @@ export default function BrandNameGeneratorForm() {
                     type="radio"
                     value={length}
                     checked={wordLength === length}
-                    onChange={(e) => setWordLength(parseInt(e.target.value) as 2 | 3)}
+                    onChange={(e) =>
+                      setWordLength(parseInt(e.target.value) as 2 | 3)
+                    }
                     className="mr-2"
                   />
                   <span className="text-slate-700">{length} Kata</span>

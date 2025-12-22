@@ -16,9 +16,8 @@ export default function BrandIndustryManager() {
   const [newIndustryName, setNewIndustryName] = useState("");
   const [newIndustryDesc, setNewIndustryDesc] = useState("");
 
-  const [selectedIndustry, setSelectedIndustry] = useState<BrandIndustry | null>(
-    null
-  );
+  const [selectedIndustry, setSelectedIndustry] =
+    useState<BrandIndustry | null>(null);
   const [keywords, setKeywords] = useState<BrandKeyword[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
   const [loadingKeywords, setLoadingKeywords] = useState(false);
@@ -47,7 +46,9 @@ export default function BrandIndustryManager() {
   const fetchKeywords = async (industryId: string) => {
     try {
       setLoadingKeywords(true);
-      const res = await fetch(`/api/branding/keywords?industryId=${industryId}`);
+      const res = await fetch(
+        `/api/branding/keywords?industryId=${industryId}`
+      );
       const { data } = await res.json();
       setKeywords(data);
     } catch (err) {
@@ -92,7 +93,9 @@ export default function BrandIndustryManager() {
 
   // Hapus industri
   const handleDeleteIndustry = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus industri ini beserta semua keywords?")) {
+    if (
+      !confirm("Yakin ingin menghapus industri ini beserta semua keywords?")
+    ) {
       return;
     }
 
@@ -268,7 +271,9 @@ export default function BrandIndustryManager() {
                     onClick={() => handleSelectIndustry(industry)}
                     className="flex-1"
                   >
-                    <p className="font-semibold text-slate-700">{industry.name}</p>
+                    <p className="font-semibold text-slate-700">
+                      {industry.name}
+                    </p>
                     {industry.description && (
                       <p className="text-sm text-slate-500 mt-1">
                         {industry.description}
@@ -292,7 +297,8 @@ export default function BrandIndustryManager() {
       {selectedIndustry && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
           <h3 className="text-xl font-bold text-slate-700 mb-4">
-            Kelola Keywords - <span className="text-primary">{selectedIndustry.name}</span>
+            Kelola Keywords -{" "}
+            <span className="text-primary">{selectedIndustry.name}</span>
           </h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

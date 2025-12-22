@@ -1,7 +1,10 @@
 // app/api/branding/generate/route.ts
 import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
-import { GeneratorOptions, GeneratedResult } from "@/types/brand-name-generator";
+import {
+  GeneratorOptions,
+  GeneratedResult,
+} from "@/types/brand-name-generator";
 
 function generateNames(
   keywords: string[],

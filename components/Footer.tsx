@@ -129,8 +129,9 @@ export default function Footer() {
     return links.filter((link) => link.category_id === categoryId);
   };
 
-  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
-    }`;
+  const waLink = `https://wa.me/${
+    settings?.website_phone?.replace(/\D/g, "") || ""
+  }`;
 
   // Perbaikan: Tambahkan tipe eksplisit untuk parameter svgString
   const fixSvg = (svgString: string) => {
@@ -151,7 +152,9 @@ export default function Footer() {
       <footer
         className="w-full bg-cover bg-center"
         style={{
-          backgroundImage: heroBackground ? `url(${heroBackground})` : undefined,
+          backgroundImage: heroBackground
+            ? `url(${heroBackground})`
+            : undefined,
         }}
       >
         <div className="mx-auto max-w-7xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 gap-y-8 md:gap-8 py-10 px-4 sm:px-6 lg:px-8">
@@ -193,8 +196,9 @@ export default function Footer() {
                 <div className="widget-content">
                   <a
                     className="py-2.5 px-5 h-9 block w-fit bg-primary rounded-full shadow-sm text-xs text-white mx-auto transition-all duration-500 hover:bg-primary/90 lg:mx-0"
-                    href={`mailto:${settings?.website_email || "halo@kanglogo.com"
-                      }`}
+                    href={`mailto:${
+                      settings?.website_email || "halo@kanglogo.com"
+                    }`}
                   >
                     {settings?.website_email || "halo@kanglogo.com"}
                   </a>
@@ -268,7 +272,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="py-7 px-4 sm:px-0 bg-primary">
+        <div className="py-7 px-4 sm:px-0 bg-slate-700">
           <div className="mx-auto max-w-7xl flex items-center justify-center flex-col lg:justify-between lg:flex-row">
             <span className="text-sm text-white text-center sm:text-left">
               ©

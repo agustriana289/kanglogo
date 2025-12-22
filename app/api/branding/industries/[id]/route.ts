@@ -43,10 +43,7 @@ export async function DELETE(
     const { id } = await params;
 
     // Hapus semua keywords terkait industri terlebih dahulu
-    await supabase
-      .from("brand_keywords")
-      .delete()
-      .eq("industry_id", id);
+    await supabase.from("brand_keywords").delete().eq("industry_id", id);
 
     // Kemudian hapus industri
     const { error } = await supabase

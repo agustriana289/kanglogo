@@ -28,7 +28,7 @@ export interface GeneratedName {
 export interface GeneratorOptions {
   industryId: string;
   inputText: string;
-  prefix?: 'PT' | 'CV' | 'TOKO' | 'STUDIO' | 'AGENCY' | '';
+  prefix?: "PT" | "CV" | "TOKO" | "STUDIO" | "AGENCY" | "";
   wordLength: 2 | 3;
 }
 
