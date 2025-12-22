@@ -27,6 +27,24 @@ export default function BrandNameGeneratorForm() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const itemsPerPage = 12;
 
+  const getPageNumbers = (currentPage: number, totalPages: number): (number | string)[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages: (number | string)[] = [];
+
+    if (currentPage <= 3) {
+      pages.push(1, 2, 3, 4, '...', totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+    }
+
+    return pages;
+  };
+
   // Fetch industries saat component mount
   useEffect(() => {
     const fetchIndustries = async () => {
@@ -245,8 +263,8 @@ export default function BrandNameGeneratorForm() {
                     key={index}
                     onClick={() => copyToClipboard(result.full_name, globalIndex)}
                     className={`p-6 border rounded-3xl transition-all text-left w-full ${isCopied
-                        ? 'bg-primary border-primary shadow-lg scale-105'
-                        : 'bg-white border-slate-200 hover:shadow-md hover:border-primary/30 hover:scale-102'
+                      ? 'bg-primary border-primary shadow-lg scale-105'
+                      : 'bg-white border-slate-200 hover:shadow-md hover:border-primary/30 hover:scale-102'
                       }`}
                   >
                     <p className={`text-lg font-bold break-words ${isCopied ? 'text-white' : 'text-slate-800'
@@ -263,19 +281,41 @@ export default function BrandNameGeneratorForm() {
 
           {/* Pagination */}
           {Math.ceil(results.length / itemsPerPage) > 1 && (
-            <div className="flex justify-center gap-2 flex-wrap">
-              {Array.from({ length: Math.ceil(results.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
-                    ? "bg-primary text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                >
-                  {page}
-                </button>
+            <div className="flex justify-center items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sebelumnya
+              </button>
+
+              {getPageNumbers(currentPage, Math.ceil(results.length / itemsPerPage)).map((page, index) => (
+                typeof page === 'number' ? (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                  >
+                    {page}
+                  </button>
+                ) : (
+                  <span key={index} className="px-2 text-slate-400">
+                    {page}
+                  </span>
+                )
               ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(results.length / itemsPerPage), prev + 1))}
+                disabled={currentPage === Math.ceil(results.length / itemsPerPage)}
+                className="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Selanjutnya
+              </button>
             </div>
           )}
         </div>
