@@ -6,6 +6,11 @@ import { BrandIndustry, GeneratedResult } from "@/types/brand-name-generator";
 import LogoPathAnimation from "./LogoPathAnimation";
 
 const PREFIX_OPTIONS = ["", "PT", "CV", "TOKO", "STUDIO", "AGENCY"];
+const SEPARATOR_OPTIONS = [
+  { value: "", label: "Menyambung (TechCode)" },
+  { value: "-", label: "Dengan Dash (Tech-Code)" },
+  { value: " ", label: "Dengan Spasi (Tech Code)" },
+];
 
 export default function BrandNameGeneratorForm() {
   const [industries, setIndustries] = useState<BrandIndustry[]>([]);
@@ -13,6 +18,7 @@ export default function BrandNameGeneratorForm() {
   const [inputText, setInputText] = useState("");
   const [prefix, setPrefix] = useState("");
   const [wordLength, setWordLength] = useState<2 | 3>(2);
+  const [separator, setSeparator] = useState("");
   const [results, setResults] = useState<GeneratedResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingIndustries, setLoadingIndustries] = useState(true);
@@ -60,6 +66,7 @@ export default function BrandNameGeneratorForm() {
           inputText,
           prefix: prefix || undefined,
           wordLength,
+          separator: separator || undefined,
         }),
       });
 
@@ -86,36 +93,25 @@ export default function BrandNameGeneratorForm() {
 
   if (loadingIndustries) {
     return (
-      <div className="flex flex-col justify-center items-center h-64 gap-4">
+      <div className="flex flex-col justify-center items-center h-64 gap-4 bg-white rounded-3xl shadow-sm">
         <LogoPathAnimation />
-        <p className="text-slate-600">Memuat industri...</p>
+        <p className="text-slate-600 font-medium">Memuat industri...</p>
       </div>
     );
   }
 
   return (
-    <section className="py-12 bg-white">
-      <div className="mx-auto max-w-4xl px-6 lg:px-8">
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-slate-700 mb-4">
-            Generator <span className="text-primary">Nama Brand</span>
-          </h2>
-          <p className="text-slate-600">
-            Buat kombinasi nama brand yang unik dengan memilih industri dan opsi
-            yang tersedia.
-          </p>
-        </div>
-
-        <form onSubmit={handleGenerate} className="space-y-6">
+    <div className="max-w-4xl mx-auto">
+        <form onSubmit={handleGenerate} className="bg-white rounded-3xl shadow-sm p-8 mb-12 space-y-6">
           {/* Pilih Industri */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Industri
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
+              Pilih Industri
             </label>
             <select
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-slate-50"
             >
               <option value="">-- Pilih Industri --</option>
               {industries.map((industry) => (
@@ -128,27 +124,30 @@ export default function BrandNameGeneratorForm() {
 
           {/* Input Text (Optional) */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Masukkan Teks (Opsional)
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
+              Kata/Teks Tambahan <span className="text-slate-500 font-normal">(Opsional)</span>
             </label>
+            <p className="text-xs text-slate-500 mb-3">
+              Tambahkan kata unik Anda yang akan dikombinasikan dengan keywords industri. Kosongkan untuk menggunakan keywords industri saja.
+            </p>
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Masukkan teks yang ingin digunakan..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Contoh: Pijar, Nata, Kode"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-slate-50"
             />
           </div>
 
           {/* Prefix */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
               Prefix Tambahan
             </label>
             <select
               value={prefix}
               onChange={(e) => setPrefix(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-slate-50"
             >
               <option value="">Tanpa Prefix</option>
               {PREFIX_OPTIONS.filter((p) => p !== "").map((p) => (
@@ -161,12 +160,12 @@ export default function BrandNameGeneratorForm() {
 
           {/* Panjang Kata */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Panjang Kata
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
+              Jumlah Kata dalam Nama
             </label>
-            <div className="flex gap-4">
+            <div className="flex gap-6">
               {[2, 3].map((length) => (
-                <label key={length} className="flex items-center">
+                <label key={length} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     value={length}
@@ -174,18 +173,36 @@ export default function BrandNameGeneratorForm() {
                     onChange={(e) =>
                       setWordLength(parseInt(e.target.value) as 2 | 3)
                     }
-                    className="mr-2"
+                    className="w-4 h-4 text-primary cursor-pointer"
                   />
-                  <span className="text-slate-700">{length} Kata</span>
+                  <span className="text-slate-700 font-medium">{length} Kata</span>
                 </label>
               ))}
             </div>
           </div>
 
+          {/* Separator */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
+              Pemisah Kata
+            </label>
+            <select
+              value={separator}
+              onChange={(e) => setSeparator(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-slate-50"
+            >
+              {SEPARATOR_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-700 text-sm font-medium">⚠️ {error}</p>
             </div>
           )}
 
@@ -193,32 +210,35 @@ export default function BrandNameGeneratorForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 active:scale-95"
           >
-            {loading ? "Sedang Generate..." : "Generate Nama Brand"}
+            {loading ? "Sedang Generate..." : "🚀 Generate Nama Brand"}
           </button>
         </form>
 
         {/* Hasil Generate */}
         {results.length > 0 && (
           <div className="mt-12">
-            <h3 className="text-2xl font-bold text-slate-700 mb-6">
-              Hasil Generate ({results.length})
-            </h3>
+            <div className="text-center mb-8">
+              <h3 className="text-3xl font-bold text-slate-700">
+                Hasil Generate <span className="text-primary">({results.length})</span>
+              </h3>
+              <p className="text-slate-600 mt-2">Pilih nama favorit Anda dan salin dengan mudah</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {results.map((result, index) => (
                 <div
                   key={index}
-                  className="p-4 border border-slate-200 rounded-lg hover:shadow-md transition-shadow"
+                  className="p-6 bg-white border border-slate-200 rounded-3xl hover:shadow-md hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
                 >
-                  <p className="text-lg font-semibold text-slate-800 mb-2">
+                  <p className="text-lg font-bold text-slate-800 mb-4 break-words">
                     {result.full_name}
                   </p>
                   <button
                     onClick={() => copyToClipboard(result.full_name)}
-                    className="text-sm bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 transition-colors"
+                    className="w-full text-sm bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all duration-200 font-medium active:scale-95"
                   >
-                    Salin
+                    📋 Salin
                   </button>
                 </div>
               ))}
@@ -226,6 +246,6 @@ export default function BrandNameGeneratorForm() {
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

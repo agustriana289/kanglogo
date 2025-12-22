@@ -10,10 +10,20 @@ export const metadata: Metadata = {
 
 export default function GeneratorPage() {
   return (
-    <main className="bg-gradient-to-b from-slate-50 to-white min-h-screen">
-      <div className="pt-20 pb-20">
+    <section className="py-12 sm:py-24 bg-slate-50">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Header */}
+        <div className="pb-16 text-center">
+          <h1 className="max-w-3xl mx-auto font-manrope font-bold text-4xl text-slate-700 mb-5 md:text-6xl leading-tight">
+            Generator <span className="text-primary">Nama Brand</span>
+          </h1>
+          <p className="sm:max-w-2xl sm:mx-auto text-base font-normal leading-7 text-slate-700">
+            Ciptakan nama brand unik dan berkesan dengan kombinasi kata-kata terbaik untuk bisnis Anda. Gunakan AI untuk menghasilkan ratusan ide nama dalam sekejap.
+          </p>
+        </div>
+
         <BrandNameGeneratorForm />
       </div>
-    </main>
+    </section>
   );
 }

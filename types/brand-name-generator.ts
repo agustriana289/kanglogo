@@ -30,6 +30,7 @@ export interface GeneratorOptions {
   inputText: string;
   prefix?: "PT" | "CV" | "TOKO" | "STUDIO" | "AGENCY" | "";
   wordLength: 2 | 3;
+  separator?: "" | "-" | " ";
 }
 
 export interface GeneratedResult {
