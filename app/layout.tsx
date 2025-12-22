@@ -11,6 +11,7 @@ import PublicNotificationPopup from "@/components/PublicNotificationPopup";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 import JsonLd from "@/components/JsonLd";
 import Script from "next/script";
+import SeoTracker from "@/components/SeoTracker";
 
 
 const inter = Inter({
@@ -145,6 +146,7 @@ export default function RootLayout({
         <Footer />
         <PublicNotificationPopup />
         <WhatsAppFloatingButton />
+        <SeoTracker />
         <Script
           src="https://www.google.com/recaptcha/api.js"
           strategy="lazyOnload"
