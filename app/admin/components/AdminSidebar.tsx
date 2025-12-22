@@ -147,6 +147,11 @@ export default function AdminSidebar({
           label: "Tambah Font",
           icon: BoldIcon,
         },
+        {
+          href: "/admin/generator",
+          label: "Brand Name",
+          icon: MagnifyingGlassIcon,
+        },
       ],
     },
     {
