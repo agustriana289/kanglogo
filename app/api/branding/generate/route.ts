@@ -5,6 +5,7 @@ import {
   GeneratorOptions,
   GeneratedResult,
 } from "@/types/brand-name-generator";
+import { generateBrandNamesWithAI } from "@/lib/gemini";
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -286,13 +287,48 @@ export async function POST(req: NextRequest) {
     }
 
     const keywordsList = keywords.map((k) => k.keyword);
-    const results = generateNames(
-      keywordsList,
-      inputText,
-      wordLength,
-      prefix || "",
-      finalSeparator
-    );
+
+    let results: GeneratedResult[] = [];
+
+    if (inputText && inputText.trim().length > 0) {
+      const { data: industry } = await supabase
+        .from("brand_industries")
+        .select("name")
+        .eq("id", industryId)
+        .single();
+
+      const industryName = industry?.name || "Bisnis";
+
+      try {
+        const aiNames = await generateBrandNamesWithAI(
+          inputText.trim(),
+          industryName,
+          keywordsList,
+          wordLength,
+          finalSeparator
+        );
+
+        if (aiNames.length > 0) {
+          const prefixText = prefix ? `${prefix} ` : "";
+          results = aiNames.map(name => ({
+            name: name,
+            full_name: prefixText ? `${prefixText}${name}` : name
+          }));
+        }
+      } catch (error) {
+        console.error("AI generation failed, falling back to algorithm:", error);
+      }
+    }
+
+    if (results.length === 0) {
+      results = generateNames(
+        keywordsList,
+        inputText,
+        wordLength,
+        prefix || "",
+        finalSeparator
+      );
+    }
 
     // Optional: Simpan hasil generated names ke database
     if (results.length > 0) {
