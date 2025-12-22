@@ -18,7 +18,9 @@ export default function GeneratorPage() {
             Generator <span className="text-primary">Nama Brand</span>
           </h1>
           <p className="sm:max-w-2xl sm:mx-auto text-base font-normal leading-7 text-slate-700">
-            Ciptakan nama brand unik dan berkesan dengan kombinasi kata-kata terbaik untuk bisnis Anda. Gunakan AI untuk menghasilkan ratusan ide nama dalam sekejap.
+            Ciptakan nama brand unik dan berkesan dengan kombinasi kata-kata
+            terbaik untuk bisnis Anda. Gunakan AI untuk menghasilkan ratusan ide
+            nama dalam sekejap.
           </p>
         </div>
 

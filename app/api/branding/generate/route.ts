@@ -33,7 +33,7 @@ function generateNames(
   // Generate kombinasi dengan perkalian kartesian
   const generateCombinations = (arr: string[], length: number): string[][] => {
     const result: string[][] = [];
-    
+
     if (length === 2) {
       // Untuk 2 kata: kombinasi berbeda, hindari duplikat (A+A, B+B, dll)
       for (let i = 0; i < arr.length; i++) {
@@ -86,8 +86,13 @@ function generateNames(
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { industryId, inputText, prefix, wordLength, separator }: GeneratorOptions & { separator?: string } =
-      body;
+    const {
+      industryId,
+      inputText,
+      prefix,
+      wordLength,
+      separator,
+    }: GeneratorOptions & { separator?: string } = body;
 
     if (!industryId || !wordLength) {
       return NextResponse.json(
@@ -98,7 +103,8 @@ export async function POST(req: NextRequest) {
 
     // Default separator berdasarkan word length
     // 2 kata: menyambung (default), 3 kata: spasi (default)
-    const finalSeparator = separator !== undefined ? separator : (wordLength === 3 ? " " : "");
+    const finalSeparator =
+      separator !== undefined ? separator : wordLength === 3 ? " " : "";
 
     // Ambil keywords untuk industri
     const { data: keywords, error: keywordsError } = await supabase

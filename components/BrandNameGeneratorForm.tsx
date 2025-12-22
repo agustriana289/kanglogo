@@ -102,7 +102,7 @@ export default function BrandNameGeneratorForm() {
 
   return (
     <div className="max-w-4xl mx-auto">
-        <form onSubmit={handleGenerate} className="bg-white rounded-3xl shadow-sm p-8 mb-12 space-y-6">
+      <form onSubmit={handleGenerate} className="bg-white rounded-3xl shadow-sm p-8 mb-12 space-y-6">
           {/* Pilih Industri */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-3">
