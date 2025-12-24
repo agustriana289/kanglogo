@@ -98,10 +98,10 @@ function mapOrderToNotionProperties(data: NotionOrderData) {
     },
     "Payment Deadline": data.paymentDeadline
       ? {
-          date: {
-            start: data.paymentDeadline.split("T")[0],
-          },
-        }
+        date: {
+          start: data.paymentDeadline.split("T")[0],
+        },
+      }
       : null,
     "Created At": {
       date: {
@@ -110,8 +110,8 @@ function mapOrderToNotionProperties(data: NotionOrderData) {
     },
     "Final File": data.finalFileLink
       ? {
-          url: data.finalFileLink,
-        }
+        url: data.finalFileLink,
+      }
       : null,
     "Order ID": {
       number: data.orderId,
@@ -162,11 +162,11 @@ export async function syncOrderToNotion(orderId: number) {
     let notionUrl = "";
 
     if (notionPageId) {
-      const response = await notion.pages.update({
+      await notion.pages.update({
         page_id: notionPageId,
         properties: properties as any,
       });
-      notionUrl = response.url;
+      notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
     } else {
       const response = await notion.pages.create({
         parent: {
@@ -175,7 +175,7 @@ export async function syncOrderToNotion(orderId: number) {
         properties: properties as any,
       });
       notionPageId = response.id;
-      notionUrl = response.url;
+      notionUrl = `https://notion.so/${response.id.replace(/-/g, "")}`;
 
       await supabase
         .from("orders")
