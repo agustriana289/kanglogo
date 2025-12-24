@@ -42,7 +42,7 @@ export interface NotionOrderData {
 }
 
 function mapOrderToNotionProperties(data: NotionOrderData) {
-  return {
+  const properties: any = {
     "Invoice Number": {
       title: [
         {
@@ -60,12 +60,6 @@ function mapOrderToNotionProperties(data: NotionOrderData) {
           },
         },
       ],
-    },
-    "Customer Email": {
-      email: data.customerEmail || null,
-    },
-    "Customer WhatsApp": {
-      phone_number: data.customerWhatsapp || null,
     },
     "Service": {
       rich_text: [
@@ -96,27 +90,46 @@ function mapOrderToNotionProperties(data: NotionOrderData) {
         name: statusMapping[data.status] || data.status,
       },
     },
-    "Payment Deadline": data.paymentDeadline
-      ? {
-        date: {
-          start: data.paymentDeadline.split("T")[0],
-        },
-      }
-      : null,
-    "Created At": {
-      date: {
-        start: data.createdAt.split("T")[0],
-      },
-    },
-    "Final File": data.finalFileLink
-      ? {
-        url: data.finalFileLink,
-      }
-      : null,
     "Order ID": {
       number: data.orderId,
     },
   };
+
+  if (data.customerEmail) {
+    properties["Customer Email"] = {
+      email: data.customerEmail,
+    };
+  }
+
+  if (data.customerWhatsapp) {
+    properties["Customer WhatsApp"] = {
+      phone_number: data.customerWhatsapp,
+    };
+  }
+
+  if (data.paymentDeadline) {
+    properties["Payment Deadline"] = {
+      date: {
+        start: data.paymentDeadline.split("T")[0],
+      },
+    };
+  }
+
+  if (data.createdAt) {
+    properties["Created At"] = {
+      date: {
+        start: data.createdAt.split("T")[0],
+      },
+    };
+  }
+
+  if (data.finalFileLink) {
+    properties["Final File"] = {
+      url: data.finalFileLink,
+    };
+  }
+
+  return properties;
 }
 
 export async function syncOrderToNotion(orderId: number) {
