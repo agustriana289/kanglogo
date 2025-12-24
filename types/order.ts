@@ -17,12 +17,12 @@ export interface Order {
   final_price: number;
   payment_method: string;
   status:
-    | "pending_payment"
-    | "paid"
-    | "accepted"
-    | "in_progress"
-    | "cancelled"
-    | "completed";
+  | "pending_payment"
+  | "paid"
+  | "accepted"
+  | "in_progress"
+  | "cancelled"
+  | "completed";
   payment_deadline: string | null;
   work_duration_days: number | null;
   work_deadline: string | null;
@@ -30,4 +30,11 @@ export interface Order {
   proof_of_payment_url?: string;
   created_at: string;
   updated_at: string;
+  notion_page_id?: string | null;
+  last_synced_at?: string | null;
+  services?: {
+    id: number;
+    title: string;
+    slug: string;
+  };
 }
