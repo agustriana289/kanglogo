@@ -10,6 +10,7 @@ export interface MarketplaceAsset {
   tagline: string;
   deskripsi: string;
   image_url: string;
+  is_sold: boolean;
   created_at?: string;
   updated_at?: string;
 }

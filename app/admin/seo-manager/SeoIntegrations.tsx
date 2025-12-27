@@ -209,7 +209,7 @@ export default function SeoIntegrations() {
                                     <li>Klik tombol <strong>ADD KEY</strong> &rarr; <strong>Create new key</strong>.</li>
                                     <li>Pilih tipe <strong>JSON</strong> lalu klik Create. File akan terdownload.</li>
                                     <li>Buka file JSON tersebut dengan Notepad.</li>
-                                    <li>Cari tulisan <code>"client_email"</code>, copy alamat email disebelahnya (contoh: <em>nama@project.iam...</em>).</li>
+                                    <li>Cari tulisan <code>&quot;client_email&quot;</code>, copy alamat email disebelahnya (contoh: <em>nama@project.iam...</em>).</li>
                                     <li>Buka <strong>Google Search Console</strong> website Anda.</li>
                                     <li>Masuk menu <strong>Settings</strong> &rarr; <strong>Users and permissions</strong> &rarr; <strong>Add User</strong>.</li>
                                     <li>Paste email tadi, pilih izin <strong>Owner</strong>, lalu klik Add.</li>
@@ -260,7 +260,7 @@ export default function SeoIntegrations() {
                                     <li>Login ke <strong>Bing Webmaster Tools</strong>.</li>
                                     <li>Klik ikon Gear (Settings) di pojok kanan atas.</li>
                                     <li>Pilih menu <strong>API Access</strong>.</li>
-                                    <li>Klik "Generate API Key".</li>
+                                    <li>Klik &quot;Generate API Key&quot;.</li>
                                     <li>Copy Key tersebut.</li>
                                 </ol>
                                 <a href="https://www.bing.com/webmasters/help/webmaster-api-getting-started-598d417e" target="_blank" className="text-blue-500 hover:underline text-xs flex items-center gap-1 mt-2">
