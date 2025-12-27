@@ -96,6 +96,7 @@ export default function MarketplacePage() {
       const { data, error } = await supabase
         .from("marketplace_assets")
         .select("*")
+        .eq("is_sold", false) // Hanya tampilkan yang belum terjual
         .order("created_at", { ascending: false });
 
       if (error) throw error;

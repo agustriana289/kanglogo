@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MarketplaceAsset } from "@/types/marketplace";
 import { supabase } from "@/lib/supabase";
 import { createStorePurchaseNotification } from "@/lib/notifications";
+import { validateOrder } from "@/lib/validators/orderValidator";
 import { XMarkIcon, CheckIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 
@@ -109,6 +110,19 @@ export default function PurchaseModal({
       return;
     }
 
+    // Comprehensive spam validation
+    const validationResult = validateOrder({
+      customer_name: formData.customer_name,
+      customer_email: formData.customer_email,
+      customer_whatsapp: formData.customer_whatsapp,
+      country_code: formData.country_code,
+    });
+
+    if (!validationResult.valid) {
+      alert(validationResult.error || "Data tidak valid");
+      return;
+    }
+
     setLoading(true);
     try {
       // Generate order number
@@ -144,6 +158,14 @@ export default function PurchaseModal({
         .single();
 
       if (error) throw error;
+
+      // Auto-update is_sold jika order langsung completed (freebies atau harga 0)
+      if (data.status === 'completed') {
+        await supabase
+          .from("marketplace_assets")
+          .update({ is_sold: true })
+          .eq("id", asset.id);
+      }
 
       // Create notification
       await createStorePurchaseNotification(
@@ -254,11 +276,10 @@ export default function PurchaseModal({
                   </h4>
                   <p className="text-sm text-gray-500">{asset.kategori_aset}</p>
                   <p
-                    className={`text-lg font-bold ${
-                      asset.jenis === "premium"
-                        ? "text-primary"
-                        : "text-green-600"
-                    }`}
+                    className={`text-lg font-bold ${asset.jenis === "premium"
+                      ? "text-primary"
+                      : "text-green-600"
+                      }`}
                   >
                     {asset.jenis === "premium"
                       ? formatCurrency(asset.harga_aset)
@@ -369,13 +390,12 @@ export default function PurchaseModal({
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        className={`flex-1 ${inputStyle} ${
-                          discountInfo
-                            ? "border-green-500 bg-green-50"
-                            : discountError
+                        className={`flex-1 ${inputStyle} ${discountInfo
+                          ? "border-green-500 bg-green-50"
+                          : discountError
                             ? "border-red-500 bg-red-50"
                             : ""
-                        }`}
+                          }`}
                         placeholder="Masukkan kode..."
                         value={formData.discount_code}
                         onChange={(e) => {
@@ -456,17 +476,16 @@ export default function PurchaseModal({
               <button
                 type="submit"
                 disabled={loading}
-                className={`flex-1 py-2.5 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${
-                  asset.jenis === "premium"
-                    ? "bg-primary hover:bg-primary/90"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
+                className={`flex-1 py-2.5 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${asset.jenis === "premium"
+                  ? "bg-primary hover:bg-primary/90"
+                  : "bg-green-600 hover:bg-green-700"
+                  }`}
               >
                 {loading
                   ? "Memproses..."
                   : asset.jenis === "premium"
-                  ? "Lanjutkan Pembayaran"
-                  : "Unduh Sekarang"}
+                    ? "Lanjutkan Pembayaran"
+                    : "Unduh Sekarang"}
               </button>
             </div>
           </form>

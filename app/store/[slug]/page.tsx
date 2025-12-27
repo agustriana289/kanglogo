@@ -77,7 +77,9 @@ export default async function AssetDetailPage({
       '@type': 'Offer',
       priceCurrency: 'IDR',
       price: asset.harga_aset || 0,
-      availability: 'https://schema.org/InStock',
+      availability: asset.is_sold
+        ? 'https://schema.org/OutOfStock'
+        : 'https://schema.org/InStock',
       seller: {
         '@type': 'Organization',
         name: 'KangLogo.com',

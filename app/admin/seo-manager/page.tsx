@@ -13,55 +13,65 @@ import {
     ArrowPathIcon,
     ShieldCheckIcon,
     PresentationChartLineIcon,
+    ExclamationTriangleIcon,
+    XMarkIcon
 } from "@heroicons/react/24/outline";
 
 // Dynamic Import for ApexCharts to avoid SSR issues
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
+import SeoIntegrations from "./SeoIntegrations";
+
 export default function SeoManagerPage() {
-    const [activeTab, setActiveTab] = useState<"dashboard" | "bulk-editor">("dashboard");
+    const [activeTab, setActiveTab] = useState<"dashboard" | "bulk-editor" | "integrations">("dashboard");
     const [loading, setLoading] = useState(true);
-    const [dateRange, setDateRange] = useState<"today" | "week" | "month" | "year" | "all">("week");
+    const [rawVisits, setRawVisits] = useState<any[]>([]);
+    const [selectedDetail, setSelectedDetail] = useState<{ type: "page" | "referrer" | "country"; value: string } | null>(null);
 
     // Stats Data
     const [stats, setStats] = useState({
         totalViews: 0,
         totalVisitors: 0,
         conversions: 0,
-        avgTime: "0m", // Placeholder
-        bounceRate: "0%" // Placeholder
+        avgTime: "0m",
+        bounceRate: "0%"
     });
 
     // Chart Data
-    const [visitorChart, setVisitorChart] = useState<any>({
-        series: [],
-        options: {},
-    });
+    const [visitorChart, setVisitorChart] = useState<any>({ series: [], options: {} });
     const [countryChart, setCountryChart] = useState<any>({ series: [], options: {} });
     const [deviceChart, setDeviceChart] = useState<any>({ series: [], options: {} });
 
     // Table Data
     const [topPages, setTopPages] = useState<any[]>([]);
     const [referrers, setReferrers] = useState<any[]>([]);
+    const [rankingStats, setRankingStats] = useState<any>(null);
 
     useEffect(() => {
         fetchAnalytics();
-    }, [dateRange]);
+    }, []);
 
     const fetchAnalytics = async () => {
         setLoading(true);
         try {
-            // Calculate date filter
+            // Default to 90 days for now to ensure data visibility
             const now = new Date();
-            let startDate = new Date();
-
-            if (dateRange === "today") startDate.setDate(now.getDate() - 0); // Start of today treated slightly differently in SQL usually, but let's just say "today's data"
-            if (dateRange === "week") startDate.setDate(now.getDate() - 7);
-            if (dateRange === "month") startDate.setMonth(now.getMonth() - 1);
-            if (dateRange === "year") startDate.setFullYear(now.getFullYear() - 1);
-            if (dateRange === "all") startDate = new Date(0); // Epoch
+            const startDate = new Date();
+            startDate.setDate(now.getDate() - 90);
 
             const isoDate = startDate.toISOString();
+
+            // 0. Fetch Ranking Stats (External API)
+            fetch('/api/seo/rankings')
+                .then(res => res.json())
+                .then(data => {
+                    console.log("Ranking API Data:", data); // Debugging
+                    setRankingStats(data);
+                })
+                .catch(err => {
+                    console.error("Ranking fetch error:", err);
+                    setRankingStats({ error: "FetchFailed" });
+                });
 
             // 1. Fetch Visits Data (Main Chart)
             // We need to group by date. For simplicity/speed in this MVP, we fetch raw rows and aggregate in JS.
@@ -75,6 +85,7 @@ export default function SeoManagerPage() {
             if (error) throw error;
 
             if (visits) {
+                setRawVisits(visits);
                 processAnalyticsData(visits);
             }
 
@@ -218,6 +229,13 @@ export default function SeoManagerPage() {
                     >
                         Bulk Editor
                     </button>
+                    <button
+                        onClick={() => setActiveTab("integrations")}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "integrations" ? "bg-primary text-white" : "text-gray-600 hover:bg-gray-50"
+                            }`}
+                    >
+                        Integrasi API
+                    </button>
                 </div>
             </div>
 
@@ -225,19 +243,9 @@ export default function SeoManagerPage() {
             {activeTab === "dashboard" ? (
                 <>
                     {/* Filters */}
-                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                        {(["today", "week", "month", "year", "all"] as const).map((range) => (
-                            <button
-                                key={range}
-                                onClick={() => setDateRange(range)}
-                                className={`px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider border ${dateRange === range
-                                        ? "bg-white border-primary text-primary shadow-sm"
-                                        : "bg-white border-transparent text-gray-500 hover:bg-gray-100"
-                                    }`}
-                            >
-                                {range}
-                            </button>
-                        ))}
+                    {/* Filters Removed as per request (Defaulting to All Time/30 Days) */}
+                    <div className="mb-6">
+                        <p className="text-sm text-gray-500">Menampilkan data statistik pengunjung.</p>
                     </div>
 
                     {loading ? (
@@ -245,12 +253,181 @@ export default function SeoManagerPage() {
                     ) : (
                         <div className="space-y-6">
                             {/* Summary Cards */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <StatCard title="Total Views" value={stats.totalViews} icon={<PresentationChartLineIcon className="w-6 h-6 text-blue-500" />} />
                                 <StatCard title="Conversion Clicks" value={stats.conversions} icon={<ShieldCheckIcon className="w-6 h-6 text-green-500" />} />
-                                <StatCard title="Top Country" value={countryChart.options.labels?.[0] || "-"} icon={<GlobeAltIcon className="w-6 h-6 text-indigo-500" />} />
-                                <StatCard title="Top Device" value={deviceChart.options.labels?.[0] || "-"} icon={<DevicePhoneMobileIcon className="w-6 h-6 text-pink-500" />} />
                             </div>
+
+                            {/* Ranking Stats Section - Grid Layout */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Google Search Console */}
+                                {rankingStats?.google?.connected ? (
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2d/Google-favicon-2015.png" alt="Google" className="w-8 h-8" />
+                                                <div>
+                                                    <h3 className="text-lg font-semibold text-gray-800">Performa Pencarian (Google)</h3>
+                                                    <p className="text-sm text-gray-500">30 Hari Terakhir</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-4 text-sm">
+                                                <div className="text-center">
+                                                    <p className="text-gray-500">Total Klik</p>
+                                                    <p className="font-bold text-lg text-gray-900">{rankingStats.google.clicks}</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-gray-500">Impressions</p>
+                                                    <p className="font-bold text-lg text-gray-900">{rankingStats.google.impressions}</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-gray-500">Avg Position</p>
+                                                    <p className="font-bold text-lg text-green-600">#{Number(rankingStats.google.position).toFixed(1)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Top Keywords Table */}
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                                                    <tr>
+                                                        <th className="px-4 py-2">Kata Kunci (Top 5)</th>
+                                                        <th className="px-4 py-2 text-right">Klik</th>
+                                                        <th className="px-4 py-2 text-right">Posisi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rankingStats.google.topKeywords?.map((k: any, idx: number) => (
+                                                        <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                                                            <td className="px-4 py-2 font-medium text-gray-900">{k.keyword}</td>
+                                                            <td className="px-4 py-2 text-right text-gray-600">{k.clicks}</td>
+                                                            <td className="px-4 py-2 text-right text-blue-600 font-semibold">{Number(k.position).toFixed(1)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {(!rankingStats.google.topKeywords || rankingStats.google.topKeywords.length === 0) && (
+                                                        <tr><td colSpan={3} className="px-4 py-6 text-center text-gray-400">Belum ada data kata kunci</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className={`border rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 ${rankingStats?.google?.hasKey ? "bg-amber-50 border-amber-100" : "bg-blue-50 border-blue-100"}`}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-white rounded-full shadow-sm">
+                                                {rankingStats?.google?.hasKey ? (
+                                                    <ExclamationTriangleIcon className="w-8 h-8 text-amber-500" />
+                                                ) : (
+                                                    <MagnifyingGlassIcon className="w-8 h-8 text-blue-500" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                {rankingStats?.google?.hasKey ? (
+                                                    <>
+                                                        <h3 className="font-bold text-amber-900">Koneksi Google Search Console Bermasalah</h3>
+                                                        <p className="text-sm text-amber-700">
+                                                            {rankingStats.google.error === "NoVerifiedSites"
+                                                                ? "Service Account tidak menemukan website yang terverifikasi. Pastikan Anda sudah menambahkan email Service Account sebagai 'Owner' di Google Search Console."
+                                                                : `Terjadi error: ${rankingStats.google.error || "Gagal mengambil data"}`}
+                                                        </p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <h3 className="font-bold text-blue-900">Aktifkan Data Ranking Google & Bing</h3>
+                                                        <p className="text-sm text-blue-700">Hubungkan API gratis untuk melihat kata kunci pencarian dan posisi website Anda.</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveTab("integrations")}
+                                            className={`px-6 py-2 font-medium rounded-lg transition shadow-sm whitespace-nowrap ${rankingStats?.google?.hasKey ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+                                        >
+                                            {rankingStats?.google?.hasKey ? "Cek Konfigurasi" : "Setup Integrasi"}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Bing Webmaster Tools Section */}
+                                {rankingStats?.bing?.connected ? (
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                                    <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M5.4 2L4 3.4V20.6L14 22L19.4 15.6L10.6 13.8V7.8L5.4 2Z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold text-gray-800">Performa Pencarian (Bing)</h3>
+                                                    <p className="text-sm text-gray-500">Data dari Bing Webmaster Tools</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-4 text-sm">
+                                                <div className="text-center">
+                                                    <p className="text-gray-500">Total Klik</p>
+                                                    <p className="font-bold text-lg text-gray-900">{rankingStats.bing.clicks}</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-gray-500">Impressions</p>
+                                                    <p className="font-bold text-lg text-gray-900">{rankingStats.bing.impressions}</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-gray-500">Avg Position</p>
+                                                    <p className="font-bold text-lg text-green-600">#{Number(rankingStats.bing.position).toFixed(1)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Top Keywords Table */}
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                                                    <tr>
+                                                        <th className="px-4 py-2">Kata Kunci (Top 5)</th>
+                                                        <th className="px-4 py-2 text-right">Klik</th>
+                                                        <th className="px-4 py-2 text-right">Posisi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rankingStats.bing.topKeywords?.map((k: any, idx: number) => (
+                                                        <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                                                            <td className="px-4 py-2 font-medium text-gray-900">{k.keyword}</td>
+                                                            <td className="px-4 py-2 text-right text-gray-600">{k.clicks}</td>
+                                                            <td className="px-4 py-2 text-right text-blue-600 font-semibold">{Number(k.position).toFixed(1)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {(!rankingStats.bing.topKeywords || rankingStats.bing.topKeywords.length === 0) && (
+                                                        <tr><td colSpan={3} className="px-4 py-6 text-center text-gray-400">Belum ada data kata kunci</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ) : rankingStats?.bing?.hasKey ? (
+                                    <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-white rounded-full shadow-sm">
+                                                <ExclamationTriangleIcon className="w-8 h-8 text-amber-500" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-amber-900">Koneksi Bing Webmaster Tools Bermasalah</h3>
+                                                <p className="text-sm text-amber-700">
+                                                    {rankingStats.bing.error || "Gagal mengambil data dari Bing"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveTab("integrations")}
+                                            className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition shadow-sm whitespace-nowrap"
+                                        >
+                                            Cek Konfigurasi
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
+                            {/* End of Ranking Stats Grid */}
 
                             {/* Main Chart */}
                             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -287,8 +464,12 @@ export default function SeoManagerPage() {
                                             </thead>
                                             <tbody>
                                                 {topPages.map((page, i) => (
-                                                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                                        <td className="px-6 py-3 font-medium text-gray-900 truncate max-w-xs">{page.url}</td>
+                                                    <tr
+                                                        key={i}
+                                                        onClick={() => setSelectedDetail({ type: "page", value: page.url })}
+                                                        className="border-b border-gray-50 hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                                                    >
+                                                        <td className="px-6 py-3 font-medium text-gray-900 truncate max-w-xs group-hover:text-primary transition-colors">{page.url}</td>
                                                         <td className="px-6 py-3 text-right font-semibold text-primary">{page.views}</td>
                                                     </tr>
                                                 ))}
@@ -315,8 +496,12 @@ export default function SeoManagerPage() {
                                             </thead>
                                             <tbody>
                                                 {referrers.map((ref, i) => (
-                                                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                                        <td className="px-6 py-3 font-medium text-gray-900">{ref.source}</td>
+                                                    <tr
+                                                        key={i}
+                                                        onClick={() => setSelectedDetail({ type: "referrer", value: ref.source })}
+                                                        className="border-b border-gray-50 hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                                                    >
+                                                        <td className="px-6 py-3 font-medium text-gray-900 group-hover:text-primary transition-colors">{ref.source}</td>
                                                         <td className="px-6 py-3 text-right font-semibold text-emerald-600">{ref.count}</td>
                                                     </tr>
                                                 ))}
@@ -331,9 +516,21 @@ export default function SeoManagerPage() {
                         </div>
                     )}
                 </>
+            ) : activeTab === "integrations" ? (
+                <SeoIntegrations />
             ) : (
-                /* Bulk Editor Placeholder - Can be split into own component later */
+                /* Bulk Editor Placeholder */
                 <BulkSeoEditor />
+            )}
+
+            {/* Detail Modal */}
+            {selectedDetail && (
+                <DetailModal
+                    type={selectedDetail.type}
+                    value={selectedDetail.value}
+                    allData={rawVisits}
+                    onClose={() => setSelectedDetail(null)}
+                />
             )}
         </div>
     );
@@ -347,6 +544,128 @@ function StatCard({ title, value, icon }: { title: string, value: string | numbe
                 <h4 className="text-2xl font-bold text-gray-900">{value}</h4>
             </div>
             <div className="p-3 bg-gray-50 rounded-xl">{icon}</div>
+        </div>
+    );
+}
+
+function DetailModal({ type, value, allData, onClose }: { type: "page" | "referrer" | "country", value: string, allData: any[], onClose: () => void }) {
+    // Filter data based on selection
+    const filteredData = allData.filter(v => {
+        if (type === "page") return v.page_path === value;
+        if (type === "referrer") {
+            let ref = v.referrer;
+            if (!ref || ref.includes(window.location.hostname)) ref = "Direct / Internal";
+            else {
+                try {
+                    const url = new URL(ref);
+                    ref = url.hostname;
+                } catch { ref = "Unknown"; }
+            }
+            return ref === value;
+        }
+        return false;
+    });
+
+    // 1. Trend Chart (Views over time for this specific item)
+    const dailyCounts: { [key: string]: number } = {};
+    filteredData.forEach(v => {
+        const date = new Date(v.created_at).toLocaleDateString("id-ID");
+        dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+    });
+    const chartSeries = [{ name: "Views", data: Object.values(dailyCounts) }];
+    const chartOptions: ApexCharts.ApexOptions = {
+        chart: { type: "area" as const, height: 250, toolbar: { show: false } },
+        dataLabels: { enabled: false },
+        stroke: { curve: "smooth" },
+        xaxis: { categories: Object.keys(dailyCounts) },
+        colors: ["#3B82F6"],
+        fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 } }
+    };
+
+    // 2. Breakdown Stats
+    const breakdown1: { [key: string]: number } = {}; // Left Table
+    const breakdown2: { [key: string]: number } = {}; // Right Table
+
+    let title1 = "";
+    let title2 = "";
+
+    if (type === "page") {
+        title1 = "Asal Negara";
+        title2 = "Sumber Referrer";
+        filteredData.forEach(v => {
+            breakdown1[v.country || "Unknown"] = (breakdown1[v.country || "Unknown"] || 0) + 1;
+
+            let ref = v.referrer;
+            if (!ref || ref.includes(window.location.hostname)) ref = "Direct / Internal";
+            else { try { ref = new URL(ref).hostname; } catch { ref = "Unknown"; } }
+            breakdown2[ref] = (breakdown2[ref] || 0) + 1;
+        });
+    } else if (type === "referrer") {
+        title1 = "Halaman Yang Dituju";
+        title2 = "Asal Negara";
+        filteredData.forEach(v => {
+            breakdown1[v.page_path] = (breakdown1[v.page_path] || 0) + 1;
+            breakdown2[v.country || "Unknown"] = (breakdown2[v.country || "Unknown"] || 0) + 1;
+        });
+    }
+
+    const sortedB1 = Object.entries(breakdown1).sort(([, a], [, b]) => b - a).slice(0, 10);
+    const sortedB2 = Object.entries(breakdown2).sort(([, a], [, b]) => b - a).slice(0, 10);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                    <div>
+                        <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">{type === "page" ? "Detail Halaman" : "Detail Traffic Source"}</span>
+                        <h3 className="text-xl font-bold text-gray-900 mt-1">{value}</h3>
+                        <p className="text-sm text-gray-500">Total {filteredData.length} kunjungan</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition"><XMarkIcon className="w-6 h-6 text-gray-500" /></button>
+                </div>
+
+                <div className="p-6 space-y-8">
+                    {/* Chart */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-4">Tren Kunjungan</h4>
+                        <Chart options={chartOptions} series={chartSeries} type="area" height={250} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Table 1 */}
+                        <div className="border border-slate-100 rounded-xl overflow-hidden">
+                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 font-semibold text-sm text-gray-700">{title1}</div>
+                            <table className="w-full text-sm text-left">
+                                <tbody>
+                                    {sortedB1.map(([k, v], i) => (
+                                        <tr key={i} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                                            <td className="px-4 py-2 font-medium text-gray-900 truncate max-w-[200px]">{k}</td>
+                                            <td className="px-4 py-2 text-right text-gray-600">{v}</td>
+                                        </tr>
+                                    ))}
+                                    {sortedB1.length === 0 && <tr><td className="p-4 text-center text-gray-400">No data</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Table 2 */}
+                        <div className="border border-slate-100 rounded-xl overflow-hidden">
+                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 font-semibold text-sm text-gray-700">{title2}</div>
+                            <table className="w-full text-sm text-left">
+                                <tbody>
+                                    {sortedB2.map(([k, v], i) => (
+                                        <tr key={i} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                                            <td className="px-4 py-2 font-medium text-gray-900 truncate max-w-[200px]">{k}</td>
+                                            <td className="px-4 py-2 text-right text-gray-600">{v}</td>
+                                        </tr>
+                                    ))}
+                                    {sortedB2.length === 0 && <tr><td className="p-4 text-center text-gray-400">No data</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
