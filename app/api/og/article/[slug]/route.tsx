@@ -38,7 +38,7 @@ export async function GET(
                 >
                     <div
                         style={{
-                            fontSize: '64px',
+                            fontSize: '46px',
                             fontWeight: 'bold',
                             color: 'white',
                             textAlign: 'center',
