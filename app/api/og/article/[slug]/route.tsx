@@ -15,11 +15,12 @@ export async function GET(
             { cache: 'no-store' }
         );
 
-        if (!articleResponse.ok) {
-            throw new Error('Article not found');
-        }
+        let title = 'KangLogo Blog';
 
-        const article = await articleResponse.json();
+        if (articleResponse.ok) {
+            const article = await articleResponse.json();
+            title = article.title || 'KangLogo Blog';
+        }
 
         return new ImageResponse(
             (
@@ -31,115 +32,38 @@ export async function GET(
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: '#4f46e5',
-                        position: 'relative',
-                        overflow: 'hidden',
+                        background: '#4559F2',
+                        padding: '80px 100px',
                     }}
                 >
-                    <svg
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            opacity: 0.15,
-                        }}
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <defs>
-                            <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                                <circle cx="2" cy="2" r="2" fill="white" />
-                            </pattern>
-                        </defs>
-                        <rect width="100%" height="100%" fill="url(#dots)" />
-
-                        <circle cx="150" cy="150" r="80" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
-                        <circle cx="1050" cy="100" r="60" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
-                        <rect x="900" y="450" width="100" height="100" fill="none" stroke="white" stroke-width="2" opacity="0.3" transform="rotate(45 950 500)" />
-                        <path d="M 100 500 L 200 550 L 150 600 Z" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
-
-                        <path
-                            d="M 0 400 Q 150 350 300 400 T 600 400 T 900 400 T 1200 400"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="2"
-                            opacity="0.2"
-                        />
-                        <path
-                            d="M 0 450 Q 150 500 300 450 T 600 450 T 900 450 T 1200 450"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="2"
-                            opacity="0.2"
-                        />
-                    </svg>
-
                     <div
                         style={{
+                            fontSize: '72px',
+                            fontWeight: 'bold',
+                            color: 'white',
+                            textAlign: 'center',
+                            lineHeight: 1.3,
+                            maxWidth: '1000px',
                             display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
+                            flexWrap: 'wrap',
                             justifyContent: 'center',
-                            padding: '80px 100px',
-                            position: 'relative',
-                            zIndex: 10,
                         }}
                     >
-                        <img
-                            src={`${request.nextUrl.origin}/kanglogo.svg`}
-                            alt="Logo"
-                            width="120"
-                            height="120"
-                            style={{
-                                marginBottom: '40px',
-                                borderRadius: '20px',
-                                boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-                                filter: 'brightness(0) invert(1)',
-                            }}
-                        />
-
-                        <div
-                            style={{
-                                fontSize: '60px',
-                                fontWeight: 'bold',
-                                color: 'white',
-                                textAlign: 'center',
-                                lineHeight: 1.2,
-                                marginBottom: '30px',
-                                maxWidth: '1000px',
-                                textShadow: '0 4px 10px rgba(0,0,0,0.3)',
-                                display: 'flex',
-                            }}
-                        >
-                            {article.title || 'Artikel KangLogo'}
-                        </div>
-
-                        <div
-                            style={{
-                                fontSize: '28px',
-                                color: '#fbbf24',
-                                textAlign: 'center',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                            }}
-                        >
-                            <span>✍️</span>
-                            <span>{article.author || 'KangLogo Team'}</span>
-                        </div>
+                        {title}
                     </div>
 
                     <div
                         style={{
                             position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: '200px',
-                            background: 'linear-gradient(to top, rgba(0,0,0,0.3), transparent)',
+                            bottom: '50px',
+                            fontSize: '24px',
+                            color: 'rgba(255,255,255,0.7)',
+                            letterSpacing: '8px',
+                            display: 'flex',
                         }}
-                    />
+                    >
+                        kanglogo.com
+                    </div>
                 </div>
             ),
             {
@@ -160,11 +84,33 @@ export async function GET(
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: '#4f46e5',
+                        background: '#4559F2',
+                        padding: '80px 100px',
                     }}
                 >
-                    <div style={{ fontSize: '60px', color: 'white', fontWeight: 'bold' }}>
+                    <div
+                        style={{
+                            fontSize: '72px',
+                            fontWeight: 'bold',
+                            color: 'white',
+                            textAlign: 'center',
+                            display: 'flex',
+                        }}
+                    >
                         KangLogo Blog
+                    </div>
+
+                    <div
+                        style={{
+                            position: 'absolute',
+                            bottom: '50px',
+                            fontSize: '24px',
+                            color: 'rgba(255,255,255,0.7)',
+                            letterSpacing: '8px',
+                            display: 'flex',
+                        }}
+                    >
+                        kanglogo.com
                     </div>
                 </div>
             ),
