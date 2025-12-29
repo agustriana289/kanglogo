@@ -21,7 +21,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
-type FilterTab = "premium" | "freebies";
+type FilterTab = "premium" | "freebies" | "sold";
 
 export default function MarketplaceManagementPage() {
   const [assets, setAssets] = useState<MarketplaceAsset[]>([]);
@@ -92,8 +92,9 @@ export default function MarketplaceManagementPage() {
 
   // Stats
   const stats = useMemo(() => ({
-    premium: assets.filter((a) => a.jenis === "premium").length,
-    freebies: assets.filter((a) => a.jenis === "freebies").length,
+    premium: assets.filter((a) => a.jenis === "premium" && !a.is_sold).length,
+    freebies: assets.filter((a) => a.jenis === "freebies" && !a.is_sold).length,
+    sold: assets.filter((a) => a.is_sold).length,
   }), [assets]);
 
   // Filtered assets
@@ -101,7 +102,13 @@ export default function MarketplaceManagementPage() {
     let filtered = assets;
 
     // Tab filter
-    filtered = filtered.filter((a) => a.jenis === activeTab);
+    if (activeTab === "sold") {
+      // Tab Terjual: hanya item yang is_sold = true
+      filtered = filtered.filter((a) => a.is_sold);
+    } else {
+      // Tab Premium/Freebies: filter by jenis DAN exclude sold items
+      filtered = filtered.filter((a) => a.jenis === activeTab && !a.is_sold);
+    }
 
     // Search filter
     if (searchQuery.trim()) {
@@ -413,6 +420,7 @@ export default function MarketplaceManagementPage() {
   const tabs: { key: FilterTab; label: string; count: number }[] = [
     { key: "premium", label: "Premium", count: stats.premium },
     { key: "freebies", label: "Freebies", count: stats.freebies },
+    { key: "sold", label: "Terjual", count: stats.sold },
   ];
 
   // Get unique categories

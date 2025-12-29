@@ -213,6 +213,22 @@ export default function StorePurchasesPage() {
         .update({ status: editedStatus, download_link: downloadLink || null })
         .eq("id", selectedOrder.id);
       if (error) throw error;
+
+      // Auto-update is_sold (dua arah)
+      if (editedStatus === 'completed' && selectedOrder.status !== 'completed') {
+        // Status berubah KE completed → mark as sold
+        await supabase
+          .from("marketplace_assets")
+          .update({ is_sold: true })
+          .eq("id", selectedOrder.asset_id);
+      } else if (editedStatus !== 'completed' && selectedOrder.status === 'completed') {
+        // Status berubah DARI completed ke status lain → mark as available
+        await supabase
+          .from("marketplace_assets")
+          .update({ is_sold: false })
+          .eq("id", selectedOrder.asset_id);
+      }
+
       showAlert("success", "Berhasil", "Pesanan berhasil diperbarui!");
       fetchOrders();
       setShowDetailModal(false);
@@ -347,15 +363,14 @@ export default function StorePurchasesPage() {
   }) => (
     <button
       onClick={onChange}
-      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${
-        checked
-          ? variant === "header"
-            ? "text-white"
-            : "text-primary"
-          : variant === "header"
+      className={`flex items-center justify-center w-5 h-5 rounded transition-colors ${checked
+        ? variant === "header"
+          ? "text-white"
+          : "text-primary"
+        : variant === "header"
           ? "text-white/50 hover:text-white/80"
           : "text-gray-300 hover:text-gray-400"
-      }`}
+        }`}
     >
       {checked ? (
         <CheckCircleIcon className="w-5 h-5" />
@@ -471,11 +486,10 @@ export default function StorePurchasesPage() {
                   setFilterStatus(st);
                   setCurrentPage(1);
                 }}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
-                  filterStatus === st
-                    ? "shadow-sm text-gray-900 bg-white"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === st
+                  ? "shadow-sm text-gray-900 bg-white"
+                  : "text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 {st}
               </button>
@@ -555,13 +569,12 @@ export default function StorePurchasesPage() {
                 <span className="text-gray-700">
                   {bulkStatus
                     ? statusOptions.find((opt) => opt.value === bulkStatus)
-                        ?.label
+                      ?.label
                     : "Ubah Status..."}
                 </span>
                 <ChevronDownIcon
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    bulkStatusDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 text-gray-400 transition-transform ${bulkStatusDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
               {bulkStatusDropdownOpen && (
@@ -732,9 +745,8 @@ export default function StorePurchasesPage() {
                   return (
                     <tr
                       key={o.id}
-                      className={`hover:bg-gray-50 transition ${
-                        selectedOrders.includes(o.id) ? "bg-primary/5" : ""
-                      }`}
+                      className={`hover:bg-gray-50 transition ${selectedOrders.includes(o.id) ? "bg-primary/5" : ""
+                        }`}
                     >
                       <td className="px-6 py-4">
                         <CustomCheckbox
@@ -819,11 +831,10 @@ export default function StorePurchasesPage() {
                   ) : (
                     <button
                       onClick={() => setCurrentPage(p as number)}
-                      className={`w-9 h-9 border rounded-lg ${
-                        currentPage === p
-                          ? "text-primary bg-primary/10 border-primary"
-                          : "hover:bg-gray-50"
-                      }`}
+                      className={`w-9 h-9 border rounded-lg ${currentPage === p
+                        ? "text-primary bg-primary/10 border-primary"
+                        : "hover:bg-gray-50"
+                        }`}
                     >
                       {p}
                     </button>
@@ -850,9 +861,8 @@ export default function StorePurchasesPage() {
             >
               <span>{itemsPerPage} halaman</span>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  pageDropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${pageDropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
             {pageDropdownOpen && (
@@ -865,11 +875,10 @@ export default function StorePurchasesPage() {
                       setPageDropdownOpen(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
-                      itemsPerPage === v
-                        ? "text-primary font-medium bg-primary/5"
-                        : ""
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${itemsPerPage === v
+                      ? "text-primary font-medium bg-primary/5"
+                      : ""
+                      }`}
                   >
                     {v} halaman
                   </button>
@@ -996,11 +1005,10 @@ export default function StorePurchasesPage() {
                               "_blank"
                             )
                           }
-                          className={`flex-1 flex items-center gap-2 px-3 py-2.5 border rounded-lg overflow-hidden ${
-                            downloadLink
-                              ? "cursor-pointer hover:bg-gray-50"
-                              : ""
-                          }`}
+                          className={`flex-1 flex items-center gap-2 px-3 py-2.5 border rounded-lg overflow-hidden ${downloadLink
+                            ? "cursor-pointer hover:bg-gray-50"
+                            : ""
+                            }`}
                         >
                           {downloadLink ? (
                             <>
