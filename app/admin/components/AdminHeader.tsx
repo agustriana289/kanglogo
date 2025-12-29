@@ -234,11 +234,10 @@ export default function AdminHeader({
           {/* Mobile Search Button */}
           <button
             onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-            className={`md:hidden p-2 rounded-lg transition-colors ${
-              isMobileSearchOpen
+            className={`md:hidden p-2 rounded-lg transition-colors ${isMobileSearchOpen
                 ? "bg-slate-100 dark:bg-slate-700 text-primary"
                 : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
-            }`}
+              }`}
           >
             <MagnifyingGlassIcon className="w-5 h-5" />
           </button>
@@ -288,11 +287,10 @@ export default function AdminHeader({
                             if (notification.link)
                               router.push(notification.link);
                           }}
-                          className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer transition-colors ${
-                            !notification.is_read
+                          className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer transition-colors ${!notification.is_read
                               ? "bg-blue-50/50 dark:bg-blue-900/10"
                               : ""
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 mt-1">
@@ -300,11 +298,10 @@ export default function AdminHeader({
                             </div>
                             <div className="flex-1 min-w-0">
                               <p
-                                className={`text-sm font-medium ${
-                                  !notification.is_read
+                                className={`text-sm font-medium ${!notification.is_read
                                     ? "text-slate-900 dark:text-white"
                                     : "text-slate-700 dark:text-slate-300"
-                                }`}
+                                  }`}
                               >
                                 {notification.title}
                               </p>
@@ -383,6 +380,16 @@ export default function AdminHeader({
                   >
                     <DocumentIcon className="w-4 h-4 text-slate-400" />
                     Landing Page
+                  </Link>
+                  <Link
+                    href="/admin/header-settings"
+                    onClick={() => setIsSettingsOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    Pengaturan Header
                   </Link>
                 </div>
               </div>
