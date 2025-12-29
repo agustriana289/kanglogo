@@ -47,5 +47,17 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/robots.txt',
+        destination: '/api/robots',
+      },
+      {
+        source: '/ads.txt',
+        destination: '/api/ads',
+      },
+    ];
+  },
 };
 module.exports = withBundleAnalyzer(withPWA(nextConfig));

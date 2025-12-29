@@ -13,6 +13,7 @@ import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 import JsonLd from "@/components/JsonLd";
 import Script from "next/script";
 import SeoTracker from "@/components/SeoTracker";
+import CustomHeadInjector from "@/components/CustomHeadInjector";
 
 
 const inter = Inter({
@@ -141,6 +142,7 @@ export default function RootLayout({
         }} />
         <JsonLd data={organizationData} />
         <JsonLd data={websiteData} />
+        <CustomHeadInjector />
         <RootLayoutClient />
         <Header />
         {children}
