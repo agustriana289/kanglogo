@@ -10,7 +10,6 @@ export async function GET(
     try {
         const { slug } = await params;
 
-        // Fetch article data
         const articleResponse = await fetch(
             `${request.nextUrl.origin}/api/articles/${slug}`,
             { cache: 'no-store' }
@@ -21,9 +20,6 @@ export async function GET(
         }
 
         const article = await articleResponse.json();
-
-        // Fetch logo
-        const logoUrl = `${request.nextUrl.origin}/icons/icon-512x512.png.png`;
 
         return new ImageResponse(
             (
@@ -40,7 +36,6 @@ export async function GET(
                         overflow: 'hidden',
                     }}
                 >
-                    {/* SVG Background Pattern */}
                     <svg
                         style={{
                             position: 'absolute',
@@ -52,7 +47,6 @@ export async function GET(
                         }}
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        {/* Grid Dots */}
                         <defs>
                             <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
                                 <circle cx="2" cy="2" r="2" fill="white" />
@@ -60,30 +54,27 @@ export async function GET(
                         </defs>
                         <rect width="100%" height="100%" fill="url(#dots)" />
 
-                        {/* Geometric Shapes */}
-                        <circle cx="150" cy="150" r="80" fill="none" stroke="white" strokeWidth="2" opacity="0.3" />
-                        <circle cx="1050" cy="100" r="60" fill="none" stroke="white" strokeWidth="2" opacity="0.3" />
-                        <rect x="900" y="450" width="100" height="100" fill="none" stroke="white" strokeWidth="2" opacity="0.3" transform="rotate(45 950 500)" />
-                        <path d="M 100 500 L 200 550 L 150 600 Z" fill="none" stroke="white" strokeWidth="2" opacity="0.3" />
+                        <circle cx="150" cy="150" r="80" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
+                        <circle cx="1050" cy="100" r="60" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
+                        <rect x="900" y="450" width="100" height="100" fill="none" stroke="white" stroke-width="2" opacity="0.3" transform="rotate(45 950 500)" />
+                        <path d="M 100 500 L 200 550 L 150 600 Z" fill="none" stroke="white" stroke-width="2" opacity="0.3" />
 
-                        {/* Wave Pattern */}
                         <path
                             d="M 0 400 Q 150 350 300 400 T 600 400 T 900 400 T 1200 400"
                             fill="none"
                             stroke="white"
-                            strokeWidth="2"
+                            stroke-width="2"
                             opacity="0.2"
                         />
                         <path
                             d="M 0 450 Q 150 500 300 450 T 600 450 T 900 450 T 1200 450"
                             fill="none"
                             stroke="white"
-                            strokeWidth="2"
+                            stroke-width="2"
                             opacity="0.2"
                         />
                     </svg>
 
-                    {/* Content Container */}
                     <div
                         style={{
                             display: 'flex',
@@ -95,9 +86,8 @@ export async function GET(
                             zIndex: 10,
                         }}
                     >
-                        {/* Logo */}
                         <img
-                            src={logoUrl}
+                            src={`${request.nextUrl.origin}/kanglogo.svg`}
                             alt="Logo"
                             width="120"
                             height="120"
@@ -105,10 +95,10 @@ export async function GET(
                                 marginBottom: '40px',
                                 borderRadius: '20px',
                                 boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                                filter: 'brightness(0) invert(1)',
                             }}
                         />
 
-                        {/* Title */}
                         <div
                             style={{
                                 fontSize: '60px',
@@ -125,7 +115,6 @@ export async function GET(
                             {article.title || 'Artikel KangLogo'}
                         </div>
 
-                        {/* Author */}
                         <div
                             style={{
                                 fontSize: '28px',
@@ -141,7 +130,6 @@ export async function GET(
                         </div>
                     </div>
 
-                    {/* Bottom Gradient Overlay */}
                     <div
                         style={{
                             position: 'absolute',
@@ -162,7 +150,6 @@ export async function GET(
     } catch (error) {
         console.error('Error generating OG image:', error);
 
-        // Fallback image
         return new ImageResponse(
             (
                 <div

@@ -130,9 +130,6 @@ export default function Sidebar() {
           key={widget.id}
           className="bg-white rounded-lg shadow p-4"
         >
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">
-            {widget.title}
-          </h3>
           <div
             className="text-gray-700 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: widget.content }}
