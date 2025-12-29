@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Script from 'next/script';
 import { supabase } from '@/lib/supabase';
 
 export default function CustomHeadInjector() {
+    const [customCode, setCustomCode] = useState('');
+
     useEffect(() => {
-        const injectCustomCode = async () => {
+        const fetchCustomCode = async () => {
             try {
                 const { data } = await supabase
                     .from('website_settings')
@@ -13,44 +16,19 @@ export default function CustomHeadInjector() {
                     .single();
 
                 if (data?.custom_head_code) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.custom_head_code;
-
-                    const scripts = tempDiv.querySelectorAll('script');
-                    scripts.forEach((script) => {
-                        const newScript = document.createElement('script');
-
-                        if (script.src) {
-                            newScript.src = script.src;
-                        }
-
-                        if (script.innerHTML) {
-                            newScript.innerHTML = script.innerHTML;
-                        }
-
-                        Array.from(script.attributes).forEach((attr) => {
-                            newScript.setAttribute(attr.name, attr.value);
-                        });
-
-                        document.head.appendChild(newScript);
-                    });
-
-                    const metas = tempDiv.querySelectorAll('meta');
-                    metas.forEach((meta) => {
-                        const newMeta = document.createElement('meta');
-                        Array.from(meta.attributes).forEach((attr) => {
-                            newMeta.setAttribute(attr.name, attr.value);
-                        });
-                        document.head.appendChild(newMeta);
-                    });
+                    setCustomCode(data.custom_head_code);
                 }
             } catch (error) {
-                console.error('Error injecting custom head code:', error);
+                console.error('Error fetching custom head code:', error);
             }
         };
 
-        injectCustomCode();
+        fetchCustomCode();
     }, []);
 
-    return null;
+    if (!customCode) return null;
+
+    return (
+        <div dangerouslySetInnerHTML={{ __html: customCode }} />
+    );
 }

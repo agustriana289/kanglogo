@@ -169,8 +169,9 @@ export default function SEOPage() {
                 if (error) throw error;
                 showAlert("success", "Berhasil", "Meta tag berhasil diperbarui");
             } else {
-                // Insert new meta tag
-                const { error } = await supabase.from("meta_tags").insert(newMetaTag);
+                // Insert new meta tag - remove id field
+                const { id, ...tagData } = newMetaTag;
+                const { error } = await supabase.from("meta_tags").insert(tagData);
 
                 if (error) throw error;
                 showAlert("success", "Berhasil", "Meta tag berhasil ditambahkan");
