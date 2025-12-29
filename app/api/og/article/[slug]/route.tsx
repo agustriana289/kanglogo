@@ -38,7 +38,7 @@ export async function GET(
                 >
                     <div
                         style={{
-                            fontSize: '72px',
+                            fontSize: '64px',
                             fontWeight: 'bold',
                             color: 'white',
                             textAlign: 'center',
@@ -62,7 +62,7 @@ export async function GET(
                             display: 'flex',
                         }}
                     >
-                        kanglogo.com
+                        KANGLOGO.COM
                     </div>
                 </div>
             ),
@@ -94,7 +94,11 @@ export async function GET(
                             fontWeight: 'bold',
                             color: 'white',
                             textAlign: 'center',
+                            lineHeight: 1.3,
+                            maxWidth: '1000px',
                             display: 'flex',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center',
                         }}
                     >
                         KangLogo Blog

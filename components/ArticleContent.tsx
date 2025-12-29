@@ -273,26 +273,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                         </li>
                       </React.Fragment>
                     ))}
-
-                  {/* Item terakhir (judul artikel) */}
-                  <li className="flex items-center">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </li>
-                  <li>
-                    <span className="px-3 py-1 bg-slate-200/50 text-slate-700 rounded-full text-xs font-medium truncate max-w-24 md:max-w-32">
-                      {article.title}
-                    </span>
-                  </li>
                 </ol>
               </nav>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
