@@ -28,11 +28,61 @@ export async function generateMetadata({
   const { slug } = await params;
   const service = await getService(slug);
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kanglogo.com';
+  const canonicalUrl = `${baseUrl}/services/${slug}`;
+
+  const description = service.short_description || "Layanan desain profesional terpercaya di Indonesia.";
+
+  const keywords = [
+    service.title,
+    'jasa desain',
+    'desain profesional',
+    'KangLogo',
+    'layanan desain'
+  ].join(', ');
+
   return {
     title: `${service.title} | KangLogo.com`,
-    description:
-      service.short_description ||
-      "Layanan desain profesional terpercaya di Indonesia.",
+    description: description,
+    keywords: keywords,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    openGraph: {
+      title: service.title,
+      description: description,
+      url: canonicalUrl,
+      siteName: 'KangLogo.com',
+      locale: 'id_ID',
+      images: service.image_src ? [
+        {
+          url: service.image_src,
+          width: 1200,
+          height: 630,
+          alt: service.title,
+        }
+      ] : [],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: service.title,
+      description: description,
+      images: service.image_src ? [service.image_src] : [],
+      creator: '@kanglogo',
+      site: '@kanglogo',
+    },
   };
 }
 

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { headers } from "next/headers"; // Tambahkan import ini
+import { headers } from "next/headers";
+import { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { Project } from "@/types/project";
 import ShareButtons from "./ShareButtons";
@@ -19,6 +20,74 @@ async function getProject(slug: string): Promise<Project> {
   }
 
   return data;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await getProject(slug);
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kanglogo.com';
+  const canonicalUrl = `${baseUrl}/projects/${slug}`;
+
+  const description = project.deskripsi_proyek
+    ? project.deskripsi_proyek.replace(/<[^>]*>/g, '').substring(0, 160)
+    : `Portfolio desain ${project.title} - KangLogo.com`;
+
+  const keywords = [
+    'portfolio desain',
+    'desain logo',
+    project.type,
+    'jasa desain',
+    'KangLogo'
+  ].filter(Boolean).join(', ');
+
+  return {
+    title: `${project.title} - Portfolio KangLogo`,
+    description: description,
+    keywords: keywords,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    openGraph: {
+      title: project.title,
+      description: description,
+      url: canonicalUrl,
+      siteName: 'KangLogo.com',
+      locale: 'id_ID',
+      images: project.image_url ? [
+        {
+          url: project.image_url,
+          width: 1200,
+          height: 630,
+          alt: project.title,
+        }
+      ] : [],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: project.title,
+      description: description,
+      images: project.image_url ? [project.image_url] : [],
+      creator: '@kanglogo',
+      site: '@kanglogo',
+    },
+  };
 }
 
 function formatDate(dateString: string | null): string {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import WidgetArea from "./WidgetArea";
 import Link from "next/link";
@@ -129,9 +130,8 @@ export default function Footer() {
     return links.filter((link) => link.category_id === categoryId);
   };
 
-  const waLink = `https://wa.me/${
-    settings?.website_phone?.replace(/\D/g, "") || ""
-  }`;
+  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
+    }`;
 
   // Perbaikan: Tambahkan tipe eksplisit untuk parameter svgString
   const fixSvg = (svgString: string) => {
@@ -169,19 +169,19 @@ export default function Footer() {
                     "Jasa Logo #1 Indonesia - Kanglogo.com"
                   }
                 >
-                  <img
-                    alt={
-                      settings?.website_name ||
-                      "Jasa Logo #1 Indonesia - Kanglogo.com"
-                    }
-                    src={logoUrl}
-                    title={
-                      settings?.website_name ||
-                      "Jasa Logo #1 Indonesia - Kanglogo.com"
-                    }
-                    loading="lazy"
-                    className="lazyload h-12 brightness-0 invert opacity-90"
-                  />
+                  {logoUrl && (
+                    <Image
+                      alt={
+                        settings?.website_name ||
+                        "Jasa Logo #1 Indonesia - Kanglogo.com"
+                      }
+                      src={logoUrl}
+                      width={180}
+                      height={48}
+                      unoptimized
+                      className="h-12 w-auto brightness-0 invert opacity-90"
+                    />
+                  )}
                 </Link>
               </div>
               <div className="widget Text" data-version="1" id="Text3">
@@ -196,9 +196,8 @@ export default function Footer() {
                 <div className="widget-content">
                   <a
                     className="py-2.5 px-5 h-9 block w-fit bg-primary rounded-full shadow-sm text-xs text-white mx-auto transition-all duration-500 hover:bg-primary/90 lg:mx-0"
-                    href={`mailto:${
-                      settings?.website_email || "halo@kanglogo.com"
-                    }`}
+                    href={`mailto:${settings?.website_email || "halo@kanglogo.com"
+                      }`}
                   >
                     {settings?.website_email || "halo@kanglogo.com"}
                   </a>

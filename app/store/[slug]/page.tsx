@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { MarketplaceAsset } from "@/types/marketplace";
 
@@ -33,6 +34,85 @@ async function getAsset(slug: string): Promise<MarketplaceAsset> {
   }
 
   return data;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  if (slug.startsWith("STR-")) {
+    return {
+      title: 'Invoice - KangLogo Store',
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const asset = await getAsset(slug);
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kanglogo.com';
+  const canonicalUrl = `${baseUrl}/store/${slug}`;
+
+  const description = asset.deskripsi
+    ? asset.deskripsi.replace(/<[^>]*>/g, '').substring(0, 160)
+    : `${asset.nama_aset} - ${asset.jenis === 'premium' ? 'Premium' : 'Freebies'} desain dari KangLogo`;
+
+  const keywords = [
+    asset.nama_aset,
+    asset.kategori_aset,
+    asset.jenis === 'premium' ? 'premium design' : 'free design',
+    'desain grafis',
+    'KangLogo'
+  ].filter(Boolean).join(', ');
+
+  return {
+    title: `${asset.nama_aset} - KangLogo Store`,
+    description: description,
+    keywords: keywords,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    openGraph: {
+      title: asset.nama_aset,
+      description: description,
+      url: canonicalUrl,
+      siteName: 'KangLogo.com',
+      locale: 'id_ID',
+      images: asset.image_url ? [
+        {
+          url: asset.image_url,
+          width: 1200,
+          height: 630,
+          alt: asset.nama_aset,
+        }
+      ] : [],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: asset.nama_aset,
+      description: description,
+      images: asset.image_url ? [asset.image_url] : [],
+      creator: '@kanglogo',
+      site: '@kanglogo',
+    },
+  };
 }
 
 const formatCurrency = (amount: number) => {

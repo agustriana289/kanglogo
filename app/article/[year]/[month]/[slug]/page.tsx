@@ -70,12 +70,41 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kanglogo.com';
   const ogImage = article.featured_image || `${baseUrl}/api/og/article/${article.slug}`;
 
+  const articleDate = new Date(article.published_at);
+  const year = articleDate.getFullYear();
+  const month = String(articleDate.getMonth() + 1).padStart(2, '0');
+  const canonicalUrl = `${baseUrl}/article/${year}/${month}/${article.slug}`;
+
+  const categories = article.article_categories?.map((ac: any) => ac.categories?.name).filter(Boolean) || [];
+  const keywords = categories.length > 0
+    ? [...categories, 'desain logo', 'jasa desain', 'KangLogo'].join(', ')
+    : 'desain logo, jasa desain, KangLogo';
+
   return {
     title: article.title,
     description: article.excerpt,
+    keywords: keywords,
+    authors: [{ name: article.author_name || 'KangLogo Team' }],
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
     openGraph: {
       title: article.title,
       description: article.excerpt,
+      url: canonicalUrl,
+      siteName: 'KangLogo.com',
+      locale: 'id_ID',
       images: [
         {
           url: ogImage,
@@ -86,13 +115,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ],
       type: 'article',
       publishedTime: article.published_at,
+      modifiedTime: article.updated_at || article.published_at,
       authors: [article.author_name || 'KangLogo Team'],
+      section: categories[0] || 'Blog',
+      tags: categories,
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
       description: article.excerpt,
       images: [ogImage],
+      creator: '@kanglogo',
+      site: '@kanglogo',
     },
   };
 }

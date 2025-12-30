@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import WidgetArea from "./WidgetArea";
 
@@ -92,9 +93,8 @@ export default function Header() {
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const waLink = `https://wa.me/${
-    settings?.website_phone?.replace(/\D/g, "") || ""
-  }`;
+  const waLink = `https://wa.me/${settings?.website_phone?.replace(/\D/g, "") || ""
+    }`;
   const waDisplay = settings?.website_phone;
   const logoUrl = settings?.logo_url;
 
@@ -112,11 +112,17 @@ export default function Header() {
                     href="/"
                     title={settings?.website_name}
                   >
-                    <img
-                      className="h-12"
-                      src={logoUrl}
-                      alt={settings?.website_name}
-                    />
+                    {logoUrl && (
+                      <Image
+                        src={logoUrl}
+                        alt={settings?.website_name || "KangLogo"}
+                        width={180}
+                        height={48}
+                        priority
+                        unoptimized
+                        className="h-12 w-auto"
+                      />
+                    )}
                   </Link>
                 </div>
               </div>
@@ -146,9 +152,8 @@ export default function Header() {
 
                 {/* Mobile Menu */}
                 <div
-                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${
-                    mobileMenuOpen ? "block" : "hidden"
-                  }`}
+                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${mobileMenuOpen ? "block" : "hidden"
+                    }`}
                   id="mobile-menu"
                 >
                   <div className="p-4 border-b">
@@ -195,9 +200,8 @@ export default function Header() {
                   </nav>
                 </div>
                 <div
-                  className={`menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden ${
-                    mobileMenuOpen ? "block" : "hidden"
-                  }`}
+                  className={`menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden ${mobileMenuOpen ? "block" : "hidden"
+                    }`}
                   id="menu-overlay"
                   onClick={closeMobileMenu}
                 ></div>
