@@ -40,7 +40,7 @@ interface ArticleContentProps {
 export default function ArticleContent({ article }: ArticleContentProps) {
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
   const [latestArticles, setLatestArticles] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
@@ -51,7 +51,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
   const viewIncremented = useRef(false);
   useEffect(() => {
     const incrementView = async () => {
-      // Prevent double counting in Strict Mode or re-renders
       if (viewIncremented.current) return;
       viewIncremented.current = true;
 
