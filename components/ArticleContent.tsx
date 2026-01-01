@@ -140,7 +140,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         excerpt,
         featured_image,
         published_at,
-        users(name),
         article_categories(
           categories(id, name, slug)
         )
@@ -156,7 +155,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
       } else if (Array.isArray(data) && data.length > 0) {
         const transformedData = data.map((item: any) => ({
           ...item,
-          author: item.users || { name: "Admin" },
+          author: { name: "Admin" },
           categories: Array.isArray(item.article_categories)
             ? item.article_categories
               .map((ac: any) => ac.categories)
@@ -178,23 +177,39 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
   const fetchLatestArticles = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const currentDate = new Date(article.published_at);
+
+      // Ambil 1 artikel sebelum artikel ini (published_at < current)
+      const { data: prevArticle } = await supabase
         .from("articles")
         .select("id, title, slug, published_at")
         .eq("status", "published")
-        .neq("id", article.id)
+        .lt("published_at", article.published_at)
         .order("published_at", { ascending: false })
-        .limit(2);
+        .limit(1);
 
-      if (error) {
-        console.error("Error fetching latest articles:", error);
-      } else if (data) {
-        setLatestArticles(data);
+      // Ambil 1 artikel sesudah artikel ini (published_at > current)
+      const { data: nextArticle } = await supabase
+        .from("articles")
+        .select("id, title, slug, published_at")
+        .eq("status", "published")
+        .gt("published_at", article.published_at)
+        .order("published_at", { ascending: true })
+        .limit(1);
+
+      const articles = [];
+      if (prevArticle && prevArticle.length > 0) {
+        articles.push(prevArticle[0]);
       }
+      if (nextArticle && nextArticle.length > 0) {
+        articles.push(nextArticle[0]);
+      }
+
+      setLatestArticles(articles);
     } catch (error) {
-      console.error("Error fetching latest articles:", error);
+      console.error("Error fetching prev/next articles:", error);
     }
-  }, [article.id]);
+  }, [article.id, article.published_at]);
 
   useEffect(() => {
     fetchLatestArticles();
