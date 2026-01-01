@@ -71,7 +71,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
   const fetchRelatedArticles = async () => {
     try {
-      // Get articles from same categories
       const categoryIds = article.categories.map((c) => c.id);
 
       if (categoryIds.length === 0) {
@@ -79,7 +78,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         return;
       }
 
-      // First, get article IDs that share categories
       const { data: relatedArticleCategories, error: categoryError } =
         await supabase
           .from("article_categories")
@@ -96,7 +94,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         return;
       }
 
-      // Get unique article IDs
       const relatedArticleIds = [
         ...new Set(relatedArticleCategories?.map((ac) => ac.article_id) || []),
       ];
@@ -106,7 +103,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         return;
       }
 
-      // Fetch actual articles
       const { data, error } = await supabase
         .from("articles")
         .select(
@@ -126,7 +122,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         .eq("status", "published")
         .in("id", relatedArticleIds)
         .order("published_at", { ascending: false })
-        .limit(3);
+        .limit(4);
 
       if (error) {
         console.error("Error fetching related articles:", error);
@@ -236,37 +232,24 @@ export default function ArticleContent({ article }: ArticleContentProps) {
             {/* Article Header */}
             <div className="p-6 pb-4">
               <nav aria-label="Breadcrumb" className="mb-4">
-                <ol className="flex flex-wrap items-center space-x-2">
+                <ol className="flex flex-wrap items-center space-x-2 text-sm">
                   <li>
                     <Link
                       href="/"
-                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-full text-xs font-medium text-gray-700 transition-colors"
+                      className="text-gray-600 hover:text-primary transition-colors"
                     >
                       Home
                     </Link>
                   </li>
 
-                  {/* Tampilkan kategori jika ada */}
                   {article.categories.length > 0 &&
                     article.categories.map((category, index) => (
                       <React.Fragment key={category.id}>
-                        <li className="flex items-center">
-                          <svg
-                            className="w-5 h-5 text-gray-400"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </li>
+                        <li className="text-gray-400">/</li>
                         <li>
                           <Link
                             href={`/category/${category.slug}`}
-                            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-full text-xs font-medium text-gray-700 transition-colors"
+                            className="text-gray-600 hover:text-primary transition-colors"
                           >
                             {category.name}
                           </Link>
@@ -329,13 +312,12 @@ export default function ArticleContent({ article }: ArticleContentProps) {
             <ShareButtons url={currentUrl} title={article.title} />
           </div>
 
-          {/* Related Articles */}
           {relatedArticles.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-6">
                 Artikel Terkait
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {relatedArticles.map((relatedArticle) => (
                   <div
                     key={relatedArticle.id}
@@ -378,7 +360,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
         {/* <-- 3. Tambahkan Kolom Sidebar */}
         <div className="lg:col-span-1">
-          <Sidebar />
+          <Sidebar showPopularArticles={true} showCategories={true} />
         </div>
       </div>
 

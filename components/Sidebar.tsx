@@ -1,10 +1,11 @@
-// components/Sidebar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation"; // Import usePathname
+import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 interface Category {
   id: number;
@@ -19,14 +20,27 @@ interface Widget {
   content: string;
 }
 
-export default function Sidebar() {
-  const pathname = usePathname(); // Dapatkan path URL saat ini
+interface PopularArticle {
+  id: number;
+  title: string;
+  slug: string;
+  published_at: string;
+  views: number;
+}
+
+interface SidebarProps {
+  showPopularArticles?: boolean;
+  showCategories?: boolean;
+}
+
+export default function Sidebar({ showPopularArticles = false, showCategories = false }: SidebarProps) {
+  const pathname = usePathname();
   const [categories, setCategories] = useState<Category[]>([]);
   const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [popularArticles, setPopularArticles] = useState<PopularArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
-  // Tentukan apakah kita berada di halaman blog atau tidak
-  // Kita asumsikan jika path bukan /pages, maka itu adalah halaman blog
   const isBlogPage = !pathname.startsWith("/pages");
 
   useEffect(() => {
@@ -35,9 +49,7 @@ export default function Sidebar() {
 
   const fetchSidebarData = async () => {
     try {
-      // Hanya ambil kategori jika kita berada di halaman blog
-      if (isBlogPage) {
-        // Pertama, ambil semua kategori
+      if (isBlogPage && showCategories) {
         const { data: categoriesData, error: categoriesError } = await supabase
           .from("categories")
           .select("*")
@@ -46,25 +58,38 @@ export default function Sidebar() {
         if (categoriesError) {
           console.error("Error fetching categories:", categoriesError);
         } else {
-          // Kedua, untuk setiap kategori, hitung jumlah artikel yang terkait
           const categoriesWithCounts = await Promise.all(
             categoriesData.map(async (category) => {
               const { count, error } = await supabase
                 .from("article_categories")
-                .select("*", { count: "exact", head: true }) // Hitung entri di tabel hubung
+                .select("*", { count: "exact", head: true })
                 .eq("category_id", category.id);
 
               return {
                 ...category,
-                count: count || 0, // Gunakan count atau 0 jika ada error
+                count: count || 0,
               };
             })
           );
-          setCategories(categoriesWithCounts);
+          setCategories(categoriesWithCounts.filter(cat => cat.count > 0));
         }
       }
 
-      // Fetch widgets (ini selalu dijalankan)
+      if (isBlogPage && showPopularArticles) {
+        const { data: popularData, error: popularError } = await supabase
+          .from("articles")
+          .select("id, title, slug, published_at, views")
+          .eq("status", "published")
+          .order("views", { ascending: false })
+          .limit(5);
+
+        if (popularError) {
+          console.error("Error fetching popular articles:", popularError);
+        } else {
+          setPopularArticles(popularData || []);
+        }
+      }
+
       const { data: widgetsData, error: widgetsError } = await supabase
         .from("widgets")
         .select("*")
@@ -83,6 +108,18 @@ export default function Sidebar() {
     }
   };
 
+  const getArticleUrl = (article: PopularArticle) => {
+    const date = new Date(article.published_at);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `/article/${year}/${month}/${article.slug}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, "dd MMM yyyy", { locale: id });
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -92,16 +129,40 @@ export default function Sidebar() {
     );
   }
 
+  const displayedCategories = showAllCategories ? categories : categories.slice(0, 10);
+  const hasMoreCategories = categories.length > 10;
+
   return (
     <div className="space-y-6">
-      {/* PERUBAHAN: Hanya render kategori jika isBlogPage benar */}
-      {isBlogPage && (
+      {isBlogPage && showPopularArticles && popularArticles.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="font-semibold mb-4 text-gray-900">
+            Artikel Populer
+          </h3>
+          <div className="space-y-3">
+            {popularArticles.map((article) => (
+              <Link
+                key={article.id}
+                href={getArticleUrl(article)}
+                className="block group"
+              >
+                <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
+                  {article.title}
+                </h4>
+                <p className="text-xs text-gray-500">{formatDate(article.published_at)}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isBlogPage && showCategories && (
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="font-semibold mb-4 text-gray-900">
             Kategori
           </h3>
           <div className="space-y-2">
-            {categories.map((category) => (
+            {displayedCategories.map((category) => (
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
@@ -120,11 +181,18 @@ export default function Sidebar() {
                 Belum ada kategori
               </p>
             )}
+            {hasMoreCategories && (
+              <button
+                onClick={() => setShowAllCategories(!showAllCategories)}
+                className="w-full text-left p-2 rounded-md hover:bg-gray-100 transition-colors text-sm text-primary font-medium"
+              >
+                {showAllCategories ? "Tampilkan Lebih Sedikit" : "Muat Lainnya"}
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Widgets selalu ditampilkan */}
       {widgets.map((widget) => (
         <div
           key={widget.id}
