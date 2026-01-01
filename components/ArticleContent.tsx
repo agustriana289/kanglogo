@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -39,7 +39,7 @@ interface ArticleContentProps {
 
 export default function ArticleContent({ article }: ArticleContentProps) {
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
-  // Add loading state
+  const [latestArticles, setLatestArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUrl, setCurrentUrl] = useState("");
 
@@ -65,11 +65,41 @@ export default function ArticleContent({ article }: ArticleContentProps) {
     incrementView();
   }, [article.id]);
 
-  useEffect(() => {
-    fetchRelatedArticles();
-  }, [article.id]);
+  // Fungsi untuk memperbaiki format konten sebelum ditampilkan
+  const processContent = useCallback((content: string) => {
+    let processedContent = content.replace(
+      /<p>(\d+\.\s+[\s\S]*?)<\/p>/g,
+      "<h2>$1</h2>"
+    );
 
-  const fetchRelatedArticles = async () => {
+    processedContent = processedContent.replace(
+      /<p>\s*→\s*([\s\S]*?)<\/p>/g,
+      "<li>$1</li>"
+    );
+
+    processedContent = processedContent.replace(
+      /<p>\s*✓\s*([\s\S]*?)<\/p>/g,
+      "<li>$1</li>"
+    );
+
+    processedContent = processedContent.replace(/(<br\s*\/?>){2,}/gi, "<br>");
+    processedContent = processedContent.replace(/<ul><ul>/g, "<ul>");
+    processedContent = processedContent.replace(/<\/ul><\/ul>/g, "</ul>");
+    processedContent = processedContent.replace(/<li><\/li>/g, "");
+
+    const liWithoutUl = processedContent.match(/<li>(.*?)<\/li>/g);
+    if (liWithoutUl) {
+      liWithoutUl.forEach((item) => {
+        if (!processedContent.includes(`<ul>${item}</ul>`)) {
+          processedContent = processedContent.replace(item, `<ul>${item}</ul>`);
+        }
+      });
+    }
+
+    return processedContent;
+  }, []);
+
+  const fetchRelatedArticles = useCallback(async () => {
     try {
       const categoryIds = article.categories.map((c) => c.id);
 
@@ -86,10 +116,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
           .neq("article_id", article.id);
 
       if (categoryError) {
-        console.error(
-          "Error fetching related article categories:",
-          categoryError
-        );
+        console.error("Error fetching related categories:", categoryError);
         setLoading(false);
         return;
       }
@@ -126,26 +153,52 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
       if (error) {
         console.error("Error fetching related articles:", error);
-      } else {
-        // Transform data
-        const transformedData =
-          data?.map((article) => ({
-            ...article,
-            author: article.users,
-            categories: article.article_categories
-              .map((ac) => ac.categories)
-              .filter(Boolean),
-          })) || [];
-
+      } else if (Array.isArray(data) && data.length > 0) {
+        const transformedData = data.map((item: any) => ({
+          ...item,
+          author: item.users || { name: "Admin" },
+          categories: Array.isArray(item.article_categories)
+            ? item.article_categories
+              .map((ac: any) => ac.categories)
+              .filter(Boolean)
+            : [],
+        }));
         setRelatedArticles(transformedData);
       }
     } catch (error) {
-      console.error("Error fetching related articles:", error);
+      console.error("Error in fetchRelatedArticles:", error);
     } finally {
-      // Set loading to false when done
       setLoading(false);
     }
-  };
+  }, [article.id, article.categories]);
+
+  useEffect(() => {
+    fetchRelatedArticles();
+  }, [fetchRelatedArticles]);
+
+  const fetchLatestArticles = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("id, title, slug, published_at")
+        .eq("status", "published")
+        .neq("id", article.id)
+        .order("published_at", { ascending: false })
+        .limit(2);
+
+      if (error) {
+        console.error("Error fetching latest articles:", error);
+      } else if (data) {
+        setLatestArticles(data);
+      }
+    } catch (error) {
+      console.error("Error fetching latest articles:", error);
+    }
+  }, [article.id]);
+
+  useEffect(() => {
+    fetchLatestArticles();
+  }, [fetchLatestArticles]);
 
   // Format tanggal
   const formatDate = (dateString: string) => {
@@ -159,56 +212,6 @@ export default function ArticleContent({ article }: ArticleContentProps) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     return `/article/${year}/${month}/${article.slug}`;
-  };
-
-  // Fungsi untuk memperbaiki format konten sebelum ditampilkan
-  const processContent = (content: string) => {
-    // Ganti semua <p> yang seharusnya <h2> kembali menjadi <h2>
-    // Contoh: <p>1. Pahami Karakter...</p> menjadi <h2>1. Pahami Karakter...</h2>
-    // --- PERUBAHAN 1 ---
-    let processedContent = content.replace(
-      /<p>(\d+\.\s+[\s\S]*?)<\/p>/g,
-      "<h2>$1</h2>"
-    );
-
-    // Perbaiki format list yang dipecah menjadi <p> terpisah dengan panah
-    // Contoh: <p>→ Mana yang paling...</p> menjadi <li>Mana yang paling...</li>
-    // --- PERUBAHAN 2 ---
-    processedContent = processedContent.replace(
-      /<p>\s*→\s*([\s\S]*?)<\/p>/g,
-      "<li>$1</li>"
-    );
-
-    // Perbaiki list item dengan centang
-    // --- PERUBAHAN 3 ---
-    processedContent = processedContent.replace(
-      /<p>\s*✓\s*([\s\S]*?)<\/p>/g,
-      "<li>$1</li>"
-    );
-
-    // Hapus <br> yang berlebihan (lebih dari satu berturut-turut)
-    processedContent = processedContent.replace(/(<br\s*\/?>){2,}/gi, "<br>");
-
-    // Perbaiki nested ul yang salah
-    processedContent = processedContent.replace(/<ul><ul>/g, "<ul>");
-    processedContent = processedContent.replace(/<\/ul><\/ul>/g, "</ul>");
-
-    // Perbaiki list item kosong
-    processedContent = processedContent.replace(/<li><\/li>/g, "");
-
-    // Pastikan list item yang berdiri sendiri dibungkus dengan <ul>
-    // Ini adalah solusi sederhana yang mungkin perlu penyesuaian untuk kasus yang lebih kompleks
-    const liWithoutUl = processedContent.match(/<li>(.*?)<\/li>/g);
-    if (liWithoutUl) {
-      liWithoutUl.forEach((item) => {
-        // Cek apakah item sudah berada di dalam <ul>
-        if (!processedContent.includes(`<ul>${item}</ul>`)) {
-          processedContent = processedContent.replace(item, `<ul>${item}</ul>`);
-        }
-      });
-    }
-
-    return processedContent;
   };
 
   if (loading) {
@@ -291,14 +294,32 @@ export default function ArticleContent({ article }: ArticleContentProps) {
               </div>
             )}
 
-            {/* Article Content */}
             <div className="px-6 pb-6">
               <div
-                className="prose prose-lg max-w-none"
+                className="prose prose-lg max-w-none text-gray-800"
                 dangerouslySetInnerHTML={{
                   __html: processContent(article.content),
                 }}
               />
+
+              {/* Baca Artikel Lainnya (2 Artikel Terbaru) - Versi Simple Link */}
+              {latestArticles.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">Baca Artikel Lainnya</h3>
+                  <ul className="space-y-2 list-none">
+                    {latestArticles.map((latest) => (
+                      <li key={latest.id}>
+                        <Link
+                          href={getArticleUrl(latest)}
+                          className="text-base text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                        >
+                          {latest.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
@@ -321,30 +342,34 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                 {relatedArticles.map((relatedArticle) => (
                   <div
                     key={relatedArticle.id}
-                    className="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow group"
                   >
                     {relatedArticle.featured_image && (
-                      <img
-                        src={relatedArticle.featured_image}
-                        alt={relatedArticle.title}
-                        className="w-full h-48 object-cover"
-                      />
+                      <div className="overflow-hidden">
+                        <img
+                          src={relatedArticle.featured_image}
+                          alt={relatedArticle.title}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
                     )}
                     <div className="p-4">
                       {relatedArticle.categories.length > 0 && (
-                        <span className="inline-block rounded-full bg-primary px-3 py-1 text-xs font-medium text-white mb-3">
-                          {relatedArticle.categories[0].name}
-                        </span>
+                        <div className="mb-2">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                            {relatedArticle.categories[0].name}
+                          </span>
+                        </div>
                       )}
-                      <h4 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+                      <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
                         <a
                           href={getArticleUrl(relatedArticle)}
-                          className="hover:text-primary transition-colors"
+                          className="hover:text-blue-600 transition-colors"
                         >
                           {relatedArticle.title}
                         </a>
                       </h4>
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-gray-500 text-xs">
                         {formatDate(relatedArticle.published_at)}
                       </p>
                     </div>
