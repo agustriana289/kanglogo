@@ -1,10 +1,46 @@
 // app/articles/page.tsx
 import { Suspense } from "react";
+import { Metadata } from "next";
 import DynamicArticlesList from "@/components/DynamicArticlesList";
 import FeaturedArticle from "@/components/FeaturedArticle";
 import CategoryArticles from "@/components/CategoryArticles";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Artikel & Blog - KangLogo.com",
+  description: "Jelajahi artikel seputar desain logo, branding, tips kreatif, dan panduan lengkap untuk bisnis Anda",
+  keywords: "artikel desain logo, blog branding, tips desain, panduan logo, KangLogo",
+  alternates: {
+    canonical: "https://kanglogo.com/articles",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    title: "Artikel & Blog - KangLogo.com",
+    description: "Jelajahi artikel seputar desain logo, branding, tips kreatif, dan panduan lengkap untuk bisnis Anda",
+    url: "https://kanglogo.com/articles",
+    siteName: "KangLogo.com",
+    locale: "id_ID",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Artikel & Blog - KangLogo.com",
+    description: "Jelajahi artikel seputar desain logo, branding, tips kreatif, dan panduan lengkap untuk bisnis Anda",
+    creator: "@kanglogo",
+    site: "@kanglogo",
+  },
+};
 
 export default function ArticlesPage() {
   return (

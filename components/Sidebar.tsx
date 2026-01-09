@@ -135,8 +135,8 @@ export default function Sidebar({ showPopularArticles = false, showCategories = 
   return (
     <div className="space-y-6">
       {isBlogPage && showPopularArticles && popularArticles.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold mb-4 text-gray-900">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-slate-100 dark:border-gray-700 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Artikel Populer
           </h3>
           <div className="space-y-3">
@@ -146,10 +146,10 @@ export default function Sidebar({ showPopularArticles = false, showCategories = 
                 href={getArticleUrl(article)}
                 className="block group"
               >
-                <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-blue-400 line-clamp-2 mb-1">
                   {article.title}
                 </h4>
-                <p className="text-xs text-gray-500">{formatDate(article.published_at)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(article.published_at)}</p>
               </Link>
             ))}
           </div>
@@ -157,8 +157,8 @@ export default function Sidebar({ showPopularArticles = false, showCategories = 
       )}
 
       {isBlogPage && showCategories && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold mb-4 text-gray-900">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-slate-100 dark:border-gray-700 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Kategori
           </h3>
           <div className="space-y-2">
@@ -166,9 +166,9 @@ export default function Sidebar({ showPopularArticles = false, showCategories = 
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className="flex justify-between items-center p-2 rounded-md hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
               >
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary dark:group-hover:text-blue-400">
                   {category.name}
                 </span>
                 <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
@@ -184,7 +184,7 @@ export default function Sidebar({ showPopularArticles = false, showCategories = 
             {hasMoreCategories && (
               <button
                 onClick={() => setShowAllCategories(!showAllCategories)}
-                className="w-full text-left p-2 rounded-md hover:bg-gray-100 transition-colors text-sm text-primary font-medium"
+                className="mt-2 text-sm text-primary dark:text-blue-400 hover:text-primary-dark dark:hover:text-blue-300 font-medium"
               >
                 {showAllCategories ? "Tampilkan Lebih Sedikit" : "Muat Lainnya"}
               </button>

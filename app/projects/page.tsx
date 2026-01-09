@@ -15,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import LogoPathAnimation from "@/components/LogoPathAnimation";
 import WidgetArea from "@/components/WidgetArea";
+import CanonicalTag from "@/components/CanonicalTag";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -172,6 +173,7 @@ export default function AllProjectsPage() {
 
   return (
     <main className="min-h-screen py-12">
+      <CanonicalTag url="https://kanglogo.com/projects" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">

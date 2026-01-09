@@ -101,7 +101,7 @@ export default function Header() {
   return (
     <>
       <WidgetArea position="header" />
-      <header className="bg-white shadow-sm">
+      <header className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/50">
         <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex-1 md:flex md:items-center md:gap-12">
@@ -139,7 +139,7 @@ export default function Header() {
                       {navLinks.map((link, idx) => (
                         <li key={idx}>
                           <Link
-                            className="text-slate-500 transition hover:text-slate-500/75"
+                            className="text-slate-500 dark:text-slate-400 transition hover:text-slate-500/75 dark:hover:text-slate-300"
                             href={link.url}
                           >
                             {link.label}
@@ -152,18 +152,18 @@ export default function Header() {
 
                 {/* Mobile Menu */}
                 <div
-                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white shadow-lg z-50 md:hidden ${mobileMenuOpen ? "block" : "hidden"
+                  className={`mobile-menu fixed top-0 left-0 h-full w-full bg-white dark:bg-gray-900 shadow-lg z-50 md:hidden ${mobileMenuOpen ? "block" : "hidden"
                     }`}
                   id="mobile-menu"
                 >
-                  <div className="p-4 border-b">
+                  <div className="p-4 border-b dark:border-gray-700">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-slate-800">
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
                         Menu
                       </h3>
                       <button
                         aria-label="Close menu"
-                        className="p-1 rounded-sm text-slate-600 hover:text-slate-800"
+                        className="p-1 rounded-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                         type="button"
                         onClick={closeMobileMenu}
                       >
@@ -188,7 +188,7 @@ export default function Header() {
                       {navLinks.map((link, idx) => (
                         <li key={idx}>
                           <Link
-                            className="nav-item text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded transition-colors block p-2"
+                            className="nav-item text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors block p-2"
                             href={link.url}
                             onClick={closeMobileMenu}
                           >

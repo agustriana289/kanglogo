@@ -245,7 +245,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
         {/* Kolom Konten Utama */}
         <div className="lg:col-span-2">
           {/* Main Article Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-slate-100 dark:border-gray-700 overflow-hidden mb-6">
             {/* Article Header */}
             <div className="p-6 pb-4">
               <nav aria-label="Breadcrumb" className="mb-4">
@@ -253,7 +253,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                   <li>
                     <Link
                       href="/"
-                      className="text-gray-600 hover:text-primary transition-colors"
+                      className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-blue-400 transition-colors"
                     >
                       Home
                     </Link>
@@ -262,7 +262,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                   {article.categories.length > 0 &&
                     article.categories.map((category, index) => (
                       <React.Fragment key={category.id}>
-                        <li className="text-gray-400">/</li>
+                        <li className="text-gray-400 dark:text-gray-600">/</li>
                         <li>
                           <Link
                             href={`/category/${category.slug}`}
@@ -275,10 +275,10 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                     ))}
                 </ol>
               </nav>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 {article.title}
               </h1>
-              <div className="flex items-center text-sm text-gray-500">
+              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center">
                   {article.author.avatar && (
                     <img
@@ -288,7 +288,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                     />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {article.author.name}
                     </p>
                     <p>{formatDate(article.published_at)}</p>
@@ -310,7 +310,7 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
             <div className="px-6 pb-6">
               <div
-                className="prose prose-lg max-w-none text-gray-800"
+                className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200 dark:prose-invert"
                 dangerouslySetInnerHTML={{
                   __html: processContent(article.content),
                 }}
@@ -318,14 +318,14 @@ export default function ArticleContent({ article }: ArticleContentProps) {
 
               {/* Baca Artikel Lainnya (2 Artikel Terbaru) - Versi Simple Link */}
               {latestArticles.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-gray-100">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">Baca Artikel Lainnya</h3>
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Baca Artikel Lainnya</h3>
                   <ul className="space-y-2 list-none">
                     {latestArticles.map((latest) => (
                       <li key={latest.id}>
                         <Link
                           href={getArticleUrl(latest)}
-                          className="text-base text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                          className="text-base text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors"
                         >
                           {latest.title}
                         </Link>
@@ -340,23 +340,23 @@ export default function ArticleContent({ article }: ArticleContentProps) {
           <WidgetArea position="Blog_footer" />
 
           {/* Share Buttons Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-slate-100 dark:border-gray-700 p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Bagikan artikel ini
             </h3>
             <ShareButtons url={currentUrl} title={article.title} />
           </div>
 
           {relatedArticles.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-slate-100 dark:border-gray-700 p-6 mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
                 Artikel Terkait
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {relatedArticles.map((relatedArticle) => (
                   <div
                     key={relatedArticle.id}
-                    className="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow group"
+                    className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow group"
                   >
                     {relatedArticle.featured_image && (
                       <div className="overflow-hidden">
@@ -370,20 +370,20 @@ export default function ArticleContent({ article }: ArticleContentProps) {
                     <div className="p-4">
                       {relatedArticle.categories.length > 0 && (
                         <div className="mb-2">
-                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
                             {relatedArticle.categories[0].name}
                           </span>
                         </div>
                       )}
-                      <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                      <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 leading-tight">
                         <a
                           href={getArticleUrl(relatedArticle)}
-                          className="hover:text-blue-600 transition-colors"
+                          className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         >
                           {relatedArticle.title}
                         </a>
                       </h4>
-                      <p className="text-gray-500 text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
                         {formatDate(relatedArticle.published_at)}
                       </p>
                     </div>
