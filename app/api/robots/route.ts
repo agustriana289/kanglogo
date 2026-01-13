@@ -10,29 +10,49 @@ export async function GET() {
             .select('robots_txt')
             .single();
 
+        const defaultRobots = `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login/
+Disallow: /order/
+Disallow: /faq/
+Disallow: /generator/
+Disallow: /category/
+Disallow: /pages/
+
+Sitemap: https://kanglogo.com/sitemap.xml`;
+
         if (error) {
             console.error('Error fetching robots.txt:', error);
-            return new NextResponse(
-                `User-agent: *
-Allow: /
-
-Sitemap: https://kanglogo.com/sitemap.xml`,
-                {
-                    headers: {
-                        'Content-Type': 'text/plain',
-                    },
-                }
-            );
+            return new NextResponse(defaultRobots, {
+                headers: {
+                    'Content-Type': 'text/plain',
+                },
+            });
         }
 
-        return new NextResponse(data?.robots_txt || 'User-agent: *\nAllow: /', {
+        return new NextResponse(data?.robots_txt || defaultRobots, {
             headers: {
                 'Content-Type': 'text/plain',
             },
         });
     } catch (error) {
         console.error('Error:', error);
-        return new NextResponse('User-agent: *\nAllow: /', {
+        const defaultRobots = `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login/
+Disallow: /order/
+Disallow: /faq/
+Disallow: /generator/
+Disallow: /category/
+Disallow: /pages/
+
+Sitemap: https://kanglogo.com/sitemap.xml`;
+
+        return new NextResponse(defaultRobots, {
             headers: {
                 'Content-Type': 'text/plain',
             },
