@@ -37,32 +37,11 @@ export default function HeaderSettingsPage() {
                 console.error("Error fetching settings:", error);
             } else if (data) {
                 setSettings(data);
-                await syncRobotsTxt(data.id);
             }
         } catch (error) {
             console.error("Error:", error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const syncRobotsTxt = async (settingsId: string) => {
-        try {
-            const response = await fetch('/api/robots/current');
-            const result = await response.json();
-
-            if (result.content) {
-                const { error } = await supabase
-                    .from('website_settings')
-                    .update({ robots_txt: result.content })
-                    .eq('id', settingsId);
-
-                if (!error) {
-                    setSettings((prev: any) => ({ ...prev, robots_txt: result.content }));
-                }
-            }
-        } catch (error) {
-            console.error('Error syncing robots.txt:', error);
         }
     };
 
