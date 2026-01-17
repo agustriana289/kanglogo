@@ -33,31 +33,24 @@ export default function LoginPage() {
 
       if (loginError) {
         console.error("Login error:", loginError);
-        const errorMsg = `Login Error: ${loginError.message}`;
-        setError(errorMsg);
-        alert(errorMsg);
+        setError(`Error: ${loginError.message}`);
         setLoading(false);
         return;
       }
 
       if (!data.session) {
         console.error("No session returned after login");
-        const errorMsg = "Login gagal: Tidak ada session";
-        setError(errorMsg);
-        alert(errorMsg);
+        setError("Login gagal: Tidak ada session");
         setLoading(false);
         return;
       }
 
       console.log("Login successful:", data);
       console.log("Session created:", data.session);
-      alert("Login berhasil! Redirecting...");
       window.location.href = "/admin";
     } catch (err: any) {
       console.error("Unexpected error:", err);
-      const errorMsg = `Unexpected error: ${err.message}`;
-      setError(errorMsg);
-      alert(errorMsg);
+      setError(`Unexpected error: ${err.message}`);
       setLoading(false);
     }
   };
