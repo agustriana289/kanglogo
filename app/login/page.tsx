@@ -33,26 +33,31 @@ export default function LoginPage() {
 
       if (loginError) {
         console.error("Login error:", loginError);
-        setError(`Error: ${loginError.message}`);
+        const errorMsg = `Login Error: ${loginError.message}`;
+        setError(errorMsg);
+        alert(errorMsg);
         setLoading(false);
         return;
       }
 
       if (!data.session) {
         console.error("No session returned after login");
-        setError("Login failed: No session created");
+        const errorMsg = "Login gagal: Tidak ada session";
+        setError(errorMsg);
+        alert(errorMsg);
         setLoading(false);
         return;
       }
 
       console.log("Login successful:", data);
       console.log("Session created:", data.session);
-
-      // Directly redirect after successful login
+      alert("Login berhasil! Redirecting...");
       window.location.href = "/admin";
     } catch (err: any) {
       console.error("Unexpected error:", err);
-      setError(`Unexpected error: ${err.message}`);
+      const errorMsg = `Unexpected error: ${err.message}`;
+      setError(errorMsg);
+      alert(errorMsg);
       setLoading(false);
     }
   };
@@ -69,16 +74,6 @@ export default function LoginPage() {
               src={logoUrl}
               title="Jasa Logo #1 Indonesia - Kanglogo.com"
             />
-          </div>
-
-          {/* Title */}
-          <div className="text-center">
-            <h1 className="font-manrope font-bold text-2xl md:text-3xl text-slate-800 mb-2">
-              Masuk Akun Admin
-            </h1>
-            <p className="text-sm md:text-base text-slate-600">
-              Masukkan kredensial untuk mengakses panel admin
-            </p>
           </div>
 
           {/* Error Message */}
