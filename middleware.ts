@@ -22,19 +22,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Dapatkan semua cookies yang dimulai dengan 'sb-'
+  // TEMPORARY: Disabled - Supabase uses localStorage not cookies
+  /*
   const supabaseCookies = req.cookies
     .getAll()
     .filter((cookie) => cookie.name.startsWith("sb-"));
 
-  // Jika tidak ada cookies Supabase dan user mencoba mengakses halaman admin
   if (
     supabaseCookies.length === 0 &&
     req.nextUrl.pathname.startsWith("/admin")
   ) {
-    // Redirect ke halaman login
     return NextResponse.redirect(new URL("/login", req.url));
   }
+  */
 
   return NextResponse.next();
 }
