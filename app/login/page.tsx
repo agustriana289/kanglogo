@@ -3,8 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import Link from "next/link";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const supabase = createClientComponentClient();
   // Logo URL - bisa diganti dengan settings dari database
   const logoUrl =
     "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi5kFe_bFCc6TRhYVg_FL5s7xjPyrXNGLFkRfVqfEUxhbJwCOC8mFPOzEOIzdvWWTh1UmM4guinMa8OHwK4n0zwclwZ5UArE28eWC6-v3EwpixIQYC12Mk1t4gyl-yNDzRhz7DmYt1PLtdBxBxpt8gQ8cUvIL_eENyP2_NbB_DRiuMLqSpM4R3tptUp70Yq/s600/Logo_Primary.webp";
@@ -48,19 +48,7 @@ export default function LoginPage() {
       console.log("Login successful:", data);
       console.log("Session created:", data.session);
 
-      // Verify session is saved
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        console.error("Session verification failed");
-        setError("Login failed: Session not persisted");
-        setLoading(false);
-        return;
-      }
-
-      console.log("Session verified, redirecting to admin...");
-
+      // Directly redirect after successful login
       window.location.href = "/admin";
     } catch (err: any) {
       console.error("Unexpected error:", err);
