@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,7 +13,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const supabase = createClientComponentClient();
   // Logo URL - bisa diganti dengan settings dari database
   const logoUrl =
     "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi5kFe_bFCc6TRhYVg_FL5s7xjPyrXNGLFkRfVqfEUxhbJwCOC8mFPOzEOIzdvWWTh1UmM4guinMa8OHwK4n0zwclwZ5UArE28eWC6-v3EwpixIQYC12Mk1t4gyl-yNDzRhz7DmYt1PLtdBxBxpt8gQ8cUvIL_eENyP2_NbB_DRiuMLqSpM4R3tptUp70Yq/s600/Logo_Primary.webp";
