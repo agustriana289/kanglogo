@@ -22,9 +22,11 @@ export default function FeaturedArticle() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [heroBackground, setHeroBackground] = useState<string>("");
 
   useEffect(() => {
     fetchFeaturedArticle();
+    fetchHeroBackground();
   }, []);
 
   // Fungsi untuk mengekstrak gambar pertama dari HTML content
@@ -32,6 +34,25 @@ export default function FeaturedArticle() {
     const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
     const match = htmlContent.match(imgRegex);
     return match ? match[1] : null;
+  };
+
+  const fetchHeroBackground = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("landing_page_content")
+        .select("value")
+        .eq("section", "hero")
+        .eq("key_name", "hero_background")
+        .single();
+
+      if (error) {
+        console.error("Error fetching hero background:", error);
+      } else if (data?.value) {
+        setHeroBackground(data.value);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
   const fetchFeaturedArticle = async () => {
@@ -88,21 +109,17 @@ export default function FeaturedArticle() {
 
   return (
     <div className="relative h-64 md:h-96 rounded-lg overflow-hidden shadow-lg">
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={article.title}
-          fill
-          className="object-cover"
-          unoptimized
-        />
-      ) : (
-        <div className="bg-gradient-to-r from-primary to-blue-600 h-full w-full flex items-center justify-center">
-          <span className="text-white text-lg">📰 Featured Article</span>
-        </div>
-      )}
-      <div className="absolute inset-0 bg-primary bg-opacity-70 flex items-end">
-        <div className="p-6 text-white">
+      <div
+        className="absolute inset-0 z-0 bg-no-repeat bg-cover bg-center"
+        style={{
+          backgroundImage: heroBackground
+            ? `url(${heroBackground})`
+            : "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+        }}
+      />
+
+      <div className="absolute inset-0 bg-primary/50 flex items-end z-10">
+        <div className="p-6 text-white drop-shadow-lg">
           <Link href={getArticleUrl(article)} className="block">
             <h2 className="text-2xl md:text-3xl font-bold mb-2 hover:text-blue-200 transition-colors">
               {article.title}
