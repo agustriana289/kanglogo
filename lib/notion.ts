@@ -196,13 +196,6 @@ export async function syncOrderToNotion(orderId: number) {
     let notionPageId = order.notion_page_id;
     let notionUrl = "";
 
-    if (!notionPageId) {
-      const existingPageId = await findExistingNotionPage(orderId);
-      if (existingPageId) {
-        notionPageId = existingPageId;
-      }
-    }
-
     if (notionPageId) {
       try {
         await notion.pages.update({
@@ -210,17 +203,23 @@ export async function syncOrderToNotion(orderId: number) {
           properties: properties as any,
         });
         notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
+
+        await supabase
+          .from("orders")
+          .update({ last_synced_at: new Date().toISOString() })
+          .eq("id", orderId);
       } catch (updateError: any) {
         if (updateError.code === "object_not_found") {
-          // If the page stored in DB is not found in Notion, treat it as if it never existed
-          notionPageId = null;
+          await supabase
+            .from("orders")
+            .update({ notion_page_id: null })
+            .eq("id", orderId);
+          throw new Error("Notion page not found. notion_page_id has been cleared.");
         } else {
           throw updateError;
         }
       }
-    }
-
-    if (!notionPageId) {
+    } else {
       const response = await notion.pages.create({
         parent: {
           database_id: NOTION_DATABASE_ID,
@@ -229,15 +228,15 @@ export async function syncOrderToNotion(orderId: number) {
       });
       notionPageId = response.id;
       notionUrl = `https://notion.so/${response.id.replace(/-/g, "")}`;
-    }
 
-    await supabase
-      .from("orders")
-      .update({
-        notion_page_id: notionPageId,
-        last_synced_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
+      await supabase
+        .from("orders")
+        .update({
+          notion_page_id: notionPageId,
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+    }
 
     return {
       success: true,
