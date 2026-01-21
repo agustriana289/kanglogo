@@ -120,6 +120,9 @@ export default function OrderManagementPage() {
   const [testimonialLink, setTestimonialLink] = useState<string | null>(null);
   const [syncingToNotion, setSyncingToNotion] = useState(false);
   const [notionPageUrl, setNotionPageUrl] = useState<string | null>(null);
+  const [showSyncLogModal, setShowSyncLogModal] = useState(false);
+  const [syncLogs, setSyncLogs] = useState<any[]>([]);
+  const [loadingSyncLogs, setLoadingSyncLogs] = useState(false);
 
   // Edit Mode States
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -439,8 +442,17 @@ export default function OrderManagementPage() {
       console.log("Order update berhasil");
 
       try {
-        const { syncOrderToNotion } = await import("@/lib/notion");
-        await syncOrderToNotion(selectedOrder.id);
+        const syncResponse = await fetch("/api/notion/sync-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: selectedOrder.id }),
+        });
+        const syncData = await syncResponse.json();
+
+        if (!syncResponse.ok) {
+          throw new Error(syncData.error || "Gagal sync ke Notion");
+        }
+
         console.log("Order berhasil di-sync ke Notion");
         showAlert("success", "Sync Berhasil", "Perubahan berhasil disinkronkan ke Notion!");
       } catch (syncError: any) {
@@ -511,8 +523,17 @@ export default function OrderManagementPage() {
       if (error) throw error;
 
       try {
-        const { syncOrderToNotion } = await import("@/lib/notion");
-        await syncOrderToNotion(newOrderData.id);
+        const syncResponse = await fetch("/api/notion/sync-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: newOrderData.id }),
+        });
+        const syncData = await syncResponse.json();
+
+        if (!syncResponse.ok) {
+          throw new Error(syncData.error || "Gagal sync ke Notion");
+        }
+
         console.log("Order berhasil di-sync ke Notion");
         showAlert("success", "Sync Berhasil", "Order berhasil disinkronkan ke Notion!");
       } catch (syncError: any) {
@@ -846,6 +867,30 @@ export default function OrderManagementPage() {
                   </div>
                 )}
               </div>
+
+              {/* Sync Log Button */}
+              <button
+                onClick={async () => {
+                  setShowSyncLogModal(true);
+                  setLoadingSyncLogs(true);
+                  try {
+                    const response = await fetch("/api/notion/sync-logs");
+                    const data = await response.json();
+                    setSyncLogs(data.logs || []);
+                  } catch (error) {
+                    console.error("Error fetching sync logs:", error);
+                    showAlert("error", "Error", "Gagal memuat sync logs");
+                  } finally {
+                    setLoadingSyncLogs(false);
+                  }
+                }}
+                className="inline-flex items-center justify-center px-4 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden sm:inline">Sync Log</span>
+              </button>
 
               {/* Add Button */}
               <button
@@ -2078,6 +2123,99 @@ export default function OrderManagementPage() {
                   Lihat Invoice
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sync Log Modal */}
+      {showSyncLogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-4xl shadow-xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Notion Sync Logs
+              </h3>
+              <button
+                onClick={() => setShowSyncLogModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+              {loadingSyncLogs ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-4 text-gray-500">Loading logs...</p>
+                </div>
+              ) : syncLogs.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Belum ada sync logs</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {syncLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className={`p-4 rounded-lg border ${log.sync_status === 'success'
+                          ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+                          : log.sync_status === 'error'
+                            ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                            : 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700'
+                        }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${log.sync_status === 'success'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                                : log.sync_status === 'error'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                              }`}>
+                              {log.sync_status.toUpperCase()}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${log.sync_direction === 'admin_to_notion'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
+                                : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100'
+                              }`}>
+                              {log.sync_direction === 'admin_to_notion' ? 'Admin → Notion' : 'Notion → Admin'}
+                            </span>
+                            {log.orders && (
+                              <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                                {log.orders.invoice_number}
+                              </span>
+                            )}
+                          </div>
+                          {log.orders && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                              {log.orders.customer_name}
+                            </p>
+                          )}
+                          {log.sync_error && (
+                            <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-mono bg-red-50 dark:bg-red-900/30 p-2 rounded">
+                              {log.sync_error}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(log.synced_at).toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
