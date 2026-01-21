@@ -196,6 +196,13 @@ export async function syncOrderToNotion(orderId: number) {
     let notionPageId = order.notion_page_id;
     let notionUrl = "";
 
+    if (!notionPageId) {
+      const existingPageId = await findExistingNotionPage(orderId);
+      if (existingPageId) {
+        notionPageId = existingPageId;
+      }
+    }
+
     if (notionPageId) {
       try {
         await notion.pages.update({
@@ -205,6 +212,7 @@ export async function syncOrderToNotion(orderId: number) {
         notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
       } catch (updateError: any) {
         if (updateError.code === "object_not_found") {
+          // If the page stored in DB is not found in Notion, treat it as if it never existed
           notionPageId = null;
         } else {
           throw updateError;
@@ -213,41 +221,23 @@ export async function syncOrderToNotion(orderId: number) {
     }
 
     if (!notionPageId) {
-      const existingPageId = await findExistingNotionPage(orderId);
-
-      if (existingPageId) {
-        notionPageId = existingPageId;
-        await notion.pages.update({
-          page_id: notionPageId,
-          properties: properties as any,
-        });
-        notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
-      } else {
-        const response = await notion.pages.create({
-          parent: {
-            database_id: NOTION_DATABASE_ID,
-          },
-          properties: properties as any,
-        });
-        notionPageId = response.id;
-        notionUrl = `https://notion.so/${response.id.replace(/-/g, "")}`;
-      }
-
-      await supabase
-        .from("orders")
-        .update({
-          notion_page_id: notionPageId,
-          last_synced_at: new Date().toISOString(),
-        })
-        .eq("id", orderId);
-    } else {
-      await supabase
-        .from("orders")
-        .update({
-          last_synced_at: new Date().toISOString(),
-        })
-        .eq("id", orderId);
+      const response = await notion.pages.create({
+        parent: {
+          database_id: NOTION_DATABASE_ID,
+        },
+        properties: properties as any,
+      });
+      notionPageId = response.id;
+      notionUrl = `https://notion.so/${response.id.replace(/-/g, "")}`;
     }
+
+    await supabase
+      .from("orders")
+      .update({
+        notion_page_id: notionPageId,
+        last_synced_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
 
     return {
       success: true,

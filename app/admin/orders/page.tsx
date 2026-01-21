@@ -123,6 +123,7 @@ export default function OrderManagementPage() {
   const [showSyncLogModal, setShowSyncLogModal] = useState(false);
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
   const [loadingSyncLogs, setLoadingSyncLogs] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
 
   // Edit Mode States
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -884,9 +885,9 @@ export default function OrderManagementPage() {
                     setLoadingSyncLogs(false);
                   }
                 }}
-                className="inline-flex items-center justify-center px-4 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                className="h-11 flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span className="hidden sm:inline">Sync Log</span>
@@ -895,9 +896,9 @@ export default function OrderManagementPage() {
               {/* Add Button */}
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-3 text-sm font-medium hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
+                <PlusIcon className="h-5 w-5" />
                 <span className="hidden sm:inline">Invoice Baru</span>
                 <span className="sm:hidden">Baru</span>
               </button>
@@ -2136,14 +2137,60 @@ export default function OrderManagementPage() {
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 Notion Sync Logs
               </h3>
-              <button
-                onClick={() => setShowSyncLogModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    setSyncingAll(true);
+                    try {
+                      const response = await fetch("/api/notion/sync-all", {
+                        method: "POST",
+                      });
+                      const data = await response.json();
+
+                      if (!response.ok) {
+                        throw new Error(data.error || "Gagal sync");
+                      }
+
+                      showAlert("success", "Berhasil", `${data.synced} order berhasil di-sync ke Notion!`);
+
+                      const logsResponse = await fetch("/api/notion/sync-logs");
+                      const logsData = await logsResponse.json();
+                      setSyncLogs(logsData.logs || []);
+                    } catch (error: any) {
+                      showAlert("error", "Gagal", error.message || "Gagal sync semua order");
+                    } finally {
+                      setSyncingAll(false);
+                    }
+                  }}
+                  disabled={syncingAll}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
+                >
+                  {syncingAll ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Sync All
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowSyncLogModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
@@ -2162,26 +2209,26 @@ export default function OrderManagementPage() {
                     <div
                       key={log.id}
                       className={`p-4 rounded-lg border ${log.sync_status === 'success'
-                          ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                          : log.sync_status === 'error'
-                            ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
-                            : 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700'
+                        ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+                        : log.sync_status === 'error'
+                          ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                          : 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700'
                         }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${log.sync_status === 'success'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                                : log.sync_status === 'error'
-                                  ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                              : log.sync_status === 'error'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
                               }`}>
                               {log.sync_status.toUpperCase()}
                             </span>
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${log.sync_direction === 'admin_to_notion'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
-                                : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
+                              : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100'
                               }`}>
                               {log.sync_direction === 'admin_to_notion' ? 'Admin → Notion' : 'Notion → Admin'}
                             </span>
