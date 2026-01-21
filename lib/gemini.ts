@@ -10,7 +10,14 @@ export async function generateBrandNamesWithAI(
     separator: string = ""
 ): Promise<string[]> {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({
+            model: "gemini-pro",
+            generationConfig: {
+                temperature: 0.9,
+                topP: 0.95,
+                topK: 40,
+            }
+        });
 
         const separatorDesc = separator === " "
             ? "dengan spasi"
@@ -18,36 +25,54 @@ export async function generateBrandNamesWithAI(
                 ? "dengan dash (-)"
                 : "tanpa pemisah (menyambung)";
 
-        const prompt = `Kamu adalah ahli branding dan naming yang kreatif. Tugasmu adalah membuat nama brand yang unik, natural, dan bermakna.
+        const prompt = `Kamu adalah branding expert profesional yang telah membuat ratusan nama brand sukses. Tugasmu adalah menciptakan nama brand yang KREATIF, UNIK, dan MUDAH DIINGAT.
 
 KONTEKS:
-- Input user: "${userInput}"
+- Kata kunci user: "${userInput}"
 - Industri: ${industryName}
-- Keywords industri: ${keywords.join(", ")}
+- Keywords relevan: ${keywords.slice(0, 10).join(", ")}
 - Jumlah kata: ${wordLength} kata
 - Format: ${separatorDesc}
 
-ATURAN PENTING:
-1. SEMUA nama HARUS mengandung kata "${userInput}"
-2. Kombinasi harus MASUK AKAL dan BERMAKNA - jangan gabungkan kata yang tidak ada hubungannya
-3. Nama harus cocok untuk bisnis ${industryName}
-4. Buat nama yang terdengar natural dan mudah diingat
-5. Hindari kombinasi yang aneh seperti "Bakso Kopi" (tidak masuk akal)
+PRINSIP NAMA BRAND YANG BAGUS:
+1. MUDAH DIUCAPKAN - Hindari kombinasi huruf yang sulit (contoh: "Gojek" mudah, "Xtrqwz" sulit)
+2. BERMAKNA - Ada cerita atau makna di balik nama (contoh: "Tokopedia" = Toko + Encyclopedia)
+3. UNIK - Berbeda dari kompetitor, memorable
+4. RELEVAN - Cocok dengan industri ${industryName}
+5. MODERN - Terdengar fresh dan contemporary
 
-CONTOH NAMA YANG BAGUS:
-- ${userInput}ria (elegan, seperti nama brand)
-- Sedap${userInput} (jelas untuk makanan enak)
-- ${userInput}Food (langsung menunjukkan bisnis food)
-- ${userInput} Manis Madu (kombinasi yang bermakna)
-- Warung ${userInput} (sederhana tapi jelas)
-- ${userInput} Kitchen (modern dan jelas)
+INSPIRASI DARI BRAND TERKENAL:
+- Gojek (Go + Ojek) - Simple, jelas, mudah diingat
+- Tokopedia (Toko + Encyclopedia) - Menggambarkan marketplace lengkap
+- Bukalapak (Buka + Lapak) - Friendly, Indonesia banget
+- Shopee (Shop + Free/Easy) - Catchy, modern
+- Grab (Grab = Ambil) - Satu kata, powerful
+- Traveloka (Travel + Oka) - Elegan, profesional
 
-CONTOH NAMA YANG BURUK (JANGAN BUAT SEPERTI INI):
-- ${userInput} Bakso Kopi (bakso dan kopi tidak ada hubungannya)
-- Modern ${userInput} Selera (kata-kata acak)
-- ${userInput} Pedas Manis (kontradiktif)
+TEKNIK KREATIF YANG BISA DIGUNAKAN:
+1. Portmanteau: Gabung 2 kata jadi 1 (contoh: "Insta" + "Gram" = Instagram)
+2. Suffix kreatif: Tambah -ia, -ly, -fy, -hub, -go (contoh: Spotify, Shopify)
+3. Kata bermakna: Gunakan kata yang punya arti bagus (contoh: "Pijar" = cahaya)
+4. Alliteration: Kata yang bunyinya mirip (contoh: Coca-Cola, PayPal)
+5. Metaphor: Gunakan simbol/metafora (contoh: Amazon = besar seperti sungai Amazon)
 
-Generate 100 nama brand yang unik, bermakna, dan masuk akal. Format output: satu nama per baris, tanpa numbering atau bullet points.`;
+ATURAN WAJIB:
+✓ HARUS mengandung kata "${userInput}" (bisa di awal, tengah, atau akhir)
+✓ HARUS cocok untuk bisnis ${industryName}
+✓ HARUS mudah diucapkan dan diingat
+✓ HARUS terdengar natural, BUKAN hasil bot
+✓ Hindari kombinasi aneh seperti "Bakso Kopi" atau "Modern Selera Pedas"
+
+CONTOH NAMA YANG BAGUS untuk "${userInput}":
+- ${userInput}Hub (modern, tech-savvy)
+- ${userInput}Go (action-oriented, energik)
+- ${userInput}ria (elegan, feminine)
+- ${userInput}Verse (modern, universe-like)
+- ${userInput} & Co (profesional, established)
+- The ${userInput} (premium, eksklusif)
+
+Generate 100 nama brand yang KREATIF dan NATURAL. Buat yang benar-benar bisa dipakai untuk bisnis nyata!
+Format: satu nama per baris, tanpa numbering.`;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
