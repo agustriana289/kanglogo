@@ -438,7 +438,14 @@ export default function OrderManagementPage() {
       if (error) throw error;
       console.log("Order update berhasil");
 
-      // Send notification if status changed
+      try {
+        const { syncOrderToNotion } = await import("@/lib/notion");
+        await syncOrderToNotion(selectedOrder.id);
+        console.log("Order berhasil di-sync ke Notion");
+      } catch (syncError) {
+        console.error("Auto-sync to Notion failed:", syncError);
+      }
+
       if (editedStatus !== selectedOrder.status) {
         await notifyOrderStatusChange(selectedOrder.id, editedStatus);
       }
@@ -472,7 +479,7 @@ export default function OrderManagementPage() {
         .padStart(4, "0");
       const invoiceNum = `INV-${dateStr}-${randomStr}`;
 
-      const { error } = await supabase.from("orders").insert({
+      const { data: newOrderData, error } = await supabase.from("orders").insert({
         invoice_number: invoiceNum,
         service_id: isCustomService ? null : selectedServiceId,
         customer_name: newOrder.customer_name,
@@ -497,9 +504,17 @@ export default function OrderManagementPage() {
         payment_method: newOrder.payment_method,
         status: "pending_payment",
         created_at: new Date().toISOString(),
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      try {
+        const { syncOrderToNotion } = await import("@/lib/notion");
+        await syncOrderToNotion(newOrderData.id);
+        console.log("Order berhasil di-sync ke Notion");
+      } catch (syncError) {
+        console.error("Auto-sync to Notion failed:", syncError);
+      }
 
       // Show success modal
       setCreatedInvoice(invoiceNum);
