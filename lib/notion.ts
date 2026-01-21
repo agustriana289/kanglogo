@@ -238,6 +238,13 @@ export async function syncOrderToNotion(orderId: number) {
         .eq("id", orderId);
     }
 
+    await supabase.from("notion_sync_logs").insert({
+      order_id: orderId,
+      sync_direction: "admin_to_notion",
+      sync_status: "success",
+      synced_at: new Date().toISOString(),
+    });
+
     return {
       success: true,
       notionPageId,
@@ -245,6 +252,15 @@ export async function syncOrderToNotion(orderId: number) {
     };
   } catch (error: any) {
     console.error("Error syncing to Notion:", error);
+
+    await supabase.from("notion_sync_logs").insert({
+      order_id: orderId,
+      sync_direction: "admin_to_notion",
+      sync_status: "error",
+      sync_error: error.message || "Unknown error",
+      synced_at: new Date().toISOString(),
+    });
+
     throw new Error(error.message || "Gagal sync ke Notion");
   }
 }
