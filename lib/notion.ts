@@ -132,6 +132,28 @@ function mapOrderToNotionProperties(data: NotionOrderData) {
   return properties;
 }
 
+async function findExistingNotionPage(orderId: number): Promise<string | null> {
+  try {
+    const response = await (notion.databases as any).query({
+      database_id: NOTION_DATABASE_ID,
+      filter: {
+        property: "Order ID",
+        number: {
+          equals: orderId,
+        },
+      },
+    });
+
+    if (response.results && response.results.length > 0) {
+      return response.results[0].id;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error finding existing Notion page:", error);
+    return null;
+  }
+}
+
 export async function syncOrderToNotion(orderId: number) {
   try {
     const { data: order, error } = await supabase
@@ -175,20 +197,41 @@ export async function syncOrderToNotion(orderId: number) {
     let notionUrl = "";
 
     if (notionPageId) {
-      await notion.pages.update({
-        page_id: notionPageId,
-        properties: properties as any,
-      });
-      notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
-    } else {
-      const response = await notion.pages.create({
-        parent: {
-          database_id: NOTION_DATABASE_ID,
-        },
-        properties: properties as any,
-      });
-      notionPageId = response.id;
-      notionUrl = `https://notion.so/${response.id.replace(/-/g, "")}`;
+      try {
+        await notion.pages.update({
+          page_id: notionPageId,
+          properties: properties as any,
+        });
+        notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
+      } catch (updateError: any) {
+        if (updateError.code === "object_not_found") {
+          notionPageId = null;
+        } else {
+          throw updateError;
+        }
+      }
+    }
+
+    if (!notionPageId) {
+      const existingPageId = await findExistingNotionPage(orderId);
+
+      if (existingPageId) {
+        notionPageId = existingPageId;
+        await notion.pages.update({
+          page_id: notionPageId,
+          properties: properties as any,
+        });
+        notionUrl = `https://notion.so/${notionPageId.replace(/-/g, "")}`;
+      } else {
+        const response = await notion.pages.create({
+          parent: {
+            database_id: NOTION_DATABASE_ID,
+          },
+          properties: properties as any,
+        });
+        notionPageId = response.id;
+        notionUrl = `https://notion.so/${response.id.replace(/-/g, "")}`;
+      }
 
       await supabase
         .from("orders")
@@ -197,14 +240,14 @@ export async function syncOrderToNotion(orderId: number) {
           last_synced_at: new Date().toISOString(),
         })
         .eq("id", orderId);
+    } else {
+      await supabase
+        .from("orders")
+        .update({
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
     }
-
-    await supabase
-      .from("orders")
-      .update({
-        last_synced_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
 
     return {
       success: true,
@@ -244,3 +287,17 @@ export async function testNotionConnection() {
     };
   }
 }
+
+export async function deleteNotionPage(pageId: string) {
+  try {
+    await notion.pages.update({
+      page_id: pageId,
+      archived: true,
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting Notion page:", error);
+    throw new Error(error.message || "Gagal menghapus page dari Notion");
+  }
+}
+
