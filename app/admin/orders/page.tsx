@@ -597,6 +597,7 @@ export default function OrderManagementPage() {
         customer_email: "",
         customer_whatsapp: "",
         package_name: "",
+        project_name: "",
         final_price: 0,
         payment_method: "Bank Transfer",
         discount_code: "",
