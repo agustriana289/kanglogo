@@ -278,6 +278,15 @@ export default function OrderManagementPage() {
 
     // Find loyal customer (customer with most orders)
     let loyalCustomer = { name: "", orderCount: 0, totalSpent: 0 };
+    
+    // DEBUG: Log all customers and their counts
+    console.log("=== LOYAL CUSTOMER DEBUG ===");
+    console.log("All customers:", Object.entries(customerSpending).map(([name, data]: [string, any]) => ({
+      name: data.displayName,
+      count: data.count,
+      total: data.total
+    })));
+    
     Object.entries(customerSpending).forEach(([normalizedName, data]: [string, any]) => {
       if (data.count > loyalCustomer.orderCount) {
         loyalCustomer = { 
@@ -287,6 +296,9 @@ export default function OrderManagementPage() {
         };
       }
     });
+    
+    console.log("Loyal customer result:", loyalCustomer);
+    console.log("=========================");
 
     setStats({
       unpaid,
