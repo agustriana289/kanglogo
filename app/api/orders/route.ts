@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { syncOrderToNotion } from "@/lib/notion";
+
 
 export async function POST(request: NextRequest) {
     try {
@@ -48,11 +48,7 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error;
 
-        try {
-            await syncOrderToNotion(order.id);
-        } catch (syncError) {
-            console.error("Auto-sync to Notion failed:", syncError);
-        }
+
 
         return NextResponse.json({
             success: true,
@@ -88,11 +84,7 @@ export async function PATCH(request: NextRequest) {
 
         if (error) throw error;
 
-        try {
-            await syncOrderToNotion(orderId);
-        } catch (syncError) {
-            console.error("Auto-sync to Notion failed:", syncError);
-        }
+
 
         return NextResponse.json({
             success: true,
@@ -122,7 +114,7 @@ export async function DELETE(request: NextRequest) {
 
         const { data: order } = await supabase
             .from("orders")
-            .select("notion_page_id")
+            .select("id")
             .eq("id", orderId)
             .single();
 
@@ -133,14 +125,7 @@ export async function DELETE(request: NextRequest) {
 
         if (error) throw error;
 
-        if (order?.notion_page_id) {
-            try {
-                const { deleteNotionPage } = await import("@/lib/notion");
-                await deleteNotionPage(order.notion_page_id);
-            } catch (syncError) {
-                console.error("Failed to delete Notion page:", syncError);
-            }
-        }
+
 
         return NextResponse.json({
             success: true,

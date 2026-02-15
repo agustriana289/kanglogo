@@ -31,8 +31,8 @@ export interface Order {
   project_name: string | null;
   created_at: string;
   updated_at: string;
-  notion_page_id?: string | null;
-  last_synced_at?: string | null;
+
+
   services?: {
     id: number;
     title: string;

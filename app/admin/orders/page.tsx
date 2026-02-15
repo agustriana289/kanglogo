@@ -132,12 +132,7 @@ export default function OrderManagementPage() {
   const [saving, setSaving] = useState(false);
   const [requestingTestimonial, setRequestingTestimonial] = useState(false);
   const [testimonialLink, setTestimonialLink] = useState<string | null>(null);
-  const [syncingToNotion, setSyncingToNotion] = useState(false);
-  const [notionPageUrl, setNotionPageUrl] = useState<string | null>(null);
-  const [showSyncLogModal, setShowSyncLogModal] = useState(false);
-  const [syncLogs, setSyncLogs] = useState<any[]>([]);
-  const [loadingSyncLogs, setLoadingSyncLogs] = useState(false);
-  const [syncingAll, setSyncingAll] = useState(false);
+
 
   // Edit Mode States
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -518,24 +513,7 @@ export default function OrderManagementPage() {
       if (error) throw error;
       console.log("Order update berhasil");
 
-      try {
-        const syncResponse = await fetch("/api/notion/sync-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: selectedOrder.id }),
-        });
-        const syncData = await syncResponse.json();
 
-        if (!syncResponse.ok) {
-          throw new Error(syncData.error || "Gagal sync ke Notion");
-        }
-
-        console.log("Order berhasil di-sync ke Notion");
-        showAlert("success", "Sync Berhasil", "Perubahan berhasil disinkronkan ke Notion!");
-      } catch (syncError: any) {
-        console.error("Auto-sync to Notion failed:", syncError);
-        showAlert("warning", "Sync Gagal", `Perubahan tersimpan tapi gagal sync ke Notion: ${syncError.message || syncError}`);
-      }
 
       if (editedStatus !== selectedOrder.status) {
         await notifyOrderStatusChange(selectedOrder.id, editedStatus);
@@ -600,24 +578,7 @@ export default function OrderManagementPage() {
 
       if (error) throw error;
 
-      try {
-        const syncResponse = await fetch("/api/notion/sync-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: newOrderData.id }),
-        });
-        const syncData = await syncResponse.json();
 
-        if (!syncResponse.ok) {
-          throw new Error(syncData.error || "Gagal sync ke Notion");
-        }
-
-        console.log("Order berhasil di-sync ke Notion");
-        showAlert("success", "Sync Berhasil", "Order berhasil disinkronkan ke Notion!");
-      } catch (syncError: any) {
-        console.error("Auto-sync to Notion failed:", syncError);
-        showAlert("warning", "Sync Gagal", `Order tersimpan tapi gagal sync ke Notion: ${syncError.message || syncError}`);
-      }
 
       // Show success modal
       setCreatedInvoice(invoiceNum);
@@ -719,32 +680,7 @@ export default function OrderManagementPage() {
     }
   };
 
-  const handleSyncToNotion = async () => {
-    if (!selectedOrder) return;
-    setSyncingToNotion(true);
-    try {
-      const response = await fetch("/api/notion/sync-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: selectedOrder.id }),
-      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Gagal sync ke Notion");
-      }
-
-      setNotionPageUrl(data.notionUrl);
-      showAlert("success", "Berhasil", "Order berhasil disinkronkan ke Notion!");
-      fetchOrders();
-    } catch (error: any) {
-      console.error("Error syncing to Notion:", error);
-      showAlert("error", "Gagal", error.message || "Gagal sync ke Notion");
-    } finally {
-      setSyncingToNotion(false);
-    }
-  };
 
   // Custom checkbox component with Heroicons (sama seperti di admin testimoni)
   const CustomCheckbox = ({
@@ -975,29 +911,7 @@ export default function OrderManagementPage() {
                 )}
               </div>
 
-              {/* Sync Log Button */}
-              <button
-                onClick={async () => {
-                  setShowSyncLogModal(true);
-                  setLoadingSyncLogs(true);
-                  try {
-                    const response = await fetch("/api/notion/sync-logs");
-                    const data = await response.json();
-                    setSyncLogs(data.logs || []);
-                  } catch (error) {
-                    console.error("Error fetching sync logs:", error);
-                    showAlert("error", "Error", "Gagal memuat sync logs");
-                  } finally {
-                    setLoadingSyncLogs(false);
-                  }
-                }}
-                className="h-11 flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="hidden sm:inline">Sync Log</span>
-              </button>
+
 
               {/* Add Button */}
               <button
@@ -2041,20 +1955,7 @@ export default function OrderManagementPage() {
                 )}
               </div>
 
-              {/* Center - Notion Link */}
-              {selectedOrder?.notion_page_id && (
-                <a
-                  href={selectedOrder.notion_page_id.startsWith('http') ? selectedOrder.notion_page_id : `https://notion.so/${selectedOrder.notion_page_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z" />
-                  </svg>
-                  Buka di Notion
-                </a>
-              )}
+
 
               {/* Right side - Action buttons */}
               <div className="flex gap-3">
@@ -2471,144 +2372,7 @@ export default function OrderManagementPage() {
         </div>
       )}
 
-      {/* Sync Log Modal */}
-      {showSyncLogModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-4xl shadow-xl max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                Notion Sync Logs
-              </h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={async () => {
-                    setSyncingAll(true);
-                    try {
-                      const response = await fetch("/api/notion/sync-all", {
-                        method: "POST",
-                      });
-                      const data = await response.json();
 
-                      if (!response.ok) {
-                        throw new Error(data.error || "Gagal sync");
-                      }
-
-                      showAlert("success", "Berhasil", `${data.synced} order berhasil di-sync ke Notion!`);
-
-                      const logsResponse = await fetch("/api/notion/sync-logs");
-                      const logsData = await logsResponse.json();
-                      setSyncLogs(logsData.logs || []);
-                    } catch (error: any) {
-                      showAlert("error", "Gagal", error.message || "Gagal sync semua order");
-                    } finally {
-                      setSyncingAll(false);
-                    }
-                  }}
-                  disabled={syncingAll}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
-                >
-                  {syncingAll ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Sync All
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setShowSyncLogModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-              {loadingSyncLogs ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-4 text-gray-500">Loading logs...</p>
-                </div>
-              ) : syncLogs.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">Belum ada sync logs</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {syncLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className={`p-4 rounded-lg border ${log.sync_status === 'success'
-                        ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                        : log.sync_status === 'error'
-                          ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
-                          : 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700'
-                        }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${log.sync_status === 'success'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                              : log.sync_status === 'error'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                              }`}>
-                              {log.sync_status.toUpperCase()}
-                            </span>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${log.sync_direction === 'admin_to_notion'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
-                              : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100'
-                              }`}>
-                              {log.sync_direction === 'admin_to_notion' ? 'Admin → Notion' : 'Notion → Admin'}
-                            </span>
-                            {log.orders && (
-                              <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                                {log.orders.invoice_number}
-                              </span>
-                            )}
-                          </div>
-                          {log.orders && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                              {log.orders.customer_name}
-                            </p>
-                          )}
-                          {log.sync_error && (
-                            <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-mono bg-red-50 dark:bg-red-900/30 p-2 rounded">
-                              {log.sync_error}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(log.synced_at).toLocaleString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
