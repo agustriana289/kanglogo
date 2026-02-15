@@ -224,7 +224,7 @@ export default function OrderManagementPage() {
     let totalIncome = 0;
 
     // Track customer spending for loyal customer calculation
-    const customerSpending: { [key: string]: { count: number; total: number } } = {};
+    const customerSpending: { [key: string]: { count: number; total: number; displayName: string } } = {};
 
     data.forEach((order) => {
       // Hitung Belum Dibayar (status pending_payment)
@@ -262,20 +262,29 @@ export default function OrderManagementPage() {
           incomeLastYear += order.final_price;
         }
 
-        // Track customer spending
-        if (!customerSpending[order.customer_name]) {
-          customerSpending[order.customer_name] = { count: 0, total: 0 };
+        // Track customer spending (normalize name: trim + lowercase for accurate matching)
+        const normalizedName = order.customer_name.trim().toLowerCase();
+        if (!customerSpending[normalizedName]) {
+          customerSpending[normalizedName] = { 
+            count: 0, 
+            total: 0, 
+            displayName: order.customer_name.trim() 
+          };
         }
-        customerSpending[order.customer_name].count++;
-        customerSpending[order.customer_name].total += order.final_price;
+        customerSpending[normalizedName].count++;
+        customerSpending[normalizedName].total += order.final_price;
       }
     });
 
     // Find loyal customer (customer with most orders)
     let loyalCustomer = { name: "", orderCount: 0, totalSpent: 0 };
-    Object.entries(customerSpending).forEach(([name, data]) => {
+    Object.entries(customerSpending).forEach(([normalizedName, data]: [string, any]) => {
       if (data.count > loyalCustomer.orderCount) {
-        loyalCustomer = { name, orderCount: data.count, totalSpent: data.total };
+        loyalCustomer = { 
+          name: data.displayName, 
+          orderCount: data.count, 
+          totalSpent: data.total 
+        };
       }
     });
 
@@ -1296,7 +1305,7 @@ export default function OrderManagementPage() {
                     <button
                       onClick={() => setCurrentPage(page as number)}
                       className={`flex items-center justify-center border shadow-xs font-medium leading-5 text-sm w-9 h-9 focus:outline-none rounded-lg ${currentPage === page
-                        ? "text-fg-brand bg-neutral-tertiary-medium border-default-medium"
+                        ? "text-primary bg-primary/5 border-primary font-semibold"
                         : "text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading"
                         }`}
                     >
