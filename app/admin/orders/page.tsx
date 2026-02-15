@@ -140,6 +140,7 @@ export default function OrderManagementPage() {
   const [editedDiscountAmount, setEditedDiscountAmount] = useState(0);
   const [isEditingCustomService, setIsEditingCustomService] = useState(false);
   const [editedCustomPackageName, setEditedCustomPackageName] = useState("");
+  const [editedProjectName, setEditedProjectName] = useState("");
 
   // Create Order States
   const [newOrder, setNewOrder] = useState({
@@ -147,6 +148,7 @@ export default function OrderManagementPage() {
     customer_email: "",
     customer_whatsapp: "",
     package_name: "",
+    project_name: "",
     final_price: 0,
     payment_method: "Bank Transfer",
     discount_code: "",
@@ -424,6 +426,7 @@ export default function OrderManagementPage() {
     setEditedDiscountAmount(order.discount_amount || 0);
     setIsEditingCustomService(false);
     setEditedCustomPackageName(order.package_details?.name || "");
+    setEditedProjectName(order.project_name || "");
 
     setShowDetailModal(true);
   };
@@ -449,6 +452,7 @@ export default function OrderManagementPage() {
         updateData.customer_email = editedCustomerEmail;
         updateData.customer_whatsapp = editedCustomerWhatsapp;
         updateData.service_id = editedServiceId;
+        updateData.project_name = editedProjectName || null;
 
         // Handle custom service
         if (isEditingCustomService) {
@@ -535,6 +539,7 @@ export default function OrderManagementPage() {
         customer_name: newOrder.customer_name,
         customer_email: newOrder.customer_email,
         customer_whatsapp: newOrder.customer_whatsapp,
+        project_name: newOrder.project_name || null,
         final_price: newOrder.final_price - newOrder.discount_amount,
         discount_code: newOrder.discount_code || null,
         discount_amount: newOrder.discount_amount || 0,
@@ -1105,7 +1110,7 @@ export default function OrderManagementPage() {
                       Nama Proyek
                     </span>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
-                      {order.package_details?.name || "-"}
+                      {order.project_name || "-"}
                     </p>
                   </div>
 
@@ -1217,7 +1222,7 @@ export default function OrderManagementPage() {
                           {order.customer_name}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {order.package_details?.name || "-"}
+                          {order.project_name || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                           {formatDateSafe(order.created_at)}

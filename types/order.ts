@@ -28,6 +28,7 @@ export interface Order {
   work_deadline: string | null;
   final_file_link: string | null;
   proof_of_payment_url?: string;
+  project_name: string | null;
   created_at: string;
   updated_at: string;
   notion_page_id?: string | null;
