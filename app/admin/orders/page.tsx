@@ -71,6 +71,17 @@ const statusOptions = [
   },
 ];
 
+interface ClientData {
+  name: string;
+  orderCount: number;
+  totalBudget: number;
+  firstOrderDate: string;
+  lastOrderDate: string;
+  phone: string;
+  email: string;
+}
+
+
 export default function OrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -883,7 +894,7 @@ export default function OrderManagementPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Left: Tabs */}
           <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
-            {["Semua", "Belum Dibayar", "Lunas"].map((status) => (
+            {["Semua", "Belum Dibayar", "Lunas", "Klien"].map((status) => (
               <button
                 key={status}
                 onClick={() => {
@@ -1057,7 +1068,118 @@ export default function OrderManagementPage() {
       )}
 
       {/* Content */}
-      {paginatedOrders.length === 0 ? (
+      {filterStatus === "Klien" ? (
+        // Clients Table View
+        (() => {
+          // Aggregate client data from orders
+          const clientsMap: Record<string, ClientData> = {};
+          
+          orders.forEach((order) => {
+            const normalizedName = order.customer_name.trim().toLowerCase();
+            
+            if (!clientsMap[normalizedName]) {
+              clientsMap[normalizedName] = {
+                name: order.customer_name.trim(),
+                orderCount: 0,
+                totalBudget: 0,
+                firstOrderDate: order.created_at,
+                lastOrderDate: order.created_at,
+                phone: order.customer_whatsapp || "-",
+                email: order.customer_email || "-",
+              };
+            }
+            
+            clientsMap[normalizedName].orderCount++;
+            clientsMap[normalizedName].totalBudget += order.final_price;
+            
+            // Update first and last order dates
+            if (new Date(order.created_at) < new Date(clientsMap[normalizedName].firstOrderDate)) {
+              clientsMap[normalizedName].firstOrderDate = order.created_at;
+            }
+            if (new Date(order.created_at) > new Date(clientsMap[normalizedName].lastOrderDate)) {
+              clientsMap[normalizedName].lastOrderDate = order.created_at;
+              // Update phone and email from most recent order
+              clientsMap[normalizedName].phone = order.customer_whatsapp || "-";
+              clientsMap[normalizedName].email = order.customer_email || "-";
+            }
+          });
+          
+          const clients = Object.values(clientsMap).sort((a, b) => b.orderCount - a.orderCount);
+          
+          return clients.length === 0 ? (
+            <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+              <UserIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Tidak ada klien
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
+                Belum ada data klien.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-slate-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Nama
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Jumlah Order
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Total Budget
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Sejak
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Terakhir Order
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      No WA
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Email
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {clients.map((client, index) => (
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        {client.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {client.orderCount} order
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                          minimumFractionDigits: 0,
+                        }).format(client.totalBudget)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {format(new Date(client.firstOrderDate), "dd MMM yyyy", { locale: id })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {format(new Date(client.lastOrderDate), "dd MMM yyyy", { locale: id })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {client.phone}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {client.email}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()
+      ) : paginatedOrders.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
           <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
