@@ -165,6 +165,11 @@ export default function OrderManagementPage() {
     discount_code: "",
     discount_amount: 0,
   });
+  
+  // Autocomplete States
+  const [customerSuggestions, setCustomerSuggestions] = useState<Array<{name: string, email: string, phone: string}>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showEditSuggestions, setShowEditSuggestions] = useState(false);
   const [creating, setCreating] = useState(false);
   const [isCustomService, setIsCustomService] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -1104,79 +1109,132 @@ export default function OrderManagementPage() {
             }
           });
           
-          const clients = Object.values(clientsMap).sort((a, b) => b.orderCount - a.orderCount);
+          // Convert to array and sort by order count
+          let clients = Object.values(clientsMap).sort((a, b) => b.orderCount - a.orderCount);
           
-          return clients.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-              <UserIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Tidak ada klien
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                Belum ada data klien.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-slate-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Nama
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Jumlah Order
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Total Budget
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Sejak
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Terakhir Order
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      No WA
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Email
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {clients.map((client, index) => (
-                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                        {client.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {client.orderCount} order
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {new Intl.NumberFormat("id-ID", {
-                          style: "currency",
-                          currency: "IDR",
-                          minimumFractionDigits: 0,
-                        }).format(client.totalBudget)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {format(new Date(client.firstOrderDate), "dd MMM yyyy", { locale: id })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {format(new Date(client.lastOrderDate), "dd MMM yyyy", { locale: id })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {client.phone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {client.email}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          // Apply search filter
+          if (searchQuery.trim()) {
+            clients = clients.filter(client => 
+              client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              client.phone.includes(searchQuery)
+            );
+          }
+          
+          // Calculate pagination
+          const totalClients = clients.length;
+          const totalPages = Math.ceil(totalClients / itemsPerPage);
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const paginatedClients = clients.slice(startIndex, endIndex);
+          
+          return (
+            <>
+              {totalClients === 0 ? (
+                <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                  <UserIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Tidak ada klien
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">
+                    {searchQuery ? `Tidak ada klien yang cocok dengan "${searchQuery}"` : "Belum ada data klien."}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-slate-700">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Nama
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Jumlah Order
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Total Budget
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Sejak
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Terakhir Order
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            No WA
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Email
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {paginatedClients.map((client, index) => (
+                          <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              {client.name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {client.orderCount} order
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                                minimumFractionDigits: 0,
+                              }).format(client.totalBudget)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {format(new Date(client.firstOrderDate), "dd MMM yyyy", { locale: id })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {format(new Date(client.lastOrderDate), "dd MMM yyyy", { locale: id })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {client.phone}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {client.email}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination for Clients */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span>
+                          Menampilkan {startIndex + 1} - {Math.min(endIndex, totalClients)} dari {totalClients} klien
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          Halaman {currentPage} dari {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRightIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           );
         })()
       ) : paginatedOrders.length === 0 ? (
@@ -2099,7 +2157,7 @@ export default function OrderManagementPage() {
                   }
                 />
               </div>
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Nama Pelanggan
                 </label>
@@ -2107,10 +2165,62 @@ export default function OrderManagementPage() {
                   type="text"
                   className={inputStyle}
                   value={newOrder.customer_name}
-                  onChange={(e) =>
-                    setNewOrder({ ...newOrder, customer_name: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewOrder({ ...newOrder, customer_name: value });
+                    
+                    // Generate suggestions from existing orders
+                    if (value.trim().length > 0) {
+                      const uniqueCustomers = new Map<string, {name: string, email: string, phone: string}>();
+                      
+                      orders.forEach(order => {
+                        const normalizedName = order.customer_name.trim().toLowerCase();
+                        if (normalizedName.includes(value.toLowerCase())) {
+                          if (!uniqueCustomers.has(normalizedName)) {
+                            uniqueCustomers.set(normalizedName, {
+                              name: order.customer_name.trim(),
+                              email: order.customer_email || "",
+                              phone: order.customer_whatsapp || ""
+                            });
+                          }
+                        }
+                      });
+                      
+                      setCustomerSuggestions(Array.from(uniqueCustomers.values()).slice(0, 5));
+                      setShowSuggestions(true);
+                    } else {
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 />
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && customerSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {customerSuggestions.map((customer, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setNewOrder({
+                            ...newOrder,
+                            customer_name: customer.name,
+                            customer_email: customer.email,
+                            customer_whatsapp: customer.phone
+                          });
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-slate-600 flex flex-col"
+                      >
+                        <span className="font-medium text-gray-900 dark:text-white">{customer.name}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {customer.email} • {customer.phone}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
