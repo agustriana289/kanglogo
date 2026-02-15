@@ -1397,6 +1397,20 @@ export default function OrderManagementPage() {
                     <div className="space-y-3">
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">
+                          Nama Proyek
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          placeholder="Opsional"
+                          value={editedProjectName}
+                          onChange={(e) =>
+                            setEditedProjectName(e.target.value)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">
                           Nama
                         </label>
                         <input
@@ -1928,6 +1942,20 @@ export default function OrderManagementPage() {
               </button>
             </div>
             <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nama Proyek
+                </label>
+                <input
+                  type="text"
+                  className={inputStyle}
+                  placeholder="Opsional"
+                  value={newOrder.project_name}
+                  onChange={(e) =>
+                    setNewOrder({ ...newOrder, project_name: e.target.value })
+                  }
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Nama Pelanggan

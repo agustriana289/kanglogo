@@ -23,6 +23,7 @@ export default function NewOrderPageContent() {
 
   // PERUBAHAN: State untuk form data
   const [formData, setFormData] = useState({
+    project_name: "",
     customer_name: "",
     customer_email: "",
     customer_whatsapp: "",
@@ -190,6 +191,7 @@ export default function NewOrderPageContent() {
         invoice_number: invoiceNumber,
         service_id: service.id,
         package_details: selectedPackage,
+        project_name: formData.project_name || null,
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
         customer_whatsapp: formData.customer_whatsapp
@@ -407,6 +409,25 @@ export default function NewOrderPageContent() {
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Nama Proyek */}
+                <div>
+                  <label
+                    htmlFor="project_name"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
+                  >
+                    Nama Proyek (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    id="project_name"
+                    name="project_name"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-sm"
+                    placeholder="Contoh: Logo Perusahaan ABC"
+                    value={formData.project_name}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
                 {/* Nama Lengkap */}
                 <div>
                   <label
