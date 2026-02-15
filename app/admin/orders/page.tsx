@@ -99,9 +99,12 @@ export default function OrderManagementPage() {
   // Stats
   const [stats, setStats] = useState({
     unpaid: 0,
+    unpaidCustomerName: "",
     incomeThisMonth: 0,
     incomeThisYear: 0,
+    incomeLastYear: 0,
     totalIncome: 0,
+    loyalCustomer: { name: "", orderCount: 0, totalSpent: 0 },
   });
 
   // Modal States
@@ -209,16 +212,25 @@ export default function OrderManagementPage() {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
+    const lastYear = currentYear - 1;
 
     let unpaid = 0;
+    let unpaidCustomerName = "";
     let incomeThisMonth = 0;
     let incomeThisYear = 0;
+    let incomeLastYear = 0;
     let totalIncome = 0;
+
+    // Track customer spending for loyal customer calculation
+    const customerSpending: { [key: string]: { count: number; total: number } } = {};
 
     data.forEach((order) => {
       // Hitung Belum Dibayar (status pending_payment)
       if (order.status === "pending_payment") {
         unpaid += order.final_price;
+        if (!unpaidCustomerName) {
+          unpaidCustomerName = order.customer_name;
+        }
       }
 
       // Hitung Penghasilan (status paid, accepted, completed, in_progress - asumsi uang masuk saat paid)
@@ -242,14 +254,37 @@ export default function OrderManagementPage() {
         if (orderDate.getFullYear() === currentYear) {
           incomeThisYear += order.final_price;
         }
+
+        // Income Last Year
+        if (orderDate.getFullYear() === lastYear) {
+          incomeLastYear += order.final_price;
+        }
+
+        // Track customer spending
+        if (!customerSpending[order.customer_name]) {
+          customerSpending[order.customer_name] = { count: 0, total: 0 };
+        }
+        customerSpending[order.customer_name].count++;
+        customerSpending[order.customer_name].total += order.final_price;
+      }
+    });
+
+    // Find loyal customer (customer with most orders)
+    let loyalCustomer = { name: "", orderCount: 0, totalSpent: 0 };
+    Object.entries(customerSpending).forEach(([name, data]) => {
+      if (data.count > loyalCustomer.orderCount) {
+        loyalCustomer = { name, orderCount: data.count, totalSpent: data.total };
       }
     });
 
     setStats({
       unpaid,
+      unpaidCustomerName,
       incomeThisMonth,
       incomeThisYear,
+      incomeLastYear,
       totalIncome,
+      loyalCustomer,
     });
   };
 
@@ -748,45 +783,73 @@ export default function OrderManagementPage() {
       {/* Overview Stats */}
 
       <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Card 1: Belum Dibayar */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <p className="text-slate-500 text-sm font-medium">Belum Dibayar</p>
           <div className="flex items-end justify-between mt-3">
-            <p className="text-2xl font-bold text-slate-800">
-              {formatCurrency(stats.unpaid)}
-            </p>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {formatCurrency(stats.unpaid)}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                {stats.unpaidCustomerName || "-"}
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Card 2: Pelanggan Setia */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <p className="text-slate-500 text-sm font-medium">
-            Penghasilan Bulan Ini
-          </p>
+          <p className="text-slate-500 text-sm font-medium">Pelanggan Setia</p>
           <div className="flex items-end justify-between mt-3">
-            <p className="text-2xl font-bold text-slate-800">
-              {formatCurrency(stats.incomeThisMonth)}
-            </p>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {stats.loyalCustomer.name || "-"}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                {stats.loyalCustomer.orderCount > 0
+                  ? `${stats.loyalCustomer.orderCount} Orderan / ${formatCurrency(stats.loyalCustomer.totalSpent)}`
+                  : "-"}
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Card 3: Penghasilan Tahun Ini */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <p className="text-slate-500 text-sm font-medium">
             Penghasilan Tahun Ini
           </p>
           <div className="flex items-end justify-between mt-3">
-            <p className="text-2xl font-bold text-slate-800">
-              {formatCurrency(stats.incomeThisYear)}
-            </p>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {formatCurrency(stats.incomeThisYear)}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Tahun kemarin {formatCurrency(stats.incomeLastYear)}
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Card 4: Total Penghasilan */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <p className="text-slate-500 text-sm font-medium">
             Total Penghasilan
           </p>
           <div className="flex items-end justify-between mt-3">
-            <p className="text-2xl font-bold text-slate-800">
-              {formatCurrency(stats.totalIncome)}
-            </p>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {formatCurrency(stats.totalIncome)}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                + Tahun 2026 / {formatCurrency(stats.incomeThisYear)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
+
 
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -1037,17 +1100,16 @@ export default function OrderManagementPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase">
-                        Jatuh Tempo
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {formatDateSafe(
-                          order.payment_deadline || order.work_deadline
-                        )}
-                      </p>
-                    </div>
+                  <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                    <span className="block text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">
+                      Nama Proyek
+                    </span>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {order.package_details?.name || "-"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end pt-3 border-t border-gray-100">
                     <div className="flex gap-1">
                       <Link
                         href={`/invoice/${order.invoice_number}`}
@@ -1097,17 +1159,12 @@ export default function OrderManagementPage() {
                     >
                       Pelanggan
                     </th>
+                    <th className="px-6 py-4">Nama Proyek</th>
                     <th
                       className="px-6 py-4 cursor-pointer"
                       onClick={() => handleSort("created_at")}
                     >
                       Tanggal Dibuat
-                    </th>
-                    <th
-                      className="px-6 py-4 cursor-pointer"
-                      onClick={() => handleSort("payment_deadline")}
-                    >
-                      Jatuh Tempo
                     </th>
                     <th
                       className="px-6 py-4 cursor-pointer"
@@ -1160,12 +1217,10 @@ export default function OrderManagementPage() {
                           {order.customer_name}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {formatDateSafe(order.created_at)}
+                          {order.package_details?.name || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {formatDateSafe(
-                            order.payment_deadline || order.work_deadline
-                          )}
+                          {formatDateSafe(order.created_at)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                           {formatCurrency(order.final_price)}
