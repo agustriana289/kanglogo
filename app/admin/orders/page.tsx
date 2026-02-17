@@ -94,6 +94,8 @@ export default function OrderManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPackage, setFilterPackage] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Order | "customer";
@@ -329,6 +331,19 @@ export default function OrderManagementPage() {
     // Status Filter (for Orders tab)
     if (filterStatusValue && filterStatusValue !== "all") {
       if (order.status !== filterStatusValue) return false;
+    }
+
+    // Date Range Filter
+    if (filterDateFrom) {
+      const orderDate = new Date(order.created_at);
+      const fromDate = new Date(filterDateFrom);
+      if (orderDate < fromDate) return false;
+    }
+    if (filterDateTo) {
+      const orderDate = new Date(order.created_at);
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999); // Include the entire day
+      if (orderDate > toDate) return false;
     }
 
     // Advanced Filters
@@ -871,57 +886,111 @@ export default function OrderManagementPage() {
                   <FunnelIcon className="w-5 h-5" />
                   <span className="hidden sm:inline">Filter</span>
                 </button>
-                {showFilterDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right">
-                    <div className="mb-4">
-                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Layanan
-                      </label>
-                      <input
-                        type="text"
-                        value={filterPackage}
-                        onChange={(e) => setFilterPackage(e.target.value)}
-                        placeholder="Filter layanan..."
-                        className={inputStyle}
-                      />
+                {showFilterDropdown && (() => {
+                  // Get unique services and customers for autocomplete
+                  const uniqueServices = Array.from(new Set(orders.map(o => o.package_details?.name).filter(Boolean)));
+                  const uniqueCustomers = Array.from(new Set(orders.map(o => o.customer_name).filter(Boolean)));
+                  
+                  return (
+                    <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right max-h-[500px] overflow-y-auto">
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Layanan
+                        </label>
+                        <input
+                          type="text"
+                          list="services-list"
+                          value={filterPackage}
+                          onChange={(e) => setFilterPackage(e.target.value)}
+                          placeholder="Pilih atau ketik layanan..."
+                          className={inputStyle}
+                        />
+                        <datalist id="services-list">
+                          {uniqueServices.map((service, idx) => (
+                            <option key={idx} value={service} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Klien
+                        </label>
+                        <input
+                          type="text"
+                          list="customers-list"
+                          value={filterCustomer}
+                          onChange={(e) => setFilterCustomer(e.target.value)}
+                          placeholder="Pilih atau ketik klien..."
+                          className={inputStyle}
+                        />
+                        <datalist id="customers-list">
+                          {uniqueCustomers.map((customer, idx) => (
+                            <option key={idx} value={customer} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Status
+                        </label>
+                        <select
+                          value={filterStatusValue}
+                          onChange={(e) => setFilterStatusValue(e.target.value)}
+                          className={inputStyle}
+                        >
+                          <option value="">Semua Status</option>
+                          {statusOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Dari Tanggal
+                        </label>
+                        <input
+                          type="date"
+                          value={filterDateFrom}
+                          onChange={(e) => setFilterDateFrom(e.target.value)}
+                          className={inputStyle}
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Sampai Tanggal
+                        </label>
+                        <input
+                          type="date"
+                          value={filterDateTo}
+                          onChange={(e) => setFilterDateTo(e.target.value)}
+                          className={inputStyle}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setFilterPackage("");
+                            setFilterCustomer("");
+                            setFilterStatusValue("");
+                            setFilterDateFrom("");
+                            setFilterDateTo("");
+                          }}
+                          className="flex-1 h-10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={() => setShowFilterDropdown(false)}
+                          className="flex-1 bg-primary hover:bg-primary/80 h-10 rounded-lg text-sm font-medium text-white transition"
+                        >
+                          Terapkan
+                        </button>
+                      </div>
                     </div>
-                    <div className="mb-4">
-                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Klien
-                      </label>
-                      <input
-                        type="text"
-                        value={filterCustomer}
-                        onChange={(e) => setFilterCustomer(e.target.value)}
-                        placeholder="Filter klien..."
-                        className={inputStyle}
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Status
-                      </label>
-                      <select
-                        value={filterStatusValue}
-                        onChange={(e) => setFilterStatusValue(e.target.value)}
-                        className={inputStyle}
-                      >
-                        <option value="">Semua Status</option>
-                        {statusOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      onClick={() => setShowFilterDropdown(false)}
-                      className="bg-primary hover:bg-primary/80 w-full h-10 rounded-lg text-sm font-medium text-white transition"
-                    >
-                      Terapkan Filter
-                    </button>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
 
