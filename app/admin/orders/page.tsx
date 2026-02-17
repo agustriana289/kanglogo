@@ -88,7 +88,9 @@ export default function OrderManagementPage() {
   const { showAlert, showConfirm } = useAlert();
 
   // UI States
+  const [activeTab, setActiveTab] = useState<'orders' | 'clients' | 'statistics'>('orders');
   const [filterStatus, setFilterStatus] = useState("Semua");
+  const [filterStatusValue, setFilterStatusValue] = useState(""); // For status filter in Orders tab
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPackage, setFilterPackage] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("");
@@ -101,7 +103,7 @@ export default function OrderManagementPage() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [bulkStatus, setBulkStatus] = useState(""); // For bulk action dropdown
   const [showMobileStats, setShowMobileStats] = useState(false);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const [bulkStatusDropdownOpen, setBulkStatusDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
@@ -324,20 +326,9 @@ export default function OrderManagementPage() {
 
   // Filter & Search Logic
   const filteredOrders = orders.filter((order) => {
-    // Status Filter (Tab)
-    if (filterStatus !== "Semua") {
-      if (
-        filterStatus === "Belum Dibayar" &&
-        order.status !== "pending_payment"
-      )
-        return false;
-      if (
-        filterStatus === "Lunas" &&
-        order.status !== "paid" &&
-        order.status !== "completed" &&
-        order.status !== "accepted"
-      )
-        return false;
+    // Status Filter (for Orders tab)
+    if (filterStatusValue && filterStatusValue !== "all") {
+      if (order.status !== filterStatusValue) return false;
     }
 
     // Advanced Filters
@@ -835,19 +826,24 @@ export default function OrderManagementPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Left: Tabs */}
           <div className="hidden h-11 items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 lg:inline-flex dark:bg-gray-900">
-            {["Semua", "Belum Dibayar", "Lunas", "Klien"].map((status) => (
+            {[
+              { key: 'orders', label: 'Pesanan' },
+              { key: 'clients', label: 'Klien' },
+              { key: 'statistics', label: 'Statistik' }
+            ].map((tab) => (
               <button
-                key={status}
+                key={tab.key}
                 onClick={() => {
-                  setFilterStatus(status);
+                  setActiveTab(tab.key as 'orders' | 'clients' | 'statistics');
                   setCurrentPage(1);
                 }}
-                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${filterStatus === status
-                  ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
+                className={`text-sm h-10 rounded-md px-3 py-2 font-medium transition-all ${
+                  activeTab === tab.key
+                    ? "shadow-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
               >
-                {status}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -879,27 +875,44 @@ export default function OrderManagementPage() {
                   <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-800 z-10 transition-all origin-top-right">
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Paket
+                        Layanan
                       </label>
                       <input
                         type="text"
                         value={filterPackage}
                         onChange={(e) => setFilterPackage(e.target.value)}
-                        placeholder="Filter paket..."
+                        placeholder="Filter layanan..."
                         className={inputStyle}
                       />
                     </div>
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Pelanggan
+                        Klien
                       </label>
                       <input
                         type="text"
                         value={filterCustomer}
                         onChange={(e) => setFilterCustomer(e.target.value)}
-                        placeholder="Filter pelanggan..."
+                        placeholder="Filter klien..."
                         className={inputStyle}
                       />
+                    </div>
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                        Status
+                      </label>
+                      <select
+                        value={filterStatusValue}
+                        onChange={(e) => setFilterStatusValue(e.target.value)}
+                        className={inputStyle}
+                      >
+                        <option value="">Semua Status</option>
+                        {statusOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <button
                       onClick={() => setShowFilterDropdown(false)}
@@ -987,7 +1000,209 @@ export default function OrderManagementPage() {
       )}
 
       {/* Content */}
-      {filterStatus === "Klien" ? (
+      {activeTab === 'statistics' ? (
+        // Statistics Table View
+        (() => {
+          interface MonthlyStats {
+            yearMonth: string; // "2025-01"
+            displayMonth: string; // "2025, Januari"
+            totalOrders: number;
+            totalIncome: number;
+            uniqueCustomers: Set<string>;
+            totalCustomers: number;
+            bestCustomer: { name: string; spent: number };
+          }
+
+          const monthlyStatsMap: Record<string, MonthlyStats> = {};
+          const monthNames = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+          ];
+
+          // Process orders to group by month
+          orders.forEach((order) => {
+            // Only count paid orders for statistics
+            if (!["paid", "accepted", "in_progress", "completed"].includes(order.status)) {
+              return;
+            }
+
+            const orderDate = new Date(order.created_at);
+            const year = orderDate.getFullYear();
+            const month = orderDate.getMonth(); // 0-11
+            const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const displayMonth = `${year}, ${monthNames[month]}`;
+
+            if (!monthlyStatsMap[yearMonth]) {
+              monthlyStatsMap[yearMonth] = {
+                yearMonth,
+                displayMonth,
+                totalOrders: 0,
+                totalIncome: 0,
+                uniqueCustomers: new Set<string>(),
+                totalCustomers: 0,
+                bestCustomer: { name: "", spent: 0 },
+              };
+            }
+
+            const stats = monthlyStatsMap[yearMonth];
+            stats.totalOrders++;
+            stats.totalIncome += order.final_price;
+            stats.uniqueCustomers.add(order.customer_name.trim().toLowerCase());
+          });
+
+          // Calculate best customer for each month
+          Object.keys(monthlyStatsMap).forEach((yearMonth) => {
+            const stats = monthlyStatsMap[yearMonth];
+            stats.totalCustomers = stats.uniqueCustomers.size;
+
+            // Find best customer for this month
+            const customerSpending: Record<string, { name: string; spent: number }> = {};
+            
+            orders.forEach((order) => {
+              if (!["paid", "accepted", "in_progress", "completed"].includes(order.status)) {
+                return;
+              }
+
+              const orderDate = new Date(order.created_at);
+              const year = orderDate.getFullYear();
+              const month = orderDate.getMonth();
+              const orderYearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+              if (orderYearMonth === yearMonth) {
+                const normalizedName = order.customer_name.trim().toLowerCase();
+                if (!customerSpending[normalizedName]) {
+                  customerSpending[normalizedName] = {
+                    name: order.customer_name.trim(),
+                    spent: 0,
+                  };
+                }
+                customerSpending[normalizedName].spent += order.final_price;
+              }
+            });
+
+            // Find customer with highest spending
+            let bestCustomer = { name: "-", spent: 0 };
+            Object.values(customerSpending).forEach((customer) => {
+              if (customer.spent > bestCustomer.spent) {
+                bestCustomer = customer;
+              }
+            });
+            stats.bestCustomer = bestCustomer;
+          });
+
+          // Convert to array and sort by year-month (newest first)
+          const monthlyStatsArray = Object.values(monthlyStatsMap).sort((a, b) => 
+            b.yearMonth.localeCompare(a.yearMonth)
+          );
+
+          // Pagination
+          const totalStats = monthlyStatsArray.length;
+          const totalPages = Math.ceil(totalStats / itemsPerPage);
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const paginatedStats = monthlyStatsArray.slice(startIndex, endIndex);
+
+          return (
+            <>
+              {totalStats === 0 ? (
+                <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                  <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Tidak ada data statistik
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">
+                    Belum ada pesanan yang dibayar.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-slate-700">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Bulan
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Total Pesanan
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Total Penghasilan
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Total Pelanggan
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Pelanggan Terbaik
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {paginatedStats.map((stat, index) => (
+                          <tr key={stat.yearMonth} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              {stat.displayMonth}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {stat.totalOrders} pesanan
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {formatCurrency(stat.totalIncome)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              {stat.totalCustomers} pelanggan
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {stat.bestCustomer.name}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  {formatCurrency(stat.bestCustomer.spent)}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination for Statistics */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span>
+                          Menampilkan {startIndex + 1} - {Math.min(endIndex, totalStats)} dari {totalStats} bulan
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          Halaman {currentPage} dari {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRightIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          );
+        })()
+      ) : activeTab === 'clients' ? (
         // Clients Table View
         (() => {
           // Aggregate client data from orders
@@ -1382,8 +1597,8 @@ export default function OrderManagementPage() {
         </>
       )}
 
-      {/* Pagination */}
-      {sortedOrders.length > 0 && (
+      {/* Pagination - Only for Orders Tab */}
+      {activeTab === 'orders' && sortedOrders.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6">
           <nav
             aria-label="Page navigation"
@@ -1450,7 +1665,7 @@ export default function OrderManagementPage() {
             </button>
             {pageDropdownOpen && (
               <div className="absolute bottom-full left-0 mb-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-150">
-                {[10, 25, 50, 100].map((value) => (
+                {[10, 20, 25, 50, 100].map((value) => (
                   <button
                     key={value}
                     onClick={() => {
