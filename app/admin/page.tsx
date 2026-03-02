@@ -21,6 +21,7 @@ interface Task {
   status: string;
   created_at: string;
   package_details: { name: string } | null;
+  final_price?: string;
 }
 
 export default function AdminDashboard() {
@@ -39,6 +40,9 @@ export default function AdminDashboard() {
     bestSeller: string;
     totalClients: number;
     totalTestimonials: number;
+    recentClients: string[];
+    topServices: {name: string, count: number}[];
+    topProducts: {name: string, count: number, image?: string}[];
     monthlyData: MonthlyDataItem[];
     storeMonthlyData: MonthlyDataItem[];
   }>({
@@ -54,6 +58,9 @@ export default function AdminDashboard() {
     bestSeller: "-",
     totalClients: 0,
     totalTestimonials: 0,
+    recentClients: [],
+    topServices: [],
+    topProducts: [],
     monthlyData: [],
     storeMonthlyData: [],
   });
@@ -210,35 +217,56 @@ export default function AdminDashboard() {
         ) || 0);
 
       // Calculate Best Seller
-      const productCounts: Record<string, number> = {};
+      const servicesCounts: Record<string, number> = {};
+      const productsCounts: Record<string, {count: number, image?: string}> = {};
+      
       if (allOrdersData) {
         allOrdersData.forEach((o: any) => {
-          const name = o.package_details?.name || "Service";
-          productCounts[name] = (productCounts[name] || 0) + 1;
+          const name = o.package_details?.name || "Layanan Custom";
+          servicesCounts[name] = (servicesCounts[name] || 0) + 1;
         });
       }
       if (allStoreData) {
         allStoreData.forEach((s: any) => {
-          const name =
-            s.product_details?.name || s.product_details?.title || "Product";
-          productCounts[name] = (productCounts[name] || 0) + 1;
+          const name = s.product_details?.name || s.product_details?.title || "Produk Toko";
+          const image = s.product_details?.image_src || s.product_details?.image || undefined;
+          if (!productsCounts[name]) productsCounts[name] = { count: 0, image };
+          productsCounts[name].count += 1;
         });
       }
 
       let bestSeller = "-";
       let maxSells = 0;
-      Object.entries(productCounts).forEach(([name, count]) => {
+      Object.entries(servicesCounts).forEach(([name, count]) => {
         if (count > maxSells) {
           maxSells = count;
           bestSeller = name;
         }
       });
+      Object.entries(productsCounts).forEach(([name, data]) => {
+        if (data.count > maxSells) {
+          maxSells = data.count;
+          bestSeller = name;
+        }
+      });
 
-      // Calculate Total Clients
+      // Calculate Total Clients & Recent Clients
       const clients = new Set(
         allOrdersData?.map((o) => o.customer_name).filter(Boolean),
       );
       const totalClients = clients.size;
+      const recentClients = Array.from(clients).slice(0, 5) as string[];
+
+      // Top Services & Products arrays
+      const topServices = Object.entries(servicesCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+        
+      const topProducts = Object.entries(productsCounts)
+        .map(([name, data]) => ({ name, count: data.count, image: data.image }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
       // Monthly data for chart (last 12 months) - Orders with real revenue
       const monthlyData = [];
@@ -316,6 +344,9 @@ export default function AdminDashboard() {
         bestSeller,
         totalClients,
         totalTestimonials: totalTestimonials || 0,
+        recentClients,
+        topServices,
+        topProducts,
         monthlyData,
         storeMonthlyData,
       });
@@ -330,8 +361,8 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, customer_name, status, created_at, package_details")
-        .in("status", ["accepted", "in_progress", "completed"])
+        .select("id, customer_name, status, created_at, package_details, final_price")
+        .in("status", ["accepted", "in_progress", "completed", "paid"])
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -360,120 +391,76 @@ export default function AdminDashboard() {
     }
   };
 
-  // ApexCharts options for bar chart - using CSS variable for primary color
-  const barChartOptions: any = {
+  // Area chart options for modern curved look
+  const areaChartOptions: any = {
     chart: {
-      type: "bar",
+      type: "area",
       height: 350,
-      stacked: true,
-      toolbar: {
-        show: false,
-      },
+      zoom: { enabled: false },
+      toolbar: { show: false },
       fontFamily: "inherit",
     },
-    colors: ["var(--color-primary)", "var(--color-secondary)"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "55%",
-        borderRadius: 4,
-        borderRadiusApplication: "end",
-        borderRadiusWhenStacked: "last",
-      },
-    },
-    dataLabels: {
-      enabled: false,
-    },
+    colors: ["#02cfb6", "#818cf8"],
+    dataLabels: { enabled: false },
     stroke: {
-      show: true,
-      width: 2,
-      colors: ["transparent"],
+      curve: "smooth",
+      width: 3,
     },
-    legend: {
-      position: "top",
-      horizontalAlign: "left",
-      labels: {
-        colors: "#64748b",
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.4,
+        opacityTo: 0.05,
+        stops: [0, 90, 100],
       },
     },
     xaxis: {
       categories: orderStats.monthlyData.map((d) => d.month),
-      axisBorder: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
       labels: {
         style: {
-          colors: "#64748b",
+          colors: "#94a3b8",
           fontSize: "12px",
+          fontWeight: 500,
         },
       },
+      tooltip: { enabled: false },
     },
     yaxis: {
       labels: {
+        formatter: (value: number) => {
+          if (value >= 1000) return `Rp ${Math.round(value/1000)}k`;
+          return value;
+        },
         style: {
-          colors: "#64748b",
+          colors: "#94a3b8",
           fontSize: "12px",
+          fontWeight: 500,
         },
       },
     },
-    fill: {
-      opacity: 1,
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
-      custom: function ({
-        series,
-        seriesIndex,
-        dataPointIndex,
-        w,
-      }: {
-        series: any;
-        seriesIndex: number;
-        dataPointIndex: number;
-        w: any;
-      }) {
-        const ordersCount = orderStats.monthlyData[dataPointIndex]?.count || 0;
-        const ordersRevenue =
-          orderStats.monthlyData[dataPointIndex]?.revenue || 0;
-        const storeCount =
-          orderStats.storeMonthlyData[dataPointIndex]?.count || 0;
-        const storeRevenue =
-          orderStats.storeMonthlyData[dataPointIndex]?.revenue || 0;
-        const month = orderStats.monthlyData[dataPointIndex]?.month || "";
-
-        return `
-          <div class="px-4 py-3 bg-white shadow-lg rounded-lg border border-slate-100">
-            <p class="font-bold text-slate-800 mb-2">${month}</p>
-            <div class="space-y-1 text-sm">
-              <p><span style="color: var(--color-primary)">●</span> Orders: ${ordersCount} / ${formatRevenueString(
-                ordersRevenue,
-              )}</p>
-              <p><span style="color: var(--color-secondary)">●</span> Store: ${storeCount} / ${formatRevenueString(
-                storeRevenue,
-              )}</p>
-            </div>
-          </div>
-        `;
-      },
-    },
     grid: {
-      borderColor: "#e2e8f0",
-      strokeDashArray: 4,
+      borderColor: "#f1f5f9",
+      strokeDashArray: 0,
+      xaxis: { lines: { show: false } },
+    },
+    legend: { show: false },
+    tooltip: {
+      theme: "light",
+      y: {
+        formatter: function (val: number) {
+          return formatRevenueString(val);
+        },
+      },
     },
   };
 
-  const barChartSeries = [
+  const areaChartSeries = [
     {
-      name: "Pesanan",
-      data: orderStats.monthlyData.map((d) => d.count),
-    },
-    {
-      name: "Toko",
-      data: orderStats.storeMonthlyData.map((d) => d.count),
+      name: "Revenue",
+      data: orderStats.monthlyData.map((d, i) => d.revenue + orderStats.storeMonthlyData[i].revenue),
     },
   ];
 
@@ -491,255 +478,235 @@ export default function AdminDashboard() {
       {/* Stats Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded flex items-center gap-1">
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                />
-              </svg>
-              {orderStats.allTime} ORDERS
-            </span>
-          </div>
-          <div>
-            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
-              Total Revenue
-            </p>
-            <p className="text-2xl font-bold text-slate-800">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">Total Revenue</p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-3xl font-bold text-slate-800">
               {formatRevenueString(orderStats.revenueAllTime)}
             </p>
+            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+              {orderStats.allTime} Orders
+            </span>
           </div>
         </div>
 
         {/* Best Seller */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
-              Best Seller
-            </p>
-            <p
-              className="text-xl font-bold text-slate-800 truncate"
-              title={orderStats.bestSeller}
-            >
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">Best Seller</p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-2xl font-bold text-slate-800 truncate" title={orderStats.bestSeller}>
               {orderStats.bestSeller}
             </p>
+            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+              Top
+            </span>
           </div>
         </div>
 
         {/* Total Clients */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
-              Total Clients
-            </p>
-            <p className="text-2xl font-bold text-slate-800">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">Total Clients</p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-3xl font-bold text-slate-800">
               {orderStats.totalClients}
             </p>
+            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              Active
+            </span>
           </div>
         </div>
 
         {/* Testimonials */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
-              Testimonials
-            </p>
-            <p className="text-2xl font-bold text-slate-800">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <p className="text-slate-500 text-sm font-medium">Testimonials</p>
+          <div className="flex items-end justify-between mt-3">
+            <p className="text-3xl font-bold text-slate-800">
               {orderStats.totalTestimonials}
             </p>
+            <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+              Total
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Two Column Layout: Chart + Tasks */}
+      {/* Middle Grid: Chart + Portfolios & Clients */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (2/3) - Monthly Orders Chart */}
+        {/* Left Column (2/3) - Chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-800">
-              Pesanan Bulanan
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Revenue Performance</h2>
+            </div>
             <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M10.2441 6C10.2441 5.0335 11.0276 4.25 11.9941 4.25H12.0041C12.9706 4.25 13.7541 5.0335 13.7541 6C13.7541 6.9665 12.9706 7.75 12.0041 7.75H11.9941C11.0276 7.75 10.2441 6.9665 10.2441 6ZM10.2441 18C10.2441 17.0335 11.0276 16.25 11.9941 16.25H12.0041C12.9706 16.25 13.7541 17.0335 13.7541 18C13.7541 18.9665 12.9706 19.75 12.0041 19.75H11.9941C11.0276 19.75 10.2441 18.9665 10.2441 18ZM11.9941 10.25C11.0276 10.25 10.2441 11.0335 10.2441 12C10.2441 12.9665 11.0276 13.75 11.9941 13.75H12.0041C12.9706 13.75 13.7541 12.9665 13.7541 12C13.7541 11.0335 12.9706 10.25 12.0041 10.25H11.9941Z"
-                />
+                <path fillRule="evenodd" clipRule="evenodd" d="M10.2441 6C10.2441 5.0335 11.0276 4.25 11.9941 4.25H12.0041C12.9706 4.25 13.7541 5.0335 13.7541 6C13.7541 6.9665 12.9706 7.75 12.0041 7.75H11.9941C11.0276 7.75 10.2441 6.9665 10.2441 6ZM10.2441 18C10.2441 17.0335 11.0276 16.25 11.9941 16.25H12.0041C12.9706 16.25 13.7541 17.0335 13.7541 18C13.7541 18.9665 12.9706 19.75 12.0041 19.75H11.9941C11.0276 19.75 10.2441 18.9665 10.2441 18ZM11.9941 10.25C11.0276 10.25 10.2441 11.0335 10.2441 12C10.2441 12.9665 11.0276 13.75 11.9941 13.75H12.0041C12.9706 13.75 13.7541 12.9665 13.7541 12C13.7541 11.0335 12.9706 10.25 12.0041 10.25H11.9941Z" />
               </svg>
             </button>
           </div>
 
-          {/* ApexCharts Bar Chart */}
-          <div className="-mx-2">
+          <div className="-mx-2 mt-auto">
             {chartLoaded && (
               <Chart
-                options={barChartOptions}
-                series={barChartSeries}
-                type="bar"
+                options={areaChartOptions}
+                series={areaChartSeries}
+                type="area"
                 height={300}
               />
             )}
           </div>
         </div>
 
-        {/* Right Column (1/3) - Task List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-800">Daftar Tugas</h2>
-            <a
-              href="/admin/tasks"
-              className="text-xs font-medium text-primary hover:text-primary/80"
-            >
+        {/* Right Column (1/3) */}
+        <div className="space-y-6 flex flex-col">
+          {/* Portfolio Gallery */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800">Portfolio Gallery</h2>
+            <a href="/admin/projects" className="text-xs font-medium text-primary hover:text-primary/80">
               Lihat Semua
             </a>
           </div>
 
-          {/* Task Tabs */}
-          <div className="flex gap-1 p-1 bg-slate-100 rounded-lg mb-4">
-            <button
-              onClick={() => setTaskTab("in_progress")}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                taskTab === "in_progress"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Dikerjakan (
-              {tasks.filter((t) => t.status === "in_progress").length})
-            </button>
-            <button
-              onClick={() => setTaskTab("completed")}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                taskTab === "completed"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Selesai ({tasks.filter((t) => t.status === "completed").length})
-            </button>
+          {/* Recent Clients */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-slate-800">Recent Clients</h2>
+              <span className="text-xs font-medium text-slate-600 bg-slate-100 flex items-center justify-center px-2 py-1 rounded">
+                {orderStats.totalClients} Klien
+              </span>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 mt-4">
+              {orderStats.recentClients.length > 0 ? orderStats.recentClients.map((client, idx) => (
+                <div key={idx} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm bg-slate-50 transition-colors">
+                  {client.charAt(0).toUpperCase()}
+                </div>
+              )) : (
+                <p className="text-sm text-slate-400">Belum ada klien</p>
+              )}
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="space-y-3 max-h-[280px] overflow-y-auto">
-            {tasks.filter((t) => t.status === taskTab).length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">
-                {taskTab === "in_progress"
-                  ? "Tidak ada tugas dikerjakan"
-                  : "Tidak ada tugas selesai"}
-              </p>
-            ) : (
-              tasks
-                .filter((t) => t.status === taskTab)
-                .slice(0, 10)
-                .map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors"
-                  >
-                    <div
-                      className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${
-                        task.status === "completed"
-                          ? "bg-emerald-500 border-emerald-500"
-                          : "border-slate-300 bg-white"
-                      }`}
-                    >
-                      {task.status === "completed" && (
-                        <div className="w-2.5 h-1.5 border-b-2 border-r-2 border-white rotate-45 mb-0.5" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm font-medium truncate ${
-                          task.status === "completed"
-                            ? "text-slate-500 line-through"
-                            : "text-slate-800"
-                        }`}
-                      >
-                        {task.package_details?.name || "Pesanan"}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate">
-                        {task.customer_name} • {formatDate(task.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))
+      {/* Bottom Grid: Available Services & Shop Products */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Available Services */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+             <h2 className="text-lg font-bold text-slate-800">Available Services</h2>
+             <a href="/admin/services" className="text-xs font-medium text-primary hover:text-primary/80">
+               Lihat Semua
+             </a>
+          </div>
+          
+          <div className="space-y-3">
+            {orderStats.topServices.length > 0 ? orderStats.topServices.map((svc, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{svc.name}</p>
+                  <p className="text-xs text-slate-500">Service</p>
+                </div>
+                <span className="text-xs font-medium text-emerald-600">{svc.count} Orders</span>
+              </div>
+            )) : (
+              <p className="text-sm text-slate-400 text-center py-4">Belum ada pesanan layanan</p>
             )}
           </div>
+        </div>
+
+        {/* Shop Products */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+             <h2 className="text-lg font-bold text-slate-800">Shop Products</h2>
+             <a href="/admin/store" className="text-xs font-medium text-primary hover:text-primary/80">
+               Lihat Semua
+             </a>
+          </div>
+          
+          <div className="space-y-3">
+            {orderStats.topProducts.length > 0 ? orderStats.topProducts.map((prod, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {prod.image ? (
+                    <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{prod.name}</p>
+                  <p className="text-xs text-slate-500">Product</p>
+                </div>
+                <span className="text-xs font-medium text-emerald-600 whitespace-nowrap">{prod.count} Sold</span>
+              </div>
+            )) : (
+              <p className="text-sm text-slate-400 text-center py-4">Belum ada pembelian produk</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Latest Projects Table Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-slate-800">Latest Projects</h2>
+          <a href="/admin/orders" className="text-xs font-medium text-primary hover:text-primary/80">
+            Lihat Semua
+          </a>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100">
+                <th className="py-3 px-2 text-xs font-medium text-slate-500">Order Reference</th>
+                <th className="py-3 px-2 text-xs font-medium text-slate-500">Product / Service</th>
+                <th className="py-3 px-2 text-xs font-medium text-slate-500">Amount</th>
+                <th className="py-3 px-2 text-xs font-medium text-slate-500">Status</th>
+                <th className="py-3 px-2 text-xs font-medium text-slate-500">Entry Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {tasks.length > 0 ? tasks.map((task) => (
+                <tr key={task.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-3 px-2">
+                    <span className="text-sm font-medium text-slate-800">#{task.id}</span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <p className="text-sm font-medium text-slate-800">{task.package_details?.name || "Order"}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{task.customer_name}</p>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm font-medium text-slate-800">{task.final_price ? formatRevenueString(parseFloat(task.final_price)) : "Rp 0"}</span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium
+                      ${task.status === "completed" ? "bg-emerald-50 text-emerald-600" : 
+                        task.status === "in_progress" ? "bg-amber-50 text-amber-600" : 
+                        "bg-blue-50 text-blue-600"}
+                    `}>
+                      {task.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                       {new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(task.created_at))}
+                    </span>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-sm text-slate-500">
+                    Belum ada proyek terbaru.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
