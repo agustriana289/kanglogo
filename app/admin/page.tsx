@@ -65,6 +65,7 @@ export default function AdminDashboard() {
     storeMonthlyData: [],
   });
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [recentProjects, setRecentProjects] = useState<any[]>([]);
   const [taskTab, setTaskTab] = useState<"in_progress" | "completed">(
     "in_progress",
   );
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
     if (authChecked) {
       fetchOrderStats();
       fetchTasks();
+      fetchRecentProjects();
       setChartLoaded(true);
     }
   }, [authChecked]);
@@ -373,6 +375,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchRecentProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, title, image_url")
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setRecentProjects(data || []);
+    } catch (error) {
+      console.error("Error fetching recent projects:", error);
+    }
+  };
+
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
@@ -561,11 +578,25 @@ export default function AdminDashboard() {
         <div className="space-y-6 flex flex-col">
           {/* Portfolio Gallery */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-800">Portfolio Gallery</h2>
               <a href="/admin/projects" className="text-xs font-medium text-blue-600 hover:text-blue-700">
                 Lihat Semua
               </a>
+            </div>
+            {/* Gallery Images Grid */}
+            <div className="grid grid-cols-3 gap-3 flex-1 items-start">
+              {recentProjects.length > 0 ? recentProjects.map((project) => (
+                <div key={project.id} className="aspect-square rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center">
+                  {project.image_url ? (
+                    <img src={project.image_url} alt={project.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0V17a2 2 0 01-2 2H6a2 2 0 01-2-2v-5z" /></svg>
+                  )}
+                </div>
+              )) : (
+                <p className="text-sm text-slate-400 col-span-3 text-center py-6">Belum ada portofolio</p>
+              )}
             </div>
           </div>
 
