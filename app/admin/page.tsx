@@ -560,29 +560,31 @@ export default function AdminDashboard() {
         {/* Right Column (1/3) */}
         <div className="space-y-6 flex flex-col">
           {/* Portfolio Gallery */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">Portfolio Gallery</h2>
-            <a href="/admin/projects" className="text-xs font-medium text-primary hover:text-primary/80">
-              Lihat Semua
-            </a>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-800">Portfolio Gallery</h2>
+              <a href="/admin/projects" className="text-xs font-medium text-blue-600 hover:text-blue-700">
+                Lihat Semua
+              </a>
+            </div>
           </div>
 
           {/* Recent Clients */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex-1">
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-slate-800">Recent Clients</h2>
               <span className="text-xs font-medium text-slate-600 bg-slate-100 flex items-center justify-center px-2 py-1 rounded">
                 {orderStats.totalClients} Klien
               </span>
             </div>
             
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-4">
               {orderStats.recentClients.length > 0 ? orderStats.recentClients.map((client, idx) => (
-                <div key={idx} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm bg-slate-50 transition-colors">
-                  {client.charAt(0).toUpperCase()}
+                <div key={idx} className="flex items-center justify-center text-center p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm font-medium text-slate-700">
+                  {client}
                 </div>
               )) : (
-                <p className="text-sm text-slate-400">Belum ada klien</p>
+                <p className="text-sm text-slate-400 col-span-2 text-center">Belum ada klien</p>
               )}
             </div>
           </div>
