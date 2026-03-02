@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
+import { notifyNewOrder, notifyOrderStatusChange, notifyOrderDeleted } from "@/app/actions/notifications";
 
 export async function POST(request: NextRequest) {
     try {
@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error;
 
-
+        // Trigger notification
+        if (order && order.id) {
+            await notifyNewOrder(order.id);
+        }
 
         return NextResponse.json({
             success: true,
@@ -84,7 +87,10 @@ export async function PATCH(request: NextRequest) {
 
         if (error) throw error;
 
-
+        // Trigger status notification if status was updated
+        if (updateData.status) {
+            await notifyOrderStatusChange(orderId, updateData.status);
+        }
 
         return NextResponse.json({
             success: true,
@@ -114,7 +120,7 @@ export async function DELETE(request: NextRequest) {
 
         const { data: order } = await supabase
             .from("orders")
-            .select("id")
+            .select("id, invoice_number, customer_name")
             .eq("id", orderId)
             .single();
 
@@ -125,7 +131,10 @@ export async function DELETE(request: NextRequest) {
 
         if (error) throw error;
 
-
+        // Trigger deleted notification if we got the invoice number
+        if (order && order.invoice_number) {
+            await notifyOrderDeleted(order.invoice_number, order.customer_name || "Pelanggan");
+        }
 
         return NextResponse.json({
             success: true,

@@ -257,7 +257,14 @@ export default function AdminDashboard() {
         allOrdersData?.map((o) => o.customer_name).filter(Boolean),
       );
       const totalClients = clients.size;
-      const recentClients = Array.from(clients).slice(0, 5) as string[];
+
+      // Extract unique recent clients from latest projects
+      const { data: latestProjectsRes } = await supabase
+        .from("projects")
+        .select("owner")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      const recentClients = Array.from(new Set((latestProjectsRes || []).map(p => p.owner).filter(Boolean))).slice(0, 5);
 
       // Top Services & Products arrays
       const topServices = Object.entries(servicesCounts)
@@ -265,10 +272,21 @@ export default function AdminDashboard() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
         
-      const topProducts = Object.entries(productsCounts)
-        .map(([name, data]) => ({ name, count: data.count, image: data.image }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+      // Fetch latest products from marketplace_assets to ensure the list is never empty if products exist
+      const { data: latestAssets } = await supabase
+        .from("marketplace_assets")
+        .select("nama_aset, image_url")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      const topProducts = (latestAssets || []).map(asset => {
+        const countData = Object.entries(productsCounts).find(([name]) => name === asset.nama_aset);
+        return {
+          name: asset.nama_aset,
+          count: countData ? countData[1].count : 0,
+          image: asset.image_url
+        };
+      }).sort((a, b) => b.count - a.count);
 
       // Monthly data for chart (last 12 months) - Orders with real revenue
       const monthlyData = [];
