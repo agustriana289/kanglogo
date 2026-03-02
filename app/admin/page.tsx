@@ -36,6 +36,9 @@ export default function AdminDashboard() {
     revenueThisMonth: number;
     revenueThisYear: number;
     revenueAllTime: number;
+    bestSeller: string;
+    totalClients: number;
+    totalTestimonials: number;
     monthlyData: MonthlyDataItem[];
     storeMonthlyData: MonthlyDataItem[];
   }>({
@@ -48,12 +51,15 @@ export default function AdminDashboard() {
     revenueThisMonth: 0,
     revenueThisYear: 0,
     revenueAllTime: 0,
+    bestSeller: "-",
+    totalClients: 0,
+    totalTestimonials: 0,
     monthlyData: [],
     storeMonthlyData: [],
   });
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTab, setTaskTab] = useState<"in_progress" | "completed">(
-    "in_progress"
+    "in_progress",
   );
   const [loading, setLoading] = useState(true);
   const [chartLoaded, setChartLoaded] = useState(false);
@@ -106,11 +112,11 @@ export default function AdminDashboard() {
       const revenueThisWeek =
         (weekOrdersData?.reduce(
           (sum, o) => sum + (parseFloat(o.final_price) || 0),
-          0
+          0,
         ) || 0) +
         (weekStoreData?.reduce(
           (sum, s) => sum + (parseFloat(s.price) || 0),
-          0
+          0,
         ) || 0);
 
       // This Month
@@ -130,11 +136,11 @@ export default function AdminDashboard() {
       const revenueThisMonth =
         (monthOrdersData?.reduce(
           (sum, o) => sum + (parseFloat(o.final_price) || 0),
-          0
+          0,
         ) || 0) +
         (monthStoreData?.reduce(
           (sum, s) => sum + (parseFloat(s.price) || 0),
-          0
+          0,
         ) || 0);
 
       // Last Month (for comparison)
@@ -145,7 +151,7 @@ export default function AdminDashboard() {
         0,
         23,
         59,
-        59
+        59,
       );
       const { count: lastMonthCountRaw } = await supabase
         .from("orders")
@@ -171,33 +177,68 @@ export default function AdminDashboard() {
       const revenueThisYear =
         (yearOrdersData?.reduce(
           (sum, o) => sum + (parseFloat(o.final_price) || 0),
-          0
+          0,
         ) || 0) +
         (yearStoreData?.reduce(
           (sum, s) => sum + (parseFloat(s.price) || 0),
-          0
+          0,
         ) || 0);
 
       // All Time
       const { data: allOrdersData } = await supabase
         .from("orders")
-        .select("final_price")
+        .select("final_price, customer_name, package_details")
         .in("status", ["paid", "accepted", "in_progress", "completed"]);
       const { data: allStoreData } = await supabase
         .from("store_orders")
-        .select("price");
+        .select("price, product_details");
+
+      const { count: totalTestimonials } = await supabase
+        .from("testimonials")
+        .select("*", { count: "exact", head: true });
 
       const allCount =
         (allOrdersData?.length || 0) + (allStoreData?.length || 0);
       const revenueAllTime =
         (allOrdersData?.reduce(
           (sum, o) => sum + (parseFloat(o.final_price) || 0),
-          0
+          0,
         ) || 0) +
         (allStoreData?.reduce(
           (sum, s) => sum + (parseFloat(s.price) || 0),
-          0
+          0,
         ) || 0);
+
+      // Calculate Best Seller
+      const productCounts: Record<string, number> = {};
+      if (allOrdersData) {
+        allOrdersData.forEach((o: any) => {
+          const name = o.package_details?.name || "Service";
+          productCounts[name] = (productCounts[name] || 0) + 1;
+        });
+      }
+      if (allStoreData) {
+        allStoreData.forEach((s: any) => {
+          const name =
+            s.product_details?.name || s.product_details?.title || "Product";
+          productCounts[name] = (productCounts[name] || 0) + 1;
+        });
+      }
+
+      let bestSeller = "-";
+      let maxSells = 0;
+      Object.entries(productCounts).forEach(([name, count]) => {
+        if (count > maxSells) {
+          maxSells = count;
+          bestSeller = name;
+        }
+      });
+
+      // Calculate Total Clients
+      const clients = new Set(
+        allOrdersData?.map((o) => o.customer_name).filter(Boolean),
+      );
+      const totalClients = clients.size;
 
       // Monthly data for chart (last 12 months) - Orders with real revenue
       const monthlyData = [];
@@ -211,7 +252,7 @@ export default function AdminDashboard() {
           0,
           23,
           59,
-          59
+          59,
         );
 
         // Fetch orders with price (Kanglogo uses final_price)
@@ -225,7 +266,7 @@ export default function AdminDashboard() {
         const ordersRevenue =
           ordersData?.reduce(
             (sum, o) => sum + (parseFloat(o.final_price) || 0),
-            0
+            0,
           ) || 0;
 
         // Fetch store purchases with price (Kanglogo uses store_orders and price)
@@ -258,8 +299,8 @@ export default function AdminDashboard() {
         lastMonthCount > 0
           ? Math.round(((monthCount - lastMonthCount) / lastMonthCount) * 100)
           : monthCount > 0
-          ? 100
-          : 0;
+            ? 100
+            : 0;
 
       setOrderStats({
         thisWeek: weekCount,
@@ -272,6 +313,9 @@ export default function AdminDashboard() {
         revenueThisMonth,
         revenueThisYear,
         revenueAllTime,
+        bestSeller,
+        totalClients,
+        totalTestimonials: totalTestimonials || 0,
         monthlyData,
         storeMonthlyData,
       });
@@ -406,11 +450,11 @@ export default function AdminDashboard() {
             <p class="font-bold text-slate-800 mb-2">${month}</p>
             <div class="space-y-1 text-sm">
               <p><span style="color: var(--color-primary)">●</span> Orders: ${ordersCount} / ${formatRevenueString(
-          ordersRevenue
-        )}</p>
+                ordersRevenue,
+              )}</p>
               <p><span style="color: var(--color-secondary)">●</span> Store: ${storeCount} / ${formatRevenueString(
-          storeRevenue
-        )}</p>
+                storeRevenue,
+              )}</p>
             </div>
           </div>
         `;
@@ -446,61 +490,138 @@ export default function AdminDashboard() {
     <div className="p-4 lg:p-6 space-y-6">
       {/* Stats Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Orders This Week */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <p className="text-slate-500 text-sm font-medium">
-            Pesanan Minggu Ini
-          </p>
-          <div className="flex items-end justify-between mt-3">
-            <p className="text-3xl font-bold text-slate-800">
-              {orderStats.thisWeek}
-            </p>
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-              {formatRevenueString(orderStats.revenueThisWeek)}
+        {/* Total Revenue */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                />
+              </svg>
+            </div>
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded flex items-center gap-1">
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                />
+              </svg>
+              {orderStats.allTime} ORDERS
             </span>
           </div>
-        </div>
-
-        {/* Orders This Month */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <p className="text-slate-500 text-sm font-medium">
-            Pesanan Bulan Ini
-          </p>
-          <div className="flex items-end justify-between mt-3">
-            <p className="text-3xl font-bold text-slate-800">
-              {orderStats.thisMonth}
+          <div>
+            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
+              Total Revenue
             </p>
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-              {formatRevenueString(orderStats.revenueThisMonth)}
-            </span>
-          </div>
-        </div>
-
-        {/* Orders This Year */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <p className="text-slate-500 text-sm font-medium">
-            Pesanan Tahun Ini
-          </p>
-          <div className="flex items-end justify-between mt-3">
-            <p className="text-3xl font-bold text-slate-800">
-              {orderStats.thisYear}
-            </p>
-            <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-              {formatRevenueString(orderStats.revenueThisYear)}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Orders */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <p className="text-slate-500 text-sm font-medium">Total Pesanan</p>
-          <div className="flex items-end justify-between mt-3">
-            <p className="text-3xl font-bold text-slate-800">
-              {orderStats.allTime}
-            </p>
-            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+            <p className="text-2xl font-bold text-slate-800">
               {formatRevenueString(orderStats.revenueAllTime)}
-            </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Best Seller */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
+              Best Seller
+            </p>
+            <p
+              className="text-xl font-bold text-slate-800 truncate"
+              title={orderStats.bestSeller}
+            >
+              {orderStats.bestSeller}
+            </p>
+          </div>
+        </div>
+
+        {/* Total Clients */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
+              Total Clients
+            </p>
+            <p className="text-2xl font-bold text-slate-800">
+              {orderStats.totalClients}
+            </p>
+          </div>
+        </div>
+
+        {/* Testimonials */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <p className="text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1">
+              Testimonials
+            </p>
+            <p className="text-2xl font-bold text-slate-800">
+              {orderStats.totalTestimonials}
+            </p>
           </div>
         </div>
       </div>
