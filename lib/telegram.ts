@@ -1,5 +1,5 @@
 const BOT_TOKEN = "8044037536:AAHHCyqI29eIobwotKLgGbkDoin7Rp8wBYg";
-const CHAT_ID = "5268455560";
+const CHAT_ID = "-1003567505382"; // ID of the KangLogo.com channel
 
 const CHANNEL_BOT_TOKEN = "7065106867:AAF3aC4zQpJqaRwc2TSA4jAwuILz0qAMwaI";
 const CHANNEL_ID = "@kanglogokece";
