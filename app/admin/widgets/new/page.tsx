@@ -1,0 +1,154 @@
+// app/admin/widgets/new/page.tsx
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { useAlert } from "@/components/providers/AlertProvider";
+
+export default function NewWidgetPage() {
+  const router = useRouter();
+  const { showAlert } = useAlert();
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    position: "sidebar",
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.content) {
+      showAlert("error", "Validasi", "Judul dan konten widget harus diisi.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("widgets").insert([formData]);
+
+      if (error) {
+        console.error("Error creating widget:", error);
+        showAlert("error", "Gagal", "Gagal membuat widget. Silakan coba lagi.");
+      } else {
+        showAlert("success", "Berhasil", "Widget berhasil dibuat!");
+        router.push("/admin/widgets"); // Arahkan kembali ke halaman kelola widget
+      }
+    } catch (error) {
+      console.error("Error creating widget:", error);
+      showAlert("error", "Error", "Terjadi kesalahan tak terduga.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Judul Widget
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="position"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Posisi
+            </label>
+            <select
+              id="position"
+              name="position"
+              value={formData.position}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+            >
+              <option value="header">Header</option>
+              <option value="footer">Footer</option>
+              <option value="sidebar">Sidebar Blog/Halaman</option>
+              <option value="Blog_header">Blog Header</option>
+              <option value="Blog_footer">Blog Footer</option>
+              <option value="marketplace_sidebar">Marketplace Sidebar</option>
+              <option value="marketplace_header">Marketplace Header</option>
+              <option value="marketplace_footer">Marketplace Footer</option>
+              <option value="proyek_sidebar">Proyek Sidebar</option>
+              <option value="proyek_header">Proyek Header</option>
+              <option value="proyek_footer">Proyek Footer</option>
+              <option value="generator_top">Generator Logo - Top</option>
+              <option value="generator_middle">Generator Logo - Middle</option>
+              <option value="generator_sidebar">
+                Generator Logo - Sidebar
+              </option>
+              <option value="vector_top">Logo Vector - Top</option>
+              <option value="vector_middle">Logo Vector - Middle</option>
+              <option value="vector_bottom">Logo Vector - Bottom</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="content"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Konten (HTML)
+            </label>
+            <textarea
+              id="content"
+              name="content"
+              rows={10}
+              value={formData.content}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+              placeholder="Anda bisa menggunakan tag HTML di sini. Contoh: &lt;p&gt;Teks paragraf&lt;/p&gt; atau &lt;ul&gt;&lt;li&gt;Daftar&lt;/li&gt;&lt;/ul&gt;"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Anda dapat menggunakan tag HTML untuk memformat konten.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Link
+              href="/admin/widgets"
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              Batal
+            </Link>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {submitting ? "Menyimpan..." : "Simpan Widget"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
