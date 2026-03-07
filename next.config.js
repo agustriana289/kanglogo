@@ -7,6 +7,7 @@ const withPWA = require("next-pwa")({
   customWorkerDir: "worker",
 });
 const nextConfig = {
+  turbopack: {},
   images: {
     remotePatterns: [
       {
