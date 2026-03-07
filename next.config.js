@@ -6,9 +6,6 @@ const withPWA = require("next-pwa")({
   // Import custom service worker for push notifications
   customWorkerDir: "worker",
 });
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -87,4 +84,4 @@ const nextConfig = {
     ];
   },
 };
-module.exports = withBundleAnalyzer(withPWA(nextConfig));
+module.exports = withPWA(nextConfig);
